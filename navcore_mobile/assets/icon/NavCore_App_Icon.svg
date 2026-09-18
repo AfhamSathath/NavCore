@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background Soft Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F1F4F9" />
+    </linearGradient>
+
+    <!-- Cobalt Pin Gradient -->
+    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3B7BF2" />
+      <stop offset="100%" stop-color="#2258C7" />
+    </linearGradient>
+
+    <!-- Floor Bar Gradient (3rd/Top) -->
+    <linearGradient id="floorTopGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E2E8F0" />
+      <stop offset="100%" stop-color="#CBD5E1" />
+    </linearGradient>
+
+    <!-- Floor Bar Gradient (2nd/Middle) -->
+    <linearGradient id="floorMidGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#94A3B8" />
+      <stop offset="100%" stop-color="#64748B" />
+    </linearGradient>
+
+    <!-- Floor Bar Gradient (1st/Bottom Active) -->
+    <linearGradient id="floorBotGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+
+    <!-- Card Soft Elevation Shadow -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#0F172A" flood-opacity="0.08" />
+    </filter>
+
+    <!-- Pin Shadow -->
+    <filter id="pinShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#1E40AF" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- App Rounded Square Base -->
+  <rect x="32" y="32" width="960" height="960" rx="220" ry="220" fill="url(#bgGrad)" filter="url(#softShadow)" stroke="#E5E7EB" stroke-width="4" />
+
+  <!-- Outer Ring Accent Grid Lines -->
+  <circle cx="512" cy="512" r="420" fill="none" stroke="#E2E8F0" stroke-width="2" stroke-dasharray="8 8" opacity="0.6" />
+
+  <!-- Stacked 3D Floor Bars -->
+  <g id="floor-3">
+    <path d="M 240 380 L 784 380 Q 804 380 812 396 L 752 460 Q 744 468 728 468 L 296 468 Q 280 468 272 452 L 212 396 Q 220 380 240 380 Z" fill="url(#floorTopGrad)" opacity="0.85" />
+    <ellipse cx="512" cy="424" rx="40" ry="18" fill="#FFFFFF" opacity="0.9" />
+  </g>
+
+  <g id="floor-2">
+    <path d="M 210 520 L 814 520 Q 834 520 842 536 L 782 600 Q 774 608 758 608 L 266 608 Q 250 608 242 592 L 182 536 Q 190 520 210 520 Z" fill="url(#floorMidGrad)" opacity="0.9" />
+    <ellipse cx="512" cy="564" rx="44" ry="20" fill="#FFFFFF" opacity="0.9" />
+  </g>
+
+  <g id="floor-1">
+    <path d="M 180 660 L 844 660 Q 864 660 872 676 L 812 740 Q 804 748 788 748 L 236 748 Q 220 748 212 732 L 152 676 Q 160 660 180 660 Z" fill="url(#floorBotGrad)" />
+    <ellipse cx="512" cy="704" rx="48" ry="22" fill="#1E3A8A" opacity="0.4" />
+  </g>
+
+  <!-- Central Location Pin Piercing Down Through Floors -->
+  <g id="location-pin" filter="url(#pinShadow)">
+    <path d="M 512 768 C 452 660 372 520 372 372 C 372 295 434 232 512 232 C 590 232 652 295 652 372 C 652 520 572 660 512 768 Z" fill="url(#pinGrad)" />
+    <circle cx="512" cy="372" r="76" fill="#FFFFFF" />
+    <circle cx="512" cy="372" r="44" fill="#2563EB" />
+  </g>
+
+  <!-- Pin Penetration Tip -->
+  <ellipse cx="512" cy="768" rx="60" ry="20" fill="none" stroke="#2563EB" stroke-width="4" opacity="0.8" />
+  <ellipse cx="512" cy="768" rx="90" ry="30" fill="none" stroke="#3B82F6" stroke-width="3" stroke-dasharray="6 6" opacity="0.5" />
+</svg>

@@ -1,0 +1,42 @@
+name: navcore_mobile
+description: "NavCore — Zero-Hardware Indoor Navigator Native Flutter Mobile App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  google_fonts: ^8.2.1
+  lucide_icons: ^0.257.0
+  geolocator: ^13.0.2
+  sensors_plus: ^6.1.1
+  camera: 0.10.5+9
+  permission_handler: ^11.3.1
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/icon/NavCore_App_Icon.svg
+    - assets/icon/app_icon.png
+

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../engine/ecef_engine.dart';
 import '../engine/bearing_engine.dart';
+import 'destinations.dart';
 
 enum ParkingSlotStatus {
   free,
@@ -473,12 +474,19 @@ class ParkingService extends ChangeNotifier {
     final slots = fetchFloorMap(floorId);
     if (slots.isEmpty) return null;
 
+    final effectiveUser = getEffectiveUserCoords(userCoords, entranceAnchor);
+
     ParkingSlot? nearest;
     double minDistance = double.infinity;
 
     for (final slot in slots) {
       if (slot.status == ParkingSlotStatus.free || slot.status == ParkingSlotStatus.occupied) {
-        final dist = haversineDistance(userCoords, slot.location);
+        final dist = calculateAccurate3DDistance(
+          effectiveUser,
+          slot.location,
+          userFloorNumber: 1,
+          targetFloorNumber: floorId == 'B2' ? -2 : (floorId == 'B1' ? -1 : 1),
+        );
         if (dist < minDistance) {
           minDistance = dist;
           nearest = slot;
@@ -493,12 +501,16 @@ class ParkingService extends ChangeNotifier {
     final activeVehicle = fetchMyVehicleLocation(_currentUserId);
     if (activeVehicle == null) return false;
 
-    final dist = haversineDistance(
-      currentUserCoords,
+    final effectiveUser = getEffectiveUserCoords(currentUserCoords, entranceAnchor);
+
+    final dist = calculateAccurate3DDistance(
+      effectiveUser,
       activeVehicle.location,
+      userFloorNumber: 1,
+      targetFloorNumber: activeVehicle.floorId.contains('B2') ? -2 : -1,
     );
 
-    if (dist > 35.0) {
+    if (dist > 500.0) {
       await clearVehicleLocation(userId: _currentUserId);
       return true;
     }

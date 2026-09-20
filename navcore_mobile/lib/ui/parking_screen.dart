@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../data/parking_service.dart';
+import '../data/destinations.dart';
 import '../engine/ecef_engine.dart';
+import '../engine/bearing_engine.dart';
 
 class ParkingScreen extends StatefulWidget {
   final ParkingService parkingService;
@@ -363,6 +365,16 @@ class _ParkingScreenState extends State<ParkingScreen> {
     final stats = widget.parkingService.getSlotAvailability(_selectedFloorId);
     final currentUserId = widget.parkingService.currentUserId;
     final vehicle = widget.parkingService.fetchMyVehicleLocation(currentUserId);
+    int distToCarMeters = 0;
+    if (vehicle != null) {
+      final effectiveUser = getEffectiveUserCoords(widget.userCoords, entranceAnchor);
+      distToCarMeters = calculateAccurate3DDistance(
+        effectiveUser,
+        vehicle.location,
+        userFloorNumber: 1,
+        targetFloorNumber: vehicle.floorId.contains('B2') ? -2 : -1,
+      ).round();
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -587,10 +599,11 @@ class _ParkingScreenState extends State<ParkingScreen> {
                           ),
                         ),
                         Text(
-                          '${vehicle.floorName} • ${vehicle.licensePlate} (${vehicle.userId})',
+                          '${vehicle.floorName} • ${vehicle.licensePlate} • $distToCarMeters m away',
                           style: GoogleFonts.inter(
                             fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
                       ],

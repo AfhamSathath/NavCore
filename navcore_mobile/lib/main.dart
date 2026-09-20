@@ -306,7 +306,10 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
         buildingProfile: _buildingProfile,
         destinations: _destinations,
         parkingService: _parkingService,
-        onOpenARView: () => setState(() => _currentIndex = 1),
+        onOpenARView: () => setState(() {
+          _arTargetDestination = null;
+          _currentIndex = 1;
+        }),
         onOpenFloorMap: () => setState(() => _currentIndex = 2),
         onOpenParking: () => setState(() => _currentIndex = 3),
         onOpenMallExplorer: () => setState(() => _currentIndex = 4),
@@ -332,7 +335,10 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
           _arTargetDestination = poi;
           _currentIndex = 1;
         }),
-        onBackClicked: () => setState(() => _currentIndex = 0),
+        onBackClicked: () => setState(() {
+          _arTargetDestination = null;
+          _currentIndex = 0;
+        }),
         onOpenMapsClicked: () => setState(() => _currentIndex = 2),
       ),
       FloorPlanScreen(
@@ -342,6 +348,7 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
         userCoords: _userCoords,
         destinations: _destinations,
         onSimulateMove: _handleSimulateMove,
+        parkingService: _parkingService,
         onSelectDestination: (poi) => setState(() {
           _arTargetDestination = poi;
           _currentIndex = 1;
@@ -369,7 +376,12 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
+        onDestinationSelected: (idx) => setState(() {
+          if (idx == 1 && _currentIndex != 1) {
+            _arTargetDestination = null;
+          }
+          _currentIndex = idx;
+        }),
         indicatorColor: const Color(0xFFDBEAFE),
         destinations: const [
           NavigationDestination(

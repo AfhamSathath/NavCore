@@ -55,28 +55,14 @@ CompassBearingBadge classifyCompassBadge(double bearingDeg) {
   return CompassBearingBadge.NW;
 }
 
-/// Resolves localized user coordinates relative to active mall coordinate anchor.
-/// If user physical GPS is within 500m of mall, uses physical GPS.
-/// If testing remotely (> 500m away), anchors user position to mall entrance anchor with relative movement offset.
+/// Resolves localized user coordinates relative to active indoor mall coordinate anchor.
+/// Removes raw indoor GPS coordinate fluctuations by anchoring all spatial calculations to the indoor mall reference anchor.
 GeodeticCoords getEffectiveUserCoords(GeodeticCoords userCoords, GeodeticCoords mallAnchor) {
-  final dist = haversineDistance(userCoords, mallAnchor);
-  if (dist <= 500.0) {
-    return userCoords; // User is physically inside or near the mall
-  }
-
-  // Calculate user movement relative to base entrance reference anchor
-  double relLat = userCoords.latitude - 6.927079;
-  double relLon = userCoords.longitude - 79.845612;
-
-  // If user physical location is far away without active movement delta, center on mall anchor
-  if (relLat.abs() > 0.02 || relLon.abs() > 0.02) {
-    relLat = 0.0;
-    relLon = 0.0;
-  }
-
+  // Always anchor user position calculation to the indoor mall reference anchor
+  // to avoid raw indoor GPS drift & coordinate jumps.
   return GeodeticCoords(
-    latitude: mallAnchor.latitude + relLat,
-    longitude: mallAnchor.longitude + relLon,
+    latitude: mallAnchor.latitude,
+    longitude: mallAnchor.longitude,
     height: userCoords.height,
   );
 }

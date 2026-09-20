@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../engine/floor_tracker.dart';
 import '../engine/ecef_engine.dart';
 import '../data/destinations.dart';
+import '../data/parking_service.dart';
 import 'shop_details_screen.dart';
 import 'dpad_control_widget.dart';
 
@@ -16,6 +17,7 @@ class FloorPlanScreen extends StatefulWidget {
   final List<DestinationPOI> destinations;
   final Function(double, double) onSimulateMove;
   final Function(DestinationPOI)? onSelectDestination;
+  final ParkingService? parkingService;
 
   const FloorPlanScreen({
     super.key,
@@ -26,6 +28,7 @@ class FloorPlanScreen extends StatefulWidget {
     required this.destinations,
     required this.onSimulateMove,
     this.onSelectDestination,
+    this.parkingService,
   });
 
   @override
@@ -34,6 +37,61 @@ class FloorPlanScreen extends StatefulWidget {
 
 class _FloorPlanScreenState extends State<FloorPlanScreen> {
   DestinationPOI? _selectedPOI;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.parkingService?.addListener(_onParkingUpdate);
+    _checkAutoSwitchToParkedCarFloor();
+  }
+
+  @override
+  void didUpdateWidget(covariant FloorPlanScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.parkingService != widget.parkingService) {
+      oldWidget.parkingService?.removeListener(_onParkingUpdate);
+      widget.parkingService?.addListener(_onParkingUpdate);
+      _checkAutoSwitchToParkedCarFloor();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.parkingService?.removeListener(_onParkingUpdate);
+    super.dispose();
+  }
+
+  void _onParkingUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  void _checkAutoSwitchToParkedCarFloor() {
+    final vehicle = widget.parkingService?.currentVehicleLocation;
+    if (vehicle != null) {
+      int targetFloorNum = -1;
+      if (vehicle.floorId.contains('B2') || vehicle.floorId.contains('-2')) {
+        targetFloorNum = -2;
+      } else if (vehicle.floorId.contains('B1') || vehicle.floorId.contains('-1')) {
+        targetFloorNum = -1;
+      }
+
+      final parkedFloor = widget.buildingProfile.floors.firstWhere(
+        (f) => f.floorNumber == targetFloorNum,
+        orElse: () => widget.buildingProfile.floors.firstWhere(
+          (f) => f.floorNumber < 0,
+          orElse: () => widget.currentFloor,
+        ),
+      );
+
+      if (parkedFloor.floorNumber != widget.currentFloor.floorNumber) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            widget.onSelectFloor(parkedFloor);
+          }
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -299,6 +357,90 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                           );
                         }(),
 
+                        // Parked Vehicle Marker Pin Overlay on 2D Spatial Floor Map
+                        () {
+                          final vehicle = widget.parkingService?.currentVehicleLocation;
+                          if (vehicle == null) return const SizedBox.shrink();
+
+                          // Check if vehicle floor matches current floor
+                          bool isVehicleOnThisFloor = false;
+                          if (widget.currentFloor.floorNumber == -1 && (vehicle.floorId == 'B1' || vehicle.floorId == 'fl-b1')) {
+                            isVehicleOnThisFloor = true;
+                          } else if (widget.currentFloor.floorNumber == -2 && (vehicle.floorId == 'B2' || vehicle.floorId == 'fl-b2')) {
+                            isVehicleOnThisFloor = true;
+                          } else if (widget.currentFloor.floorNumber == 1 && vehicle.floorId == 'GF') {
+                            isVehicleOnThisFloor = true;
+                          }
+
+                          if (!isVehicleOnThisFloor) return const SizedBox.shrink();
+
+                          final carX = width * 0.50;
+                          final carY = height * 0.42;
+
+                          return Positioned(
+                            left: (carX - 60).clamp(10.0, width - 130.0),
+                            top: (carY - 24).clamp(10.0, height - 60.0),
+                            child: GestureDetector(
+                              onTap: () => _showParkedVehicleModal(context, vehicle),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                width: 125,
+                                padding: const EdgeInsets.all(7),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.white, width: 2),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x77F59E0B),
+                                      blurRadius: 14,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(LucideIcons.car, color: Colors.white, size: 14),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            'YOUR CAR',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.inter(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Slot ${vehicle.slotId} • ${vehicle.licensePlate}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.inter(
+                                        color: Colors.white.withValues(alpha: 0.95),
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }(),
+
                         // Map Legend Overlay (Top Left - Cleanly placed above room blocks)
                         Positioned(
                           top: 12,
@@ -537,6 +679,102 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
     return slots[index % slots.length];
   }
 
+  void _showParkedVehicleModal(BuildContext context, MyVehicleLocation vehicle) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(22),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(LucideIcons.car, color: Color(0xFFD97706), size: 28),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Your Parked Vehicle',
+                        style: GoogleFonts.inter(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                      Text(
+                        'Slot ${vehicle.slotId} • ${vehicle.floorName} (${vehicle.licensePlate})',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFD97706),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                final poi = DestinationPOI(
+                  id: 'parked-vehicle-poi',
+                  name: 'Parked Car (Slot ${vehicle.slotId})',
+                  category: 'SERVICES',
+                  floorNumber: vehicle.floorId.contains('B2') ? -2 : -1,
+                  rating: 5.0,
+                  location: vehicle.location,
+                  description: 'Your saved vehicle location.',
+                  openStatus: 'PARKED',
+                );
+                if (widget.onSelectDestination != null) {
+                  widget.onSelectDestination!(poi);
+                }
+              },
+              icon: const Icon(LucideIcons.compass, color: Colors.white, size: 18),
+              label: const Text(
+                'START AR FIND MY CAR NAVIGATION',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   IconData _getCategoryIcon(String cat) {
     if (cat.contains('FOOD')) return LucideIcons.utensils;
     if (cat.contains('TECH')) return LucideIcons.laptop;
@@ -560,43 +798,52 @@ class ArchitecturalFloorPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()..color = const Color(0xFFF8FAFC);
+    final bool isBasement = floorNumber < 0;
+
+    final bgPaint = Paint()..color = isBasement ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
     final outerBorderPaint = Paint()
-      ..color = const Color(0xFF94A3B8)
+      ..color = isBasement ? const Color(0xFF38BDF8) : const Color(0xFF94A3B8)
       ..strokeWidth = 3.5
       ..style = PaintingStyle.stroke;
 
-    final wallFillPaint = Paint()..color = const Color(0xFFE2E8F0);
+    final wallFillPaint = Paint()..color = isBasement ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
 
     // 1. Draw Outer Building Boundary Wall
     final outerRect = RRect.fromLTRBR(16, 16, size.width - 16, size.height - 16, const Radius.circular(24));
     canvas.drawRRect(outerRect, wallFillPaint);
     canvas.drawRRect(outerRect, outerBorderPaint);
 
-    // 2. Draw Central Walking Corridor & Atrium
-    final corridorPaint = Paint()..color = Colors.white;
+    // 2. Draw Central Driveway / Walking Corridor
+    final corridorPaint = Paint()..color = isBasement ? const Color(0xFF334155) : Colors.white;
     const roomTopPadding = 56.0;
     final corridorRect = RRect.fromLTRBR(size.width * 0.38, roomTopPadding, size.width * 0.62, size.height - 24, const Radius.circular(16));
     canvas.drawRRect(corridorRect, corridorPaint);
 
     final corridorBorderPaint = Paint()
-      ..color = const Color(0xFFCBD5E1)
+      ..color = isBasement ? const Color(0xFF00E5FF) : const Color(0xFFCBD5E1)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
     canvas.drawRRect(corridorRect, corridorBorderPaint);
 
-    // 3. Draw Room Blocks (Left & Right Wings) - Top Padding 56.0 preserves clear space for Top-Left Legend Badge
-    final roomColors = [
-      const Color(0xFFEFF6FF), // Soft Blue
-      const Color(0xFFFDF2F8), // Soft Pink
-      const Color(0xFFFEF3C7), // Soft Amber
-      const Color(0xFFF0FDF4), // Soft Green
-    ];
+    // 3. Draw Room / Parking Stall Blocks
+    final roomColors = isBasement
+        ? [
+            const Color(0xFF1E293B),
+            const Color(0xFF1E293B),
+            const Color(0xFF1E293B),
+            const Color(0xFF1E293B),
+          ]
+        : [
+            const Color(0xFFEFF6FF),
+            const Color(0xFFFDF2F8),
+            const Color(0xFFFEF3C7),
+            const Color(0xFFF0FDF4),
+          ];
 
     final roomBorderPaint = Paint()
-      ..color = const Color(0xFF94A3B8)
+      ..color = isBasement ? const Color(0xFF475569) : const Color(0xFF94A3B8)
       ..strokeWidth = 1.8
       ..style = PaintingStyle.stroke;
 

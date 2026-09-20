@@ -65,7 +65,8 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
   final SensorFusionService _sensorFusion = SensorFusionService();
   final RouteService _routeService = RouteService();
   final OffRouteService _offRouteService = OffRouteService();
-  final VerticalTransitionService _transitionService = VerticalTransitionService();
+  final VerticalTransitionService _transitionService =
+      VerticalTransitionService();
   final BuildingDataService _buildingDataService = BuildingDataService();
 
   CameraController? _cameraController;
@@ -82,7 +83,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
     final activeAnchor = widget.destinations.isNotEmpty
         ? widget.destinations.first.location
         : entranceAnchor;
-    final effectiveUser = getEffectiveUserCoords(widget.userCoords, activeAnchor);
+    final effectiveUser = getEffectiveUserCoords(
+      widget.userCoords,
+      activeAnchor,
+    );
 
     if (widget.targetDestination != null) {
       _selectedPOI = widget.targetDestination;
@@ -107,7 +111,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       final activeAnchor = widget.destinations.isNotEmpty
           ? widget.destinations.first.location
           : entranceAnchor;
-      final effectiveUser = getEffectiveUserCoords(widget.userCoords, activeAnchor);
+      final effectiveUser = getEffectiveUserCoords(
+        widget.userCoords,
+        activeAnchor,
+      );
 
       setState(() {
         if (widget.targetDestination != null) {
@@ -176,8 +183,6 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
     );
   }
 
-
-
   void _showMarkerScannerModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -186,129 +191,166 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       builder: (context) {
         final screenWidth = MediaQuery.of(context).size.width;
         return Container(
-        height: MediaQuery.of(context).size.height * 0.70,
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Color(0xFF0F172A),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border(top: BorderSide(color: Color(0xFF10B981), width: 1.5)),
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+          height: MediaQuery.of(context).size.height * 0.70,
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Color(0xFF0F172A),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(color: Color(0xFF10B981), width: 1.5),
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        LucideIcons.scan,
+                        color: Color(0xFF10B981),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Scan Entrance Reference Marker',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(LucideIcons.x, color: Colors.white70),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    const Icon(LucideIcons.scan, color: Color(0xFF10B981), size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Scan Entrance Reference Marker',
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF030712),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child:
+                            _isCameraInitialized &&
+                                _cameraController != null &&
+                                _cameraController!.value.isInitialized
+                            ? FittedBox(
+                                fit: BoxFit.cover,
+                                child: SizedBox(
+                                  width: screenWidth,
+                                  height:
+                                      screenWidth *
+                                      _cameraController!.value.aspectRatio,
+                                  child: CameraPreview(_cameraController!),
+                                ),
+                              )
+                            : const Center(
+                                child: Icon(
+                                  LucideIcons.camera,
+                                  color: Color(0xFF10B981),
+                                  size: 48,
+                                ),
+                              ),
+                      ),
+                    ),
+                    Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: const Color(0xFF00E5FF),
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            LucideIcons.qrCode,
+                            color: Color(0xFF00E5FF),
+                            size: 36,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'ALIGN MARKER HERE',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF00E5FF),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(LucideIcons.x, color: Colors.white70),
-                  onPressed: () => Navigator.pop(context),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _markerStatusText,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  color: const Color(0xFF94A3B8),
+                  fontSize: 12,
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF030712),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isMarkerLocked = true;
+                    _markerStatusText =
+                        'Reference Point Locked! PnP Residual Error: 0.4px • AR Ready';
+                  });
+                  widget.onScanMarkerClick();
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Entrance Reference Locked • Real-World AR Navigation Ready!',
                       ),
-                      child: _isCameraInitialized && _cameraController != null && _cameraController!.value.isInitialized
-                          ? FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: screenWidth,
-                                height: screenWidth * _cameraController!.value.aspectRatio,
-                                child: CameraPreview(_cameraController!),
-                              ),
-                            )
-                          : const Center(
-                              child: Icon(LucideIcons.camera, color: Color(0xFF10B981), size: 48),
-                            ),
+                      backgroundColor: Color(0xFF10B981),
                     ),
+                  );
+                },
+                child: const Text(
+                  'LOCK REFERENCE MARKER (PnP)',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFF00E5FF), width: 2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(LucideIcons.qrCode, color: Color(0xFF00E5FF), size: 36),
-                        const SizedBox(height: 8),
-                        Text(
-                          'ALIGN MARKER HERE',
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFF00E5FF),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _markerStatusText,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 12),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              onPressed: () {
-                setState(() {
-                  _isMarkerLocked = true;
-                  _markerStatusText = 'Reference Point Locked! PnP Residual Error: 0.4px • AR Ready';
-                });
-                widget.onScanMarkerClick();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Entrance Reference Locked • Real-World AR Navigation Ready!'),
-                    backgroundColor: Color(0xFF10B981),
-                  ),
-                );
-              },
-              child: const Text(
-                'LOCK REFERENCE MARKER (PnP)',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _showAdminMarkerModal(BuildContext context) {
@@ -332,16 +374,24 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
   bool _matchesCategory(DestinationPOI poi, String selectedCat) {
     if (selectedCat == 'All' || selectedCat == 'ALL') return true;
     final catUpper = poi.category.toUpperCase();
-    if (selectedCat == 'Food' || selectedCat == 'FOOD & DRINK') return catUpper.contains('FOOD');
-    if (selectedCat == 'Tech' || selectedCat == 'TECH & ELECTRONICS') return catUpper.contains('TECH');
+    if (selectedCat == 'Food' || selectedCat == 'FOOD & DRINK') {
+      return catUpper.contains('FOOD');
+    }
+    if (selectedCat == 'Tech' || selectedCat == 'TECH & ELECTRONICS') {
+      return catUpper.contains('TECH');
+    }
     if (selectedCat == 'Fashion' || selectedCat == 'RETAIL & FASHION') {
       return catUpper.contains('FASHION') || catUpper.contains('RETAIL');
     }
     if (selectedCat == 'Luxury' || selectedCat == 'LUXURY & JEWELRY') {
       return catUpper.contains('LUXURY') || catUpper.contains('BEAUTY');
     }
-    if (selectedCat == 'Services' || selectedCat == 'SERVICES') return catUpper.contains('SERVICES');
-    if (selectedCat == 'Parking' || selectedCat == 'PARKING') return catUpper.contains('PARK');
+    if (selectedCat == 'Services' || selectedCat == 'SERVICES') {
+      return catUpper.contains('SERVICES');
+    }
+    if (selectedCat == 'Parking' || selectedCat == 'PARKING') {
+      return catUpper.contains('PARK');
+    }
     return catUpper.contains(selectedCat.toUpperCase());
   }
 
@@ -409,9 +459,11 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       }
 
       // Hide basement parking from shop discovery unless Parking category is explicitly chosen or user is on basement floor
-      final isParkingCategory = _selectedCategory == 'Parking' || _selectedCategory == 'PARKING';
+      final isParkingCategory =
+          _selectedCategory == 'Parking' || _selectedCategory == 'PARKING';
       if (!isParkingCategory && widget.currentFloor.floorNumber > 0) {
-        if (poi.floorNumber < 0 || poi.category.toUpperCase().contains('PARK')) {
+        if (poi.floorNumber < 0 ||
+            poi.category.toUpperCase().contains('PARK')) {
           return false;
         }
       }
@@ -452,11 +504,15 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     // Camera Pitch Motion Compensation:
-    final pitchOffsetPx = (widget.phonePitchDegrees * (screenHeight / 40.0)).clamp(-250.0, 250.0);
+    final pitchOffsetPx = (widget.phonePitchDegrees * (screenHeight / 40.0))
+        .clamp(-250.0, 250.0);
 
     // Multi-Floor Spatial Collision Avoidance Layout Pass for Ambient Floating Cards
     const double topSafeLimit = 185.0;
-    final double bottomSafeLimit = math.max(screenHeight - 230.0, topSafeLimit + 80.0);
+    final double bottomSafeLimit = math.max(
+      screenHeight - 230.0,
+      topSafeLimit + 80.0,
+    );
     final List<Map<String, dynamic>> positionedCards = [];
 
     for (int i = 0; i < filteredPOIs.length; i++) {
@@ -492,11 +548,20 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       if (_floorFilterMode == ARFloorFilterMode.allFloors) {
         // Multi-floor spatial projection combining floor level + distance horizon + camera pitch tilt
         final double floorLevel = poi.floorNumber.toDouble().clamp(-2.0, 10.0);
-        posY = (screenHeight * 0.50) - ((floorLevel - 1.0) * 28.0) - distHorizonOffset + pitchShiftPx;
+        posY =
+            (screenHeight * 0.50) -
+            ((floorLevel - 1.0) * 28.0) -
+            distHorizonOffset +
+            pitchShiftPx;
       } else {
         // Single floor / Auto-tilt mode
-        final double floorDelta = (poi.floorNumber - activeTargetFloorNumber).toDouble();
-        posY = (screenHeight * 0.50) - (floorDelta * 40.0) - distHorizonOffset + pitchShiftPx;
+        final double floorDelta = (poi.floorNumber - activeTargetFloorNumber)
+            .toDouble();
+        posY =
+            (screenHeight * 0.50) -
+            (floorDelta * 40.0) -
+            distHorizonOffset +
+            pitchShiftPx;
       }
 
       // Distance & Pitch Distance Sensitivity Opacity:
@@ -523,7 +588,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       }
 
       // Dynamic 3D Distance Scale Factor (Close = Larger 1.25x, Far = Smaller 0.65x):
-      final double distanceScaleFactor = (1.20 - ((distM - 5.0) * 0.007)).clamp(0.65, 1.25);
+      final double distanceScaleFactor = (1.20 - ((distM - 5.0) * 0.007)).clamp(
+        0.65,
+        1.25,
+      );
 
       positionedCards.add({
         'poi': poi,
@@ -562,15 +630,24 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
             final poi2 = p2['poi'] as DestinationPOI;
 
             if (poi1.floorNumber < poi2.floorNumber) {
-              y1 = (y1 + (cardH - dy + 6.0)).clamp(topSafeLimit, bottomSafeLimit);
+              y1 = (y1 + (cardH - dy + 6.0)).clamp(
+                topSafeLimit,
+                bottomSafeLimit,
+              );
             } else if (poi1.floorNumber > poi2.floorNumber) {
-              y1 = (y1 - (cardH - dy + 6.0)).clamp(topSafeLimit, bottomSafeLimit);
+              y1 = (y1 - (cardH - dy + 6.0)).clamp(
+                topSafeLimit,
+                bottomSafeLimit,
+              );
             } else {
               // Same floor: Stagger horizontally & vertically
               if (y1 <= y2) {
                 y1 = (y2 - cardH - 6.0).clamp(topSafeLimit, bottomSafeLimit);
                 if (y1 <= topSafeLimit + 2.0) {
-                  x1 = (x2 + (i % 2 == 0 ? 110.0 : -110.0)).clamp(12.0, screenWidth - 190.0);
+                  x1 = (x2 + (i % 2 == 0 ? 110.0 : -110.0)).clamp(
+                    12.0,
+                    screenWidth - 190.0,
+                  );
                   y1 = (y2 + cardH + 6.0).clamp(topSafeLimit, bottomSafeLimit);
                 }
               } else {
@@ -586,8 +663,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
 
     // Dynamic 3D AR Target Badge Screen Offset based on activeRelAngle & Pitch
     final normTargetX = (activeRelAngle / 30.0).clamp(-1.2, 1.2);
-    final targetBadgePosX = (screenWidth / 2) + (normTargetX * (screenWidth * 0.35));
-    final targetBadgePosY = ((screenHeight * 0.22) + (pitchOffsetPx * 0.5)).clamp(100.0, 240.0);
+    final targetBadgePosX =
+        (screenWidth / 2) + (normTargetX * (screenWidth * 0.35));
+    final targetBadgePosY = ((screenHeight * 0.22) + (pitchOffsetPx * 0.5))
+        .clamp(100.0, 240.0);
 
     // Sort positioned cards by distance and floor (farther dist first -> renders behind closer places)
     positionedCards.sort((a, b) {
@@ -606,13 +685,20 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
     });
 
     // Filter cards to visible camera FOV (relAngle.abs() <= 85°), and allow up to 35 places so all places display
-    final double fovLimit = _floorFilterMode == ARFloorFilterMode.allFloors ? 90.0 : 75.0;
-    List<Map<String, dynamic>> visibleCardsInFOV = positionedCards.where((data) {
-      final relAngle = (data['relAngle'] as double);
-      return relAngle.abs() <= fovLimit;
-    }).take(35).toList();
+    final double fovLimit = _floorFilterMode == ARFloorFilterMode.allFloors
+        ? 90.0
+        : 75.0;
+    List<Map<String, dynamic>> visibleCardsInFOV = positionedCards
+        .where((data) {
+          final relAngle = (data['relAngle'] as double);
+          return relAngle.abs() <= fovLimit;
+        })
+        .take(35)
+        .toList();
 
-    if (visibleCardsInFOV.isEmpty && !_isNavigatingActive && positionedCards.isNotEmpty) {
+    if (visibleCardsInFOV.isEmpty &&
+        !_isNavigatingActive &&
+        positionedCards.isNotEmpty) {
       visibleCardsInFOV = positionedCards.take(12).toList();
     }
 
@@ -633,9 +719,12 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       nearestPOI = sortedByDist.first['poi'] as DestinationPOI;
     }
 
-    final bool isPitchExtreme = widget.phonePitchDegrees < -25.0 || widget.phonePitchDegrees > 55.0;
-    final bool isNoKnownPlacesInView = !_isNavigatingActive && visibleCardsInFOV.isEmpty;
-    final bool isTargetOffScreen = _isNavigatingActive && activePOI != null && activeRelAngle.abs() > 35.0;
+    final bool isPitchExtreme =
+        widget.phonePitchDegrees < -25.0 || widget.phonePitchDegrees > 55.0;
+    final bool isNoKnownPlacesInView =
+        !_isNavigatingActive && visibleCardsInFOV.isEmpty;
+    final bool isTargetOffScreen =
+        _isNavigatingActive && activePOI != null && activeRelAngle.abs() > 35.0;
 
     // Evaluate off-route compliance if active route is available
     if (_activeRoute != null) {
@@ -660,9 +749,12 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
     final turnActionStr = _routeService.getTurnGuidanceText(activeRelAngle);
 
     // Guidance text generation based on floor relation, vertical transitions, and turn action
-    String guidanceText = '$turnActionStr • Walk $activeDistM m to ${activePOI?.name ?? ''}';
-    if (activePOI != null && activePOI.floorNumber != widget.currentFloor.floorNumber) {
-      final transitionType = activePOI.floorNumber > widget.currentFloor.floorNumber
+    String guidanceText =
+        '$turnActionStr • Walk $activeDistM m to ${activePOI?.name ?? ''}';
+    if (activePOI != null &&
+        activePOI.floorNumber != widget.currentFloor.floorNumber) {
+      final transitionType =
+          activePOI.floorNumber > widget.currentFloor.floorNumber
           ? WaypointType.escalator
           : WaypointType.elevator;
 
@@ -672,7 +764,8 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         currentFloor: widget.currentFloor.floorNumber,
         targetFloor: activePOI.floorNumber,
       );
-      guidanceText = '${transitionUpdate.instructionTitle} • ${transitionUpdate.instructionSubtitle}';
+      guidanceText =
+          '${transitionUpdate.instructionTitle} • ${transitionUpdate.instructionSubtitle}';
     }
 
     return Scaffold(
@@ -681,19 +774,21 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         children: [
           // 1. Live Camera Feed / Viewport
           Positioned.fill(
-            child: _isCameraInitialized &&
+            child:
+                _isCameraInitialized &&
                     _cameraController != null &&
                     _cameraController!.value.isInitialized
                 ? ClipRect(
-                    child: SizedOverflowBox(
-                      size: Size(screenWidth, screenHeight),
-                      child: FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: screenWidth,
-                          height: screenWidth * _cameraController!.value.aspectRatio,
-                          child: CameraPreview(_cameraController!),
-                        ),
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: screenWidth,
+                        height:
+                            screenWidth *
+                            (_cameraController!.value.aspectRatio > 1.0
+                                ? _cameraController!.value.aspectRatio
+                                : 1 / _cameraController!.value.aspectRatio),
+                        child: CameraPreview(_cameraController!),
                       ),
                     ),
                   )
@@ -723,11 +818,19 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2563EB).withValues(alpha: 0.15),
+                                color: const Color(
+                                  0xFF2563EB,
+                                ).withValues(alpha: 0.15),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFF2563EB)),
+                                border: Border.all(
+                                  color: const Color(0xFF2563EB),
+                                ),
                               ),
-                              child: const Icon(LucideIcons.camera, color: Color(0xFF38BDF8), size: 24),
+                              child: const Icon(
+                                LucideIcons.camera,
+                                color: Color(0xFF38BDF8),
+                                size: 24,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Text(
@@ -767,7 +870,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
             ),
 
           // 3. Floating 3D AR Distance Badge & Target Header (Active Navigation Mode - Visible when facing target)
-          if (activePOI != null && _isNavigatingActive && activeRelAngle.abs() <= 35.0)
+          if (activePOI != null &&
+              _isNavigatingActive &&
+              activeRelAngle.abs() <= 35.0)
             Positioned(
               left: (targetBadgePosX - 120).clamp(16.0, screenWidth - 256.0),
               top: targetBadgePosY,
@@ -881,7 +986,8 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                   final posX = data['posX'] as double;
                   final posY = data['posY'] as double;
                   final cardOpacity = (data['cardOpacity'] as double? ?? 1.0);
-                  final isPitchFocused = (data['isPitchFocused'] as bool? ?? true);
+                  final isPitchFocused =
+                      (data['isPitchFocused'] as bool? ?? true);
                   final cardScale = (data['distanceScale'] as double? ?? 1.0);
 
                   final isSelected = activePOI?.id == poi.id;
@@ -889,7 +995,8 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                   String floorRelationStr;
                   if (poi.floorNumber == widget.currentFloor.floorNumber) {
                     floorRelationStr = 'FLOOR ${poi.floorNumber} • SAME FLOOR';
-                  } else if (poi.floorNumber > widget.currentFloor.floorNumber) {
+                  } else if (poi.floorNumber >
+                      widget.currentFloor.floorNumber) {
                     floorRelationStr = 'FLOOR ${poi.floorNumber} • ▲ UP';
                   } else {
                     floorRelationStr = 'FLOOR ${poi.floorNumber} • ▼ DOWN';
@@ -907,168 +1014,183 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                          GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedPOI = poi;
-                              _isNavigatingActive = true;
-                            });
-                            widget.onSelectDestination(poi);
-                          },
-                          child: Container(
-                            width: 195,
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xEE090D16),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected
-                                    ? const Color(0xFF10B981)
-                                    : (isPitchFocused ? const Color(0xFF38BDF8) : const Color(0xFF1E293B)),
-                                width: isSelected ? 2.0 : (isPitchFocused ? 1.5 : 1.0),
-                              ),
-                              boxShadow: [
-                                if (isSelected)
-                                  const BoxShadow(
-                                    color: Color(0x6610B981),
-                                    blurRadius: 14,
-                                    spreadRadius: 1,
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedPOI = poi;
+                                  _isNavigatingActive = true;
+                                });
+                                widget.onSelectDestination(poi);
+                              },
+                              child: Container(
+                                width: 195,
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xEE090D16),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFF10B981)
+                                        : (isPitchFocused
+                                              ? const Color(0xFF38BDF8)
+                                              : const Color(0xFF1E293B)),
+                                    width: isSelected
+                                        ? 2.0
+                                        : (isPitchFocused ? 1.5 : 1.0),
                                   ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        poi.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.inter(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                  boxShadow: [
+                                    if (isSelected)
+                                      const BoxShadow(
+                                        color: Color(0x6610B981),
+                                        blurRadius: 14,
+                                        spreadRadius: 1,
                                       ),
-                                      const SizedBox(height: 2),
-                                      Row(
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(
-                                            LucideIcons.star,
-                                            size: 10,
-                                            color: Color(0xFFF59E0B),
-                                          ),
-                                          const SizedBox(width: 3),
                                           Text(
-                                            '${poi.rating} • $distM m',
-                                            style: const TextStyle(
-                                              color: Color(0xFFCBD5E1),
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
+                                            poi.name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.inter(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                LucideIcons.star,
+                                                size: 10,
+                                                color: Color(0xFFF59E0B),
+                                              ),
+                                              const SizedBox(width: 3),
+                                              Text(
+                                                '${poi.rating} • $distM m',
+                                                style: const TextStyle(
+                                                  color: Color(0xFFCBD5E1),
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            floorRelationStr,
+                                            style: TextStyle(
+                                              color: isSelected
+                                                  ? const Color(0xFF34D399)
+                                                  : (poi.floorNumber !=
+                                                            widget
+                                                                .currentFloor
+                                                                .floorNumber
+                                                        ? const Color(
+                                                            0xFFF59E0B,
+                                                          )
+                                                        : const Color(
+                                                            0xFF38BDF8,
+                                                          )),
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 0.5,
                                             ),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        floorRelationStr,
-                                        style: TextStyle(
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      width: 34,
+                                      height: 34,
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? const Color(0xFF10B981)
+                                            : const Color(0xFF1E293B),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
                                           color: isSelected
                                               ? const Color(0xFF34D399)
-                                              : (poi.floorNumber != widget.currentFloor.floorNumber
-                                                  ? const Color(0xFFF59E0B)
-                                                  : const Color(0xFF38BDF8)),
-                                          fontSize: 8,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.5,
+                                              : const Color(0xFF334155),
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  width: 34,
-                                  height: 34,
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? const Color(0xFF10B981)
-                                        : const Color(0xFF1E293B),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? const Color(0xFF34D399)
-                                          : const Color(0xFF334155),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Transform.rotate(
+                                            angle:
+                                                (data['relAngle'] as double) *
+                                                (math.pi / 180.0),
+                                            child: Icon(
+                                              LucideIcons.navigation,
+                                              size: 13,
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : const Color(0xFF00E5FF),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 1),
+                                          Text(
+                                            directionStr,
+                                            style: TextStyle(
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w900,
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : const Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Transform.rotate(
-                                        angle: (data['relAngle'] as double) * (math.pi / 180.0),
-                                        child: Icon(
-                                          LucideIcons.navigation,
-                                          size: 13,
-                                          color: isSelected
-                                              ? Colors.white
-                                              : const Color(0xFF00E5FF),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 1),
-                                      Text(
-                                        directionStr,
-                                        style: TextStyle(
-                                          fontSize: 8,
-                                          fontWeight: FontWeight.w900,
-                                          color: isSelected
-                                              ? Colors.white
-                                              : const Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
-                        CustomPaint(
-                          size: const Size(2, 20),
-                          painter: DottedLinePainter(
-                            color: isSelected
-                                ? const Color(0xFF10B981)
-                                : Colors.white.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF10B981)
-                                : Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
+                            CustomPaint(
+                              size: const Size(2, 20),
+                              painter: DottedLinePainter(
+                                color: isSelected
+                                    ? const Color(0xFF10B981)
+                                    : Colors.white.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
                                 color: isSelected
                                     ? const Color(0xFF10B981)
                                     : Colors.white,
-                                blurRadius: 6,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: isSelected
+                                        ? const Color(0xFF10B981)
+                                        : Colors.white,
+                                    blurRadius: 6,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
               ),
             ),
 
@@ -1080,11 +1202,17 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
               left: 20,
               right: 20,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xEE1E1B4B),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: const Color(0xFF6366F1), width: 1.5),
+                  border: Border.all(
+                    color: const Color(0xFF6366F1),
+                    width: 1.5,
+                  ),
                   boxShadow: const [
                     BoxShadow(color: Color(0x666366F1), blurRadius: 18),
                   ],
@@ -1098,7 +1226,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        widget.phonePitchDegrees < -25.0 ? LucideIcons.arrowUp : LucideIcons.arrowDown,
+                        widget.phonePitchDegrees < -25.0
+                            ? LucideIcons.arrowUp
+                            : LucideIcons.arrowDown,
                         color: Colors.white,
                         size: 18,
                       ),
@@ -1145,7 +1275,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFA0F172A),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+                  border: Border.all(
+                    color: const Color(0xFFF59E0B),
+                    width: 1.5,
+                  ),
                   boxShadow: const [
                     BoxShadow(color: Color(0x55F59E0B), blurRadius: 20),
                   ],
@@ -1200,7 +1333,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                     if (positionedCards.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E293B),
                           borderRadius: BorderRadius.circular(12),
@@ -1210,7 +1346,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              nearestRelAngle < 0 ? LucideIcons.arrowLeft : LucideIcons.arrowRight,
+                              nearestRelAngle < 0
+                                  ? LucideIcons.arrowLeft
+                                  : LucideIcons.arrowRight,
                               color: const Color(0xFF38BDF8),
                               size: 14,
                             ),
@@ -1245,11 +1383,17 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
               left: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xEE0F172A),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF00E5FF), width: 1.2),
+                  border: Border.all(
+                    color: const Color(0xFF00E5FF),
+                    width: 1.2,
+                  ),
                   boxShadow: const [
                     BoxShadow(color: Color(0x4400E5FF), blurRadius: 12),
                   ],
@@ -1257,7 +1401,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                 child: Row(
                   children: [
                     Icon(
-                      activeRelAngle < 0 ? LucideIcons.arrowLeftCircle : LucideIcons.arrowRightCircle,
+                      activeRelAngle < 0
+                          ? LucideIcons.arrowLeftCircle
+                          : LucideIcons.arrowRightCircle,
                       color: const Color(0xFF00E5FF),
                       size: 18,
                     ),
@@ -1300,27 +1446,40 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
               left: activeRelAngle < 0 ? 12 : null,
               right: activeRelAngle > 0 ? 12 : null,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF00E5FF), Color(0xFF0284C7)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: const [
-                    BoxShadow(color: Color(0x6600E5FF), blurRadius: 16, spreadRadius: 1),
+                    BoxShadow(
+                      color: Color(0x6600E5FF),
+                      blurRadius: 16,
+                      spreadRadius: 1,
+                    ),
                   ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (activeRelAngle < 0) ...[
-                      const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 16),
+                      const Icon(
+                        LucideIcons.chevronLeft,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                     ],
                     ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: screenWidth * 0.60),
                       child: Column(
-                        crossAxisAlignment: activeRelAngle < 0 ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                        crossAxisAlignment: activeRelAngle < 0
+                            ? CrossAxisAlignment.start
+                            : CrossAxisAlignment.end,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
@@ -1348,7 +1507,11 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                     ),
                     if (activeRelAngle > 0) ...[
                       const SizedBox(width: 4),
-                      const Icon(LucideIcons.chevronRight, color: Colors.white, size: 16),
+                      const Icon(
+                        LucideIcons.chevronRight,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ],
                   ],
                 ),
@@ -1379,7 +1542,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                   children: [
                     // Live Motion & Pitch Telemetry Status Chip
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 3,
+                      ),
                       margin: const EdgeInsets.only(top: 2, bottom: 4),
                       decoration: BoxDecoration(
                         color: const Color(0xAA030712),
@@ -1393,8 +1559,8 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                             widget.phonePitchDegrees > 12.0
                                 ? LucideIcons.arrowUpRight
                                 : (widget.phonePitchDegrees < -12.0
-                                    ? LucideIcons.arrowDownRight
-                                    : LucideIcons.moveHorizontal),
+                                      ? LucideIcons.arrowDownRight
+                                      : LucideIcons.moveHorizontal),
                             color: const Color(0xFF38BDF8),
                             size: 11,
                           ),
@@ -1413,7 +1579,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
 
                     // Top Bar Actions (Back, Scan Marker, Ask AI, Floor Filter)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 4,
+                      ),
                       child: Row(
                         children: [
                           if (widget.onBackClicked != null)
@@ -1425,9 +1594,15 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                 decoration: BoxDecoration(
                                   color: const Color(0xDD0D1B2A),
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: const Color(0xFF1E293B)),
+                                  border: Border.all(
+                                    color: const Color(0xFF1E293B),
+                                  ),
                                 ),
-                                child: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 16),
+                                child: const Icon(
+                                  LucideIcons.chevronLeft,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                               ),
                             ),
                           // Marker Scan Calibration Button
@@ -1435,27 +1610,46 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                             onTap: () => _showMarkerScannerModal(context),
                             onLongPress: () => _showAdminMarkerModal(context),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
-                                color: (widget.isCalibrated || _isMarkerLocked) ? const Color(0xDD064E3B) : const Color(0xDD1E293B),
+                                color: (widget.isCalibrated || _isMarkerLocked)
+                                    ? const Color(0xDD064E3B)
+                                    : const Color(0xDD1E293B),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: (widget.isCalibrated || _isMarkerLocked) ? const Color(0xFF10B981) : const Color(0xFF38BDF8),
+                                  color:
+                                      (widget.isCalibrated || _isMarkerLocked)
+                                      ? const Color(0xFF10B981)
+                                      : const Color(0xFF38BDF8),
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    (widget.isCalibrated || _isMarkerLocked) ? LucideIcons.checkCircle : LucideIcons.qrCode,
-                                    color: (widget.isCalibrated || _isMarkerLocked) ? const Color(0xFF34D399) : const Color(0xFF38BDF8),
+                                    (widget.isCalibrated || _isMarkerLocked)
+                                        ? LucideIcons.checkCircle
+                                        : LucideIcons.qrCode,
+                                    color:
+                                        (widget.isCalibrated || _isMarkerLocked)
+                                        ? const Color(0xFF34D399)
+                                        : const Color(0xFF38BDF8),
                                     size: 13,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    (widget.isCalibrated || _isMarkerLocked) ? 'PnP LOCKED ✓' : 'SCAN MARKER',
+                                    (widget.isCalibrated || _isMarkerLocked)
+                                        ? 'PnP LOCKED ✓'
+                                        : 'SCAN MARKER',
                                     style: TextStyle(
-                                      color: (widget.isCalibrated || _isMarkerLocked) ? const Color(0xFF34D399) : Colors.white,
+                                      color:
+                                          (widget.isCalibrated ||
+                                              _isMarkerLocked)
+                                          ? const Color(0xFF34D399)
+                                          : Colors.white,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -1469,26 +1663,38 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                           GestureDetector(
                             onTap: () {
                               setState(() {
-                                if (_floorFilterMode == ARFloorFilterMode.autoTilt) {
-                                  _floorFilterMode = ARFloorFilterMode.currentFloorOnly;
-                                } else if (_floorFilterMode == ARFloorFilterMode.currentFloorOnly) {
-                                  _floorFilterMode = ARFloorFilterMode.allFloors;
+                                if (_floorFilterMode ==
+                                    ARFloorFilterMode.autoTilt) {
+                                  _floorFilterMode =
+                                      ARFloorFilterMode.currentFloorOnly;
+                                } else if (_floorFilterMode ==
+                                    ARFloorFilterMode.currentFloorOnly) {
+                                  _floorFilterMode =
+                                      ARFloorFilterMode.allFloors;
                                 } else {
                                   _floorFilterMode = ARFloorFilterMode.autoTilt;
                                 }
                               });
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
-                                color: _floorFilterMode == ARFloorFilterMode.autoTilt
+                                color:
+                                    _floorFilterMode ==
+                                        ARFloorFilterMode.autoTilt
                                     ? const Color(0xFF10B981)
-                                    : (_floorFilterMode == ARFloorFilterMode.currentFloorOnly
-                                        ? const Color(0xFF2563EB)
-                                        : const Color(0xDD0D1B2A)),
+                                    : (_floorFilterMode ==
+                                              ARFloorFilterMode.currentFloorOnly
+                                          ? const Color(0xFF2563EB)
+                                          : const Color(0xDD0D1B2A)),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: _floorFilterMode == ARFloorFilterMode.autoTilt
+                                  color:
+                                      _floorFilterMode ==
+                                          ARFloorFilterMode.autoTilt
                                       ? const Color(0xFF34D399)
                                       : const Color(0xFF2563EB),
                                 ),
@@ -1497,7 +1703,8 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    _floorFilterMode == ARFloorFilterMode.autoTilt
+                                    _floorFilterMode ==
+                                            ARFloorFilterMode.autoTilt
                                         ? LucideIcons.smartphone
                                         : LucideIcons.layers,
                                     color: Colors.white,
@@ -1505,11 +1712,14 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    _floorFilterMode == ARFloorFilterMode.autoTilt
+                                    _floorFilterMode ==
+                                            ARFloorFilterMode.autoTilt
                                         ? 'TILT AUTO (F$activeTargetFloorNumber)'
-                                        : (_floorFilterMode == ARFloorFilterMode.currentFloorOnly
-                                            ? 'F${widget.currentFloor.floorNumber} ONLY'
-                                            : 'ALL FLOORS'),
+                                        : (_floorFilterMode ==
+                                                  ARFloorFilterMode
+                                                      .currentFloorOnly
+                                              ? 'F${widget.currentFloor.floorNumber} ONLY'
+                                              : 'ALL FLOORS'),
                                     style: GoogleFonts.inter(
                                       color: Colors.white,
                                       fontSize: 10,
@@ -1527,21 +1737,34 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                     // Top Navigation Guidance Banner (STEP 1/3 + Red EXIT Button)
                     if (activePOI != null && _isNavigatingActive)
                       Padding(
-                        padding: const EdgeInsets.only(left: 14, right: 14, top: 4, bottom: 6),
+                        padding: const EdgeInsets.only(
+                          left: 14,
+                          right: 14,
+                          top: 4,
+                          bottom: 6,
+                        ),
                         child: Row(
                           children: [
                             Expanded(
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xEE032830),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: const Color(0xFF00E5FF).withValues(alpha: 0.6),
+                                    color: const Color(
+                                      0xFF00E5FF,
+                                    ).withValues(alpha: 0.6),
                                     width: 1.2,
                                   ),
                                   boxShadow: const [
-                                    BoxShadow(color: Color(0x4400E5FF), blurRadius: 8),
+                                    BoxShadow(
+                                      color: Color(0x4400E5FF),
+                                      blurRadius: 8,
+                                    ),
                                   ],
                                 ),
                                 child: Row(
@@ -1553,14 +1776,20 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                         shape: BoxShape.circle,
                                       ),
                                       child: Transform.rotate(
-                                        angle: activeRelAngle * (math.pi / 180.0),
-                                        child: const Icon(LucideIcons.arrowUp, color: Colors.black, size: 12),
+                                        angle:
+                                            activeRelAngle * (math.pi / 180.0),
+                                        child: const Icon(
+                                          LucideIcons.arrowUp,
+                                          color: Colors.black,
+                                          size: 12,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           const Text(
@@ -1598,7 +1827,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                 _activeRoute = null;
                               }),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFDC2626),
                                   borderRadius: BorderRadius.circular(16),
@@ -1607,7 +1839,11 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(LucideIcons.x, color: Colors.white, size: 12),
+                                    const Icon(
+                                      LucideIcons.x,
+                                      color: Colors.white,
+                                      size: 12,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       'EXIT',
@@ -1629,24 +1865,56 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                     // Top Category Filter Chips Bar (when not navigating)
                     if (!_isNavigatingActive)
                       Padding(
-                        padding: const EdgeInsets.only(left: 14, right: 14, bottom: 6),
+                        padding: const EdgeInsets.only(
+                          left: 14,
+                          right: 14,
+                          bottom: 6,
+                        ),
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: [
-                              _buildCategoryPill('All', '${filteredPOIs.length}', LucideIcons.globe),
+                              _buildCategoryPill(
+                                'All',
+                                '${filteredPOIs.length}',
+                                LucideIcons.globe,
+                              ),
                               const SizedBox(width: 6),
-                              _buildCategoryPill('Fashion', 'Apparel', LucideIcons.shoppingBag),
+                              _buildCategoryPill(
+                                'Fashion',
+                                'Apparel',
+                                LucideIcons.shoppingBag,
+                              ),
                               const SizedBox(width: 6),
-                              _buildCategoryPill('Food', 'Dining', LucideIcons.utensils),
+                              _buildCategoryPill(
+                                'Food',
+                                'Dining',
+                                LucideIcons.utensils,
+                              ),
                               const SizedBox(width: 6),
-                              _buildCategoryPill('Tech', 'Gadgets', LucideIcons.laptop),
+                              _buildCategoryPill(
+                                'Tech',
+                                'Gadgets',
+                                LucideIcons.laptop,
+                              ),
                               const SizedBox(width: 6),
-                              _buildCategoryPill('Luxury', 'Boutique', LucideIcons.sparkles),
+                              _buildCategoryPill(
+                                'Luxury',
+                                'Boutique',
+                                LucideIcons.sparkles,
+                              ),
                               const SizedBox(width: 6),
-                              _buildCategoryPill('Services', 'Info', LucideIcons.headphones),
+                              _buildCategoryPill(
+                                'Services',
+                                'Info',
+                                LucideIcons.headphones,
+                              ),
                               const SizedBox(width: 6),
-                              _buildCategoryPill('Parking', 'Slots', LucideIcons.parkingCircle),
+                              _buildCategoryPill(
+                                'Parking',
+                                'Slots',
+                                LucideIcons.parkingCircle,
+                              ),
                             ],
                           ),
                         ),
@@ -1670,7 +1938,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                   // Active Place Navigation Sheet ("SELECTED: [STORE NAME]")
                   if (activePOI != null && _isNavigatingActive)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFC0B132B),
                         borderRadius: BorderRadius.circular(22),
@@ -1725,13 +1996,19 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                               ),
                               const SizedBox(width: 6),
                               GestureDetector(
-                                onTap: () => setState(() => _isFavorite = !_isFavorite),
+                                onTap: () =>
+                                    setState(() => _isFavorite = !_isFavorite),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF1E293B),
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFF334155)),
+                                    border: Border.all(
+                                      color: const Color(0xFF334155),
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -1739,13 +2016,17 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                       Icon(
                                         LucideIcons.heart,
                                         size: 11,
-                                        color: _isFavorite ? const Color(0xFFEF4444) : Colors.white70,
+                                        color: _isFavorite
+                                            ? const Color(0xFFEF4444)
+                                            : Colors.white70,
                                       ),
                                       const SizedBox(width: 3),
                                       Text(
                                         'Fav',
                                         style: TextStyle(
-                                          color: _isFavorite ? const Color(0xFFEF4444) : Colors.white,
+                                          color: _isFavorite
+                                              ? const Color(0xFFEF4444)
+                                              : Colors.white,
                                           fontSize: 9,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -1766,32 +2047,60 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                               Expanded(
                                 child: Row(
                                   children: [
-                                    const Icon(LucideIcons.star, size: 11, color: Color(0xFFF59E0B)),
+                                    const Icon(
+                                      LucideIcons.star,
+                                      size: 11,
+                                      color: Color(0xFFF59E0B),
+                                    ),
                                     const SizedBox(width: 3),
                                     Text(
                                       '${activePOI.rating}',
-                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     const SizedBox(width: 8),
-                                    const Icon(LucideIcons.ruler, size: 11, color: Color(0xFF94A3B8)),
+                                    const Icon(
+                                      LucideIcons.ruler,
+                                      size: 11,
+                                      color: Color(0xFF94A3B8),
+                                    ),
                                     const SizedBox(width: 3),
                                     Text(
                                       '$activeDistM m',
-                                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                        color: Color(0xFF94A3B8),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     const SizedBox(width: 8),
                                     GestureDetector(
-                                      onTap: () => _showPoiDetailsModal(activePOI),
+                                      onTap: () =>
+                                          _showPoiDetailsModal(activePOI),
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF1E293B),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: const Color(0xFF334155)),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0xFF334155),
+                                          ),
                                         ),
                                         child: const Text(
                                           'INFO',
-                                          style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9, fontWeight: FontWeight.bold),
+                                          style: TextStyle(
+                                            color: Color(0xFF38BDF8),
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1809,15 +2118,32 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                   });
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     gradient: _isNavigatingActive
-                                        ? const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF00B0FF)])
-                                        : const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)]),
+                                        ? const LinearGradient(
+                                            colors: [
+                                              Color(0xFF00E5FF),
+                                              Color(0xFF00B0FF),
+                                            ],
+                                          )
+                                        : const LinearGradient(
+                                            colors: [
+                                              Color(0xFF2563EB),
+                                              Color(0xFF1D4ED8),
+                                            ],
+                                          ),
                                     borderRadius: BorderRadius.circular(14),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: (_isNavigatingActive ? const Color(0xFF00E5FF) : const Color(0xFF2563EB)).withValues(alpha: 0.4),
+                                        color:
+                                            (_isNavigatingActive
+                                                    ? const Color(0xFF00E5FF)
+                                                    : const Color(0xFF2563EB))
+                                                .withValues(alpha: 0.4),
                                         blurRadius: 10,
                                       ),
                                     ],
@@ -1826,13 +2152,17 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
-                                        _isNavigatingActive ? LucideIcons.navigation2 : LucideIcons.compass,
+                                        _isNavigatingActive
+                                            ? LucideIcons.navigation2
+                                            : LucideIcons.compass,
                                         color: Colors.white,
                                         size: 13,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        _isNavigatingActive ? 'NAVIGATING' : 'START AR NAV',
+                                        _isNavigatingActive
+                                            ? 'NAVIGATING'
+                                            : 'START AR NAV',
                                         style: GoogleFonts.inter(
                                           color: Colors.white,
                                           fontSize: 10,
@@ -1967,7 +2297,7 @@ class ARGroundPathwayPainter extends CustomPainter {
     final path = Path()
       ..moveTo(centerBottom.dx, centerBottom.dy)
       ..lineTo(targetTop.dx, targetTop.dy);
-    
+
     canvas.drawPath(path, guidePaint);
 
     // 2. Destination Ground Target Landing Ring
@@ -1997,7 +2327,7 @@ class ARGroundPathwayPainter extends CustomPainter {
       double t = i / (numChevrons + 1);
       double cx = centerBottom.dx + (targetTop.dx - centerBottom.dx) * t;
       double cy = centerBottom.dy + (targetTop.dy - centerBottom.dy) * t;
-      
+
       // Perspective scaling: refined small scale (0.35 near horizon to 0.70 near user)
       double scale = 0.35 + (1.0 - t) * 0.35;
       double alpha = (1.0 - (t * 0.65)).clamp(0.20, 0.95);
@@ -2006,7 +2336,10 @@ class ARGroundPathwayPainter extends CustomPainter {
       canvas.translate(cx, cy);
 
       // Rotate matching relative turn direction
-      final arrowAngle = (relativeAngleDegrees * (math.pi / 180.0)).clamp(-0.8, 0.8);
+      final arrowAngle = (relativeAngleDegrees * (math.pi / 180.0)).clamp(
+        -0.8,
+        0.8,
+      );
       canvas.rotate(arrowAngle);
 
       // Aerodynamic Slender Chevron Path
@@ -2026,8 +2359,11 @@ class ARGroundPathwayPainter extends CustomPainter {
 
       // Primary gradient filled sleek chevron
       final fillPaint = Paint()
-        ..color = Color.lerp(const Color(0xFF00E5FF), const Color(0xFF10B981), t)!
-            .withValues(alpha: alpha)
+        ..color = Color.lerp(
+          const Color(0xFF00E5FF),
+          const Color(0xFF10B981),
+          t,
+        )!.withValues(alpha: alpha)
         ..style = PaintingStyle.fill;
 
       canvas.drawPath(chevronPath, glowPaint);

@@ -56,19 +56,27 @@ CompassBearingBadge classifyCompassBadge(double bearingDeg) {
 }
 
 /// Resolves localized user coordinates relative to active indoor mall coordinate anchor.
-/// Removes raw indoor GPS coordinate fluctuations by anchoring all spatial calculations to the indoor mall reference anchor.
+/// Uses user GPS when within valid proximity, or anchors to the Earth ground floor entrance anchor.
 GeodeticCoords getEffectiveUserCoords(GeodeticCoords userCoords, GeodeticCoords mallAnchor) {
-  // Always anchor user position calculation to the indoor mall reference anchor
-  // to avoid raw indoor GPS drift & coordinate jumps.
+  final latDiff = (userCoords.latitude - mallAnchor.latitude).abs();
+  final lonDiff = (userCoords.longitude - mallAnchor.longitude).abs();
+
+  if (userCoords.latitude != 0.0 &&
+      userCoords.longitude != 0.0 &&
+      latDiff < 0.05 &&
+      lonDiff < 0.05) {
+    return userCoords;
+  }
+
   return GeodeticCoords(
     latitude: mallAnchor.latitude,
     longitude: mallAnchor.longitude,
-    height: userCoords.height,
+    height: mallAnchor.height,
   );
 }
 
-/// Calculates accurate 3D spatial distance in meters incorporating 2D surface distance,
-/// Earth level WGS-84 height, and floor elevation difference.
+/// Calculates accurate 3D spatial distance in meters incorporating WGS-84 ECEF
+/// Cartesian Euclidean geometry and floor elevation differences relative to Earth ground floor.
 double calculateAccurate3DDistance(
   GeodeticCoords userCoords,
   GeodeticCoords targetLocation, {
@@ -76,17 +84,29 @@ double calculateAccurate3DDistance(
   int targetFloorNumber = 1,
   double heightPerFloorMeters = 4.5,
 }) {
-  final d2d = haversineDistance(userCoords, targetLocation);
-  final heightDiff = (targetLocation.height - userCoords.height).abs();
+  final userEffectiveHeight = userCoords.height + (userFloorNumber - 1) * heightPerFloorMeters;
+  final targetEffectiveHeight = targetLocation.height + (targetFloorNumber - 1) * heightPerFloorMeters;
 
-  final verticalDistM = heightDiff > 0.05
-      ? heightDiff
-      : (targetFloorNumber - userFloorNumber).abs() * heightPerFloorMeters;
+  final userPoint = GeodeticCoords(
+    latitude: userCoords.latitude,
+    longitude: userCoords.longitude,
+    height: userEffectiveHeight,
+  );
 
-  return sqrt(d2d * d2d + verticalDistM * verticalDistM);
+  final targetPoint = GeodeticCoords(
+    latitude: targetLocation.latitude,
+    longitude: targetLocation.longitude,
+    height: targetEffectiveHeight,
+  );
+
+  final p1 = geodeticToECEF(userPoint);
+  final p2 = geodeticToECEF(targetPoint);
+
+  return ecefDistance(p1, p2);
 }
 
-/// Calculates distance of a place/POI from the Earth ground floor (main entrance level) of a particular mall
+/// Calculates precise 3D geometric distance of a place/POI from the Earth ground floor (Floor 1 Entrance level)
+/// using WGS-84 ECEF 3D Cartesian Euclidean coordinate geometry.
 double calculateDistanceFromEarthGround(
   GeodeticCoords targetLocation, {
   int targetFloorNumber = 1,
@@ -94,21 +114,30 @@ double calculateDistanceFromEarthGround(
   GeodeticCoords? groundAnchorCoords,
   double heightPerFloorMeters = 4.5,
 }) {
-  final baseCoords = groundAnchorCoords ??
+  final groundAnchor = groundAnchorCoords ??
       GeodeticCoords(
         latitude: targetLocation.latitude,
         longitude: targetLocation.longitude,
         height: groundElevationMeters,
       );
 
-  final d2d = haversineDistance(baseCoords, targetLocation);
-  final heightDiff = (targetLocation.height - groundElevationMeters).abs();
+  final groundBasePoint = GeodeticCoords(
+    latitude: groundAnchor.latitude,
+    longitude: groundAnchor.longitude,
+    height: groundElevationMeters,
+  );
 
-  final verticalDistM = heightDiff > 0.05
-      ? heightDiff
-      : ((targetFloorNumber - 1) * heightPerFloorMeters).toDouble();
+  final targetElevatedHeight = groundElevationMeters + (targetFloorNumber - 1) * heightPerFloorMeters;
+  final targetPoint = GeodeticCoords(
+    latitude: targetLocation.latitude,
+    longitude: targetLocation.longitude,
+    height: targetElevatedHeight,
+  );
 
-  return sqrt(d2d * d2d + verticalDistM * verticalDistM);
+  final pGround = geodeticToECEF(groundBasePoint);
+  final pTarget = geodeticToECEF(targetPoint);
+
+  return ecefDistance(pGround, pTarget);
 }
 
 /// Calculates AR Card Vertical Placement (Pixel_Y_Offset) over camera viewport

@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Certificates & Signing Keys
+certs/
+*.p12
+*.key
+*.csr
+*.certSigningRequest
+*.mobileprovision
+

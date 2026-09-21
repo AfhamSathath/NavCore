@@ -52,18 +52,41 @@ jobs:
           BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
+          set -x
+
           # Define file paths
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
           PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
 
+          # Fail fast with a clear message if the secrets aren't actually configured
+          if [ -z "$BUILD_CERTIFICATE_BASE64" ]; then
+            echo "::error::BUILD_CERTIFICATE_BASE64 secret is empty or not set"
+            exit 1
+          fi
+          if [ -z "$BUILD_PROVISION_PROFILE_BASE64" ]; then
+            echo "::error::BUILD_PROVISION_PROFILE_BASE64 secret is empty or not set"
+            exit 1
+          fi
+
           # Decode certificate and provisioning profile using python3 with auto-padding repair
           python3 -c "import base64, os; s = os.environ['BUILD_CERTIFICATE_BASE64'].strip().replace('\r', '').replace('\n', ''); s += '=' * (-len(s) % 4); open('$CERTIFICATE_PATH', 'wb').write(base64.b64decode(s))"
           python3 -c "import base64, os; s = os.environ['BUILD_PROVISION_PROFILE_BASE64'].strip().replace('\r', '').replace('\n', ''); s += '=' * (-len(s) % 4); open('$PP_PATH', 'wb').write(base64.b64decode(s))"
 
+          echo "Decoded certificate size: $(wc -c < "$CERTIFICATE_PATH") bytes"
+          echo "Decoded provisioning profile size: $(wc -c < "$PP_PATH") bytes"
+          if [ ! -s "$CERTIFICATE_PATH" ]; then
+            echo "::error::Decoded certificate file is empty - check BUILD_CERTIFICATE_BASE64 secret content"
+            exit 1
+          fi
+          if [ ! -s "$PP_PATH" ]; then
+            echo "::error::Decoded provisioning profile file is empty - check BUILD_PROVISION_PROFILE_BASE64 secret content"
+            exit 1
+          fi
+
           # Convert to macOS native format using runner's openssl to ensure 100% Keychain compatibility
           openssl pkcs12 -in "$CERTIFICATE_PATH" -nodes -passin pass:"$P12_PASSWORD" -out "$RUNNER_TEMP/cert_key.pem"
-          openssl pkcs12 -export -in "$RUNNER_TEMP/cert_key.pem" -out "$RUNNER_TEMP/apple_cert.p12" -passout pass:"$P12_PASSWORD" -legacy 2>/dev/null || \
+          openssl pkcs12 -export -in "$RUNNER_TEMP/cert_key.pem" -out "$RUNNER_TEMP/apple_cert.p12" -passout pass:"$P12_PASSWORD" -legacy || \
           openssl pkcs12 -export -in "$RUNNER_TEMP/cert_key.pem" -out "$RUNNER_TEMP/apple_cert.p12" -passout pass:"$P12_PASSWORD"
 
           # Create temporary keychain

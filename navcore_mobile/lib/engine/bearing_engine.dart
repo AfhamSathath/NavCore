@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'ecef_engine.dart';
 
-/// NavCore Bearing & AR Spatial Placement Engine in Dart
-/// Implements Section 5 of NavCore Technical Spec
+/// NexNav Bearing & AR Spatial Placement Engine in Dart
+/// Implements Section 5 of NexNav Technical Spec
 
 // ignore: constant_identifier_names
 enum CompassBearingBadge { N, NE, E, SE, S, SW, W, NW }
@@ -57,7 +57,10 @@ CompassBearingBadge classifyCompassBadge(double bearingDeg) {
 
 /// Resolves localized user coordinates relative to active indoor mall coordinate anchor.
 /// Uses user GPS when within valid proximity, or anchors to the Earth ground floor entrance anchor.
-GeodeticCoords getEffectiveUserCoords(GeodeticCoords userCoords, GeodeticCoords mallAnchor) {
+GeodeticCoords getEffectiveUserCoords(
+  GeodeticCoords userCoords,
+  GeodeticCoords mallAnchor,
+) {
   final latDiff = (userCoords.latitude - mallAnchor.latitude).abs();
   final lonDiff = (userCoords.longitude - mallAnchor.longitude).abs();
 
@@ -84,8 +87,10 @@ double calculateAccurate3DDistance(
   int targetFloorNumber = 1,
   double heightPerFloorMeters = 4.5,
 }) {
-  final userEffectiveHeight = userCoords.height + (userFloorNumber - 1) * heightPerFloorMeters;
-  final targetEffectiveHeight = targetLocation.height + (targetFloorNumber - 1) * heightPerFloorMeters;
+  final userEffectiveHeight =
+      userCoords.height + (userFloorNumber - 1) * heightPerFloorMeters;
+  final targetEffectiveHeight =
+      targetLocation.height + (targetFloorNumber - 1) * heightPerFloorMeters;
 
   final userPoint = GeodeticCoords(
     latitude: userCoords.latitude,

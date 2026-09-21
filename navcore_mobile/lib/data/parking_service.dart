@@ -7,11 +7,7 @@ import '../engine/ecef_engine.dart';
 import '../engine/bearing_engine.dart';
 import 'destinations.dart';
 
-enum ParkingSlotStatus {
-  free,
-  occupied,
-  reserved,
-}
+enum ParkingSlotStatus { free, occupied, reserved }
 
 class ParkingSlot {
   final String id;
@@ -49,47 +45,48 @@ class ParkingSlot {
       floorNumber: floorNum,
       rating: 4.8,
       location: location,
-      description: '${isEVCharging ? 'EV Charger ⚡ • ' : ''}${isHandicapAccessible ? 'Handicap Accessible ♿ • ' : ''}Basement Parking Slot $id',
+      description:
+          '${isEVCharging ? 'EV Charger ⚡ • ' : ''}${isHandicapAccessible ? 'Handicap Accessible ♿ • ' : ''}Basement Parking Slot $id',
       openStatus: '24/7',
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'floorId': floorId,
-        'section': section,
-        'slotNumber': slotNumber,
-        'status': status.name,
-        'latitude': location.latitude,
-        'longitude': location.longitude,
-        'height': location.height,
-        'gridRow': gridRow,
-        'gridCol': gridCol,
-        'isEVCharging': isEVCharging,
-        'isHandicapAccessible': isHandicapAccessible,
-        'sensorId': sensorId,
-      };
+    'id': id,
+    'floorId': floorId,
+    'section': section,
+    'slotNumber': slotNumber,
+    'status': status.name,
+    'latitude': location.latitude,
+    'longitude': location.longitude,
+    'height': location.height,
+    'gridRow': gridRow,
+    'gridCol': gridCol,
+    'isEVCharging': isEVCharging,
+    'isHandicapAccessible': isHandicapAccessible,
+    'sensorId': sensorId,
+  };
 
   factory ParkingSlot.fromJson(Map<String, dynamic> json) => ParkingSlot(
-        id: json['id'],
-        floorId: json['floorId'],
-        section: json['section'],
-        slotNumber: json['slotNumber'],
-        status: ParkingSlotStatus.values.firstWhere(
-          (e) => e.name == json['status'],
-          orElse: () => ParkingSlotStatus.free,
-        ),
-        location: GeodeticCoords(
-          latitude: (json['latitude'] as num).toDouble(),
-          longitude: (json['longitude'] as num).toDouble(),
-          height: (json['height'] as num).toDouble(),
-        ),
-        gridRow: json['gridRow'],
-        gridCol: json['gridCol'],
-        isEVCharging: json['isEVCharging'] ?? false,
-        isHandicapAccessible: json['isHandicapAccessible'] ?? false,
-        sensorId: json['sensorId'] ?? '',
-      );
+    id: json['id'],
+    floorId: json['floorId'],
+    section: json['section'],
+    slotNumber: json['slotNumber'],
+    status: ParkingSlotStatus.values.firstWhere(
+      (e) => e.name == json['status'],
+      orElse: () => ParkingSlotStatus.free,
+    ),
+    location: GeodeticCoords(
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      height: (json['height'] as num).toDouble(),
+    ),
+    gridRow: json['gridRow'],
+    gridCol: json['gridCol'],
+    isEVCharging: json['isEVCharging'] ?? false,
+    isHandicapAccessible: json['isHandicapAccessible'] ?? false,
+    sensorId: json['sensorId'] ?? '',
+  );
 }
 
 class MyVehicleLocation {
@@ -132,21 +129,22 @@ class MyVehicleLocation {
   }
 
   Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'vehicleId': vehicleId,
-        'slotId': slotId,
-        'floorId': floorId,
-        'floorName': floorName,
-        'latitude': location.latitude,
-        'longitude': location.longitude,
-        'height': location.height,
-        'timestamp': timestamp.toIso8601String(),
-        'status': status,
-        'licensePlate': licensePlate,
-        'notes': notes,
-      };
+    'userId': userId,
+    'vehicleId': vehicleId,
+    'slotId': slotId,
+    'floorId': floorId,
+    'floorName': floorName,
+    'latitude': location.latitude,
+    'longitude': location.longitude,
+    'height': location.height,
+    'timestamp': timestamp.toIso8601String(),
+    'status': status,
+    'licensePlate': licensePlate,
+    'notes': notes,
+  };
 
-  factory MyVehicleLocation.fromJson(Map<String, dynamic> json) => MyVehicleLocation(
+  factory MyVehicleLocation.fromJson(Map<String, dynamic> json) =>
+      MyVehicleLocation(
         userId: json['userId'] ?? 'user-001',
         vehicleId: json['vehicleId'] ?? 'veh-default',
         slotId: json['slotId'],
@@ -165,7 +163,7 @@ class MyVehicleLocation {
 }
 
 class ParkingService extends ChangeNotifier {
-  static const String _vehicleStorageKeyPrefix = 'navcore_my_vehicle_location_';
+  static const String _vehicleStorageKeyPrefix = 'NexNav_my_vehicle_location_';
 
   static final ParkingService _instance = ParkingService._internal();
   factory ParkingService() => _instance;
@@ -195,9 +193,11 @@ class ParkingService extends ChangeNotifier {
   String get currentUserId => _currentUserId;
   String get authToken => _authToken;
   bool get isAuthenticated => _isAuthenticated;
-  MyVehicleLocation? get currentVehicleLocation => fetchMyVehicleLocation(_currentUserId);
+  MyVehicleLocation? get currentVehicleLocation =>
+      fetchMyVehicleLocation(_currentUserId);
   bool get hasParkedVehicle => currentVehicleLocation != null;
-  Stream<Map<String, List<ParkingSlot>>> get slotStream => _slotStreamController.stream;
+  Stream<Map<String, List<ParkingSlot>>> get slotStream =>
+      _slotStreamController.stream;
   bool get isLiveStreamActive => _isLiveStreamActive;
 
   /// 1. Authenticate user session & switch active user context
@@ -213,7 +213,9 @@ class ParkingService extends ChangeNotifier {
   /// Enforces backend-level authorization so cross-user queries return null.
   MyVehicleLocation? fetchMyVehicleLocation(String userId) {
     if (!_isAuthenticated || _currentUserId != userId) {
-      debugPrint('[Security Auth Denied] Requesting userId ($userId) does not match authenticated session ($_currentUserId)');
+      debugPrint(
+        '[Security Auth Denied] Requesting userId ($userId) does not match authenticated session ($_currentUserId)',
+      );
       return null;
     }
 
@@ -236,7 +238,9 @@ class ParkingService extends ChangeNotifier {
     if (!_isAuthenticated) return false;
     final myVehicle = fetchMyVehicleLocation(_currentUserId);
     if (myVehicle == null) return false;
-    return myVehicle.slotId == slotId && myVehicle.floorId == floorId && myVehicle.status == 'parked';
+    return myVehicle.slotId == slotId &&
+        myVehicle.floorId == floorId &&
+        myVehicle.status == 'parked';
   }
 
   /// Initialize Parking Layout Grids for B2, B1, and Ground Floor
@@ -309,23 +313,25 @@ class ParkingService extends ChangeNotifier {
           final r = (i - 1) ~/ 2;
           final c = (i - 1) % 2;
 
-          slots.add(ParkingSlot(
-            id: slotId,
-            floorId: floorId,
-            section: sec,
-            slotNumber: i,
-            status: initialStatus,
-            location: GeodeticCoords(
-              latitude: baseLat + (r * 0.00004),
-              longitude: baseLon + (c * 0.00004),
-              height: baseHeight,
+          slots.add(
+            ParkingSlot(
+              id: slotId,
+              floorId: floorId,
+              section: sec,
+              slotNumber: i,
+              status: initialStatus,
+              location: GeodeticCoords(
+                latitude: baseLat + (r * 0.00004),
+                longitude: baseLon + (c * 0.00004),
+                height: baseHeight,
+              ),
+              gridRow: r,
+              gridCol: c,
+              isEVCharging: isEV,
+              isHandicapAccessible: isHandicap,
+              sensorId: 'IOT-SNS-$floorId-$sec$numStr',
             ),
-            gridRow: r,
-            gridCol: c,
-            isEVCharging: isEV,
-            isHandicapAccessible: isHandicap,
-            sensorId: 'IOT-SNS-$floorId-$sec$numStr',
-          ));
+          );
         }
       }
       return slots;
@@ -337,7 +343,7 @@ class ParkingService extends ChangeNotifier {
         final sec = sections[(r + c) % sections.length];
         final numStr = counter < 10 ? '0$counter' : '$counter';
         final slotId = '$floorId-$sec-$numStr';
-        
+
         ParkingSlotStatus initialStatus = ParkingSlotStatus.free;
         final randVal = random.nextDouble();
         if (randVal < 0.55) {
@@ -349,23 +355,25 @@ class ParkingService extends ChangeNotifier {
         final isEV = (r == 0 && c < 2);
         final isHandicap = (r == 0 && c >= 2 && c < 4);
 
-        slots.add(ParkingSlot(
-          id: slotId,
-          floorId: floorId,
-          section: sec,
-          slotNumber: counter,
-          status: initialStatus,
-          location: GeodeticCoords(
-            latitude: baseLat + (r * 0.00004),
-            longitude: baseLon + (c * 0.00004),
-            height: baseHeight,
+        slots.add(
+          ParkingSlot(
+            id: slotId,
+            floorId: floorId,
+            section: sec,
+            slotNumber: counter,
+            status: initialStatus,
+            location: GeodeticCoords(
+              latitude: baseLat + (r * 0.00004),
+              longitude: baseLon + (c * 0.00004),
+              height: baseHeight,
+            ),
+            gridRow: r,
+            gridCol: c,
+            isEVCharging: isEV,
+            isHandicapAccessible: isHandicap,
+            sensorId: 'IOT-SNS-$floorId-$r$c',
           ),
-          gridRow: r,
-          gridCol: c,
-          isEVCharging: isEV,
-          isHandicapAccessible: isHandicap,
-          sensorId: 'IOT-SNS-$floorId-$r$c',
-        ));
+        );
         counter++;
       }
     }
@@ -382,8 +390,12 @@ class ParkingService extends ChangeNotifier {
     final slots = fetchFloorMap(floorId);
     final total = slots.length;
     final free = slots.where((s) => s.status == ParkingSlotStatus.free).length;
-    final occupied = slots.where((s) => s.status == ParkingSlotStatus.occupied).length;
-    final reserved = slots.where((s) => s.status == ParkingSlotStatus.reserved).length;
+    final occupied = slots
+        .where((s) => s.status == ParkingSlotStatus.occupied)
+        .length;
+    final reserved = slots
+        .where((s) => s.status == ParkingSlotStatus.reserved)
+        .length;
 
     return {
       'floorId': floorId,
@@ -441,7 +453,9 @@ class ParkingService extends ChangeNotifier {
   /// Tags vehicle to user + slot with status "parked"
   Future<void> saveVehicleLocation(MyVehicleLocation vehicleRecord) async {
     if (!_isAuthenticated || vehicleRecord.userId != _currentUserId) {
-      throw Exception('Unauthorized: Cannot save vehicle location for another user');
+      throw Exception(
+        'Unauthorized: Cannot save vehicle location for another user',
+      );
     }
 
     // Restriction: Prevent parking in a slot occupied or reserved by another vehicle
@@ -449,10 +463,17 @@ class ParkingService extends ChangeNotifier {
       for (final slot in floor) {
         if (slot.id == vehicleRecord.slotId) {
           final isParkedByOther = _userVehicleRecords.entries.any(
-            (e) => e.key != vehicleRecord.userId && e.value.status == 'parked' && e.value.slotId == slot.id,
+            (e) =>
+                e.key != vehicleRecord.userId &&
+                e.value.status == 'parked' &&
+                e.value.slotId == slot.id,
           );
-          if (isParkedByOther || (slot.status != ParkingSlotStatus.free && slot.id != _userVehicleRecords[_currentUserId]?.slotId)) {
-            throw Exception('Parking Restricted: Stall ${slot.id} is occupied by another vehicle.');
+          if (isParkedByOther ||
+              (slot.status != ParkingSlotStatus.free &&
+                  slot.id != _userVehicleRecords[_currentUserId]?.slotId)) {
+            throw Exception(
+              'Parking Restricted: Stall ${slot.id} is occupied by another vehicle.',
+            );
           }
         }
       }
@@ -460,7 +481,9 @@ class ParkingService extends ChangeNotifier {
 
     final updatedRecord = MyVehicleLocation(
       userId: vehicleRecord.userId,
-      vehicleId: vehicleRecord.vehicleId.isNotEmpty ? vehicleRecord.vehicleId : 'veh-${vehicleRecord.userId}',
+      vehicleId: vehicleRecord.vehicleId.isNotEmpty
+          ? vehicleRecord.vehicleId
+          : 'veh-${vehicleRecord.userId}',
       slotId: vehicleRecord.slotId,
       floorId: vehicleRecord.floorId,
       floorName: vehicleRecord.floorName,
@@ -494,7 +517,9 @@ class ParkingService extends ChangeNotifier {
   Future<void> _loadVehicleFromStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonStr = prefs.getString('$_vehicleStorageKeyPrefix$_currentUserId');
+      final jsonStr = prefs.getString(
+        '$_vehicleStorageKeyPrefix$_currentUserId',
+      );
       if (jsonStr != null) {
         final Map<String, dynamic> data = jsonDecode(jsonStr);
         final record = MyVehicleLocation.fromJson(data);
@@ -513,7 +538,9 @@ class ParkingService extends ChangeNotifier {
   Future<void> clearVehicleLocation({String? userId}) async {
     final targetUser = userId ?? _currentUserId;
     if (!_isAuthenticated || targetUser != _currentUserId) {
-      debugPrint('[Security Auth Denied] Cannot clear vehicle location for $targetUser');
+      debugPrint(
+        '[Security Auth Denied] Cannot clear vehicle location for $targetUser',
+      );
       return;
     }
 
@@ -556,7 +583,10 @@ class ParkingService extends ChangeNotifier {
   }
 
   /// Auto-Detect nearest parking slot via BLE / UWB proximity simulation
-  ParkingSlot? autoDetectNearestSlot(GeodeticCoords userCoords, String floorId) {
+  ParkingSlot? autoDetectNearestSlot(
+    GeodeticCoords userCoords,
+    String floorId,
+  ) {
     final slots = fetchFloorMap(floorId);
     if (slots.isEmpty) return null;
 
@@ -566,7 +596,8 @@ class ParkingService extends ChangeNotifier {
     double minDistance = double.infinity;
 
     for (final slot in slots) {
-      if (slot.status == ParkingSlotStatus.free || slot.status == ParkingSlotStatus.occupied) {
+      if (slot.status == ParkingSlotStatus.free ||
+          slot.status == ParkingSlotStatus.occupied) {
         final dist = calculateAccurate3DDistance(
           effectiveUser,
           slot.location,
@@ -583,11 +614,17 @@ class ParkingService extends ChangeNotifier {
   }
 
   /// Auto-clear exit detection logic (Slot status change or Geofence threshold)
-  Future<bool> detectVehicleExit(String slotId, GeodeticCoords currentUserCoords) async {
+  Future<bool> detectVehicleExit(
+    String slotId,
+    GeodeticCoords currentUserCoords,
+  ) async {
     final activeVehicle = fetchMyVehicleLocation(_currentUserId);
     if (activeVehicle == null) return false;
 
-    final effectiveUser = getEffectiveUserCoords(currentUserCoords, entranceAnchor);
+    final effectiveUser = getEffectiveUserCoords(
+      currentUserCoords,
+      entranceAnchor,
+    );
 
     final dist = calculateAccurate3DDistance(
       effectiveUser,
@@ -610,4 +647,3 @@ class ParkingService extends ChangeNotifier {
     super.dispose();
   }
 }
-

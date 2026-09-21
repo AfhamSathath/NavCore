@@ -21,16 +21,16 @@ import 'ui/mall_explorer_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const NavCoreApp());
+  runApp(const NexNavApp());
 }
 
-class NavCoreApp extends StatelessWidget {
-  const NavCoreApp({super.key});
+class NexNavApp extends StatelessWidget {
+  const NexNavApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'NavCore',
+      title: 'NexNav',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFFF8FAFC),
@@ -42,19 +42,19 @@ class NavCoreApp extends StatelessWidget {
         textTheme: GoogleFonts.interTextTheme(),
         useMaterial3: true,
       ),
-      home: const NavCoreMainNavigation(),
+      home: const NexNavMainNavigation(),
     );
   }
 }
 
-class NavCoreMainNavigation extends StatefulWidget {
-  const NavCoreMainNavigation({super.key});
+class NexNavMainNavigation extends StatefulWidget {
+  const NexNavMainNavigation({super.key});
 
   @override
-  State<NavCoreMainNavigation> createState() => _NavCoreMainNavigationState();
+  State<NexNavMainNavigation> createState() => _NexNavMainNavigationState();
 }
 
-class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
+class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
   int _currentIndex = 0;
   bool _isSetupComplete = false;
 
@@ -99,8 +99,6 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
 
     _initializeRealHardware();
   }
-
-
 
   Future<void> _initializeRealHardware() async {
     // 1. Request OS Permissions for Location & Camera
@@ -188,7 +186,7 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
           ],
         ),
         content: const Text(
-          'NavCore requires Location access to lock your real GPS position and Camera access for AR indoor navigation.',
+          'NexNav requires Location access to lock your real GPS position and Camera access for AR indoor navigation.',
         ),
         actions: [
           ElevatedButton(

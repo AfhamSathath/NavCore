@@ -46,7 +46,9 @@ class ReferenceMarker {
 class BuildingDataService {
   BuildingConfig? _cachedConfig;
 
-  Future<BuildingConfig> loadBuildingConfig({String buildingId = 'mall-one-galle-face'}) async {
+  Future<BuildingConfig> loadBuildingConfig({
+    String buildingId = 'mall-one-galle-face',
+  }) async {
     if (_cachedConfig != null && _cachedConfig!.buildingId == buildingId) {
       return _cachedConfig!;
     }
@@ -169,19 +171,27 @@ class BuildingDataService {
           markerId: 'REF-ENTRANCE-G1',
           name: 'Main Grand Entrance Gate 1',
           floorNumber: 1,
-          position: GeodeticCoords(latitude: 6.927079, longitude: 79.845612, height: 10.0),
+          position: GeodeticCoords(
+            latitude: 6.927079,
+            longitude: 79.845612,
+            height: 10.0,
+          ),
           physicalWidthMeters: 0.25,
           physicalHeightMeters: 0.25,
-          qrCodeData: 'NAVCORE:REF-ENTRANCE-G1:6.927079:79.845612:10.0',
+          qrCodeData: 'NexNav:REF-ENTRANCE-G1:6.927079:79.845612:10.0',
         ),
         const ReferenceMarker(
           markerId: 'REF-NORTH-ELEVATOR',
           name: 'North Tower Elevator Hall',
           floorNumber: 2,
-          position: GeodeticCoords(latitude: 6.927150, longitude: 79.845700, height: 14.5),
+          position: GeodeticCoords(
+            latitude: 6.927150,
+            longitude: 79.845700,
+            height: 14.5,
+          ),
           physicalWidthMeters: 0.25,
           physicalHeightMeters: 0.25,
-          qrCodeData: 'NAVCORE:REF-NORTH-ELEVATOR:6.927150:79.845700:14.5',
+          qrCodeData: 'NexNav:REF-NORTH-ELEVATOR:6.927150:79.845700:14.5',
         ),
       ],
     );

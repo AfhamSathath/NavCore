@@ -34,6 +34,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = 'ALL';
+  int? _selectedFloorNumber; // null = All Floors
   String _searchQuery = '';
 
   final ParkingService _parkingService = ParkingService();
@@ -101,8 +102,12 @@ class _HomeScreenState extends State<HomeScreen> {
           poi.category.toUpperCase() == _selectedCategory;
       final matchesSearch =
           poi.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          poi.category.toLowerCase().contains(_searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
+          poi.category.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          poi.description.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesFloor =
+          _selectedFloorNumber == null ||
+          poi.floorNumber == _selectedFloorNumber;
+      return matchesCategory && matchesSearch && matchesFloor;
     }).toList();
 
     return Scaffold(
@@ -137,18 +142,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'NavCore AR',
+                              'NexNav AR',
                               style: GoogleFonts.inter(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
+                                fontSize: 19,
+                                fontWeight: FontWeight.w800,
                                 color: const Color(0xFF0F172A),
                               ),
                             ),
+                            const SizedBox(height: 2),
                             Row(
                               children: [
                                 Container(
-                                  width: 7,
-                                  height: 7,
+                                  width: 6,
+                                  height: 6,
                                   decoration: const BoxDecoration(
                                     color: Color(0xFF22C55E),
                                     shape: BoxShape.circle,
@@ -156,11 +162,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 const SizedBox(width: 5),
                                 const Text(
-                                  'GPS Hardware Stream Active',
+                                  'Indoor Positioning Active',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF16A34A),
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF64748B),
                                   ),
                                 ),
                               ],
@@ -180,7 +186,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
 
                     if (_parkingService.hasParkedVehicle)
-                      _buildParkedVehicleHomeCard(_parkingService.currentVehicleLocation!),
+                      _buildParkedVehicleHomeCard(
+                        _parkingService.currentVehicleLocation!,
+                      ),
                   ],
                 ),
               ),
@@ -191,124 +199,263 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                    borderRadius: BorderRadius.circular(26),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1.5,
                     ),
-                    borderRadius: BorderRadius.circular(24),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x332563EB),
-                        blurRadius: 16,
-                        offset: Offset(0, 8),
+                        color: Color(0x441E40AF),
+                        blurRadius: 24,
+                        offset: Offset(0, 10),
                       ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Stack(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  LucideIcons.building2,
-                                  color: Colors.white,
-                                  size: 14,
+                      // 1. Mall Interior Background Photo
+                      Positioned.fill(
+                        child: Image.asset(
+                          'assets/images/mall_bg.jpg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Color(0xFF1E40AF),
+                                      Color(0xFF3B82F6),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
                                 ),
-                                SizedBox(width: 6),
-                                Text(
-                                  'ACTIVE MALL MAP',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ),
+
+                      // 2. Realistic Neutral Glassmorphism Dark Overlay (Preserves True Photo Colors & Lighting)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                const Color(
+                                  0xCC090D16,
+                                ), // 80% dark slate top vignette for header badges
+                                const Color(
+                                  0x33090D16,
+                                ), // 20% transparent mid region for REAL photo colors
+                                const Color(
+                                  0xB3090D16,
+                                ), // 70% dark slate bottom vignette for button contrast
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // 3. Card Content & Action Controls
+                      Padding(
+                        padding: const EdgeInsets.all(22),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 11,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.4),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.35,
+                                      ),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        LucideIcons.building2,
+                                        color: Colors.white,
+                                        size: 13,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'ACTIVE MALL MAP',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.4),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFFFDE047,
+                                      ).withValues(alpha: 0.5),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '4.9',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12.5,
+                                        ),
+                                      ),
+                                      SizedBox(width: 4),
+                                      Icon(
+                                        LucideIcons.star,
+                                        color: Color(0xFFFDE047),
+                                        size: 13,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          const Spacer(),
-                          const Text(
-                            '4.9 ★',
-                            style: TextStyle(
-                              color: Color(0xFFFDE047),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                            const SizedBox(height: 16),
+                            Text(
+                              widget.buildingProfile.name,
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
+                                height: 1.25,
+                                shadows: const [
+                                  Shadow(
+                                    color: Colors.black87,
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        widget.buildingProfile.name,
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${widget.buildingProfile.floors.length} Floors • Zero-Hardware Indoor PnP Locked',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF1E40AF),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(
+                                  LucideIcons.layers,
+                                  color: Color(0xFF93C5FD),
+                                  size: 14,
                                 ),
-                                elevation: 0,
-                              ),
-                              onPressed: widget.onOpenARView,
-                              icon: const Icon(LucideIcons.camera, size: 18),
-                              label: const Text(
-                                'Open AR Camera',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(color: Colors.white),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                const SizedBox(width: 5),
+                                Text(
+                                  '${widget.buildingProfile.floors.length} Floors Available',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black87,
+                                        blurRadius: 6,
+                                        offset: Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              onPressed: widget.onOpenFloorMap,
-                              icon: const Icon(LucideIcons.layers, size: 18),
-                              label: const Text(
-                                'Floor Map',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                              ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF0F172A),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 13,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      elevation: 3,
+                                      shadowColor: Colors.black38,
+                                    ),
+                                    onPressed: widget.onOpenARView,
+                                    icon: const Icon(
+                                      LucideIcons.camera,
+                                      size: 16,
+                                    ),
+                                    label: const Text(
+                                      'Open AR Camera',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: Colors.black.withValues(
+                                        alpha: 0.35,
+                                      ),
+                                      foregroundColor: Colors.white,
+                                      side: BorderSide(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                        width: 1.2,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 13,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                    onPressed: widget.onOpenFloorMap,
+                                    icon: const Icon(
+                                      LucideIcons.layers,
+                                      size: 16,
+                                    ),
+                                    label: const Text(
+                                      'Floor Map',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -316,17 +463,15 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-
-
             // Search Bar
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
                 child: TextField(
                   onChanged: (val) => setState(() => _searchQuery = val),
                   decoration: InputDecoration(
                     hintText: 'Search shops, food court, brands...',
-                    prefixIcon: const Icon(LucideIcons.search, size: 20),
+                    prefixIcon: const Icon(LucideIcons.search, size: 18),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
@@ -346,66 +491,218 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Categories Filter Horizontal List
+            // Floor & Category Filter Chip Bars (Clean & Decluttered Layout)
             SliverToBoxAdapter(
-              child: SizedBox(
-                height: 42,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _categories.length,
-                  itemBuilder: (context, index) {
-                    final cat = _categories[index];
-                    final isSelected = _selectedCategory == cat['label'];
-
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        selected: isSelected,
-                        showCheckmark: false,
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              cat['icon'],
-                              size: 14,
-                              color: isSelected
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Floor Level Chips
+                  SizedBox(
+                    height: 36,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      children: [
+                        // All Floors Chip
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            selected: _selectedFloorNumber == null,
+                            showCheckmark: false,
+                            avatar: Icon(
+                              LucideIcons.layers,
+                              size: 13,
+                              color: _selectedFloorNumber == null
                                   ? Colors.white
                                   : const Color(0xFF64748B),
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              cat['label'],
-                              style: TextStyle(
+                            label: const Text('All Floors'),
+                            labelStyle: TextStyle(
+                              fontSize: 12,
+                              fontWeight: _selectedFloorNumber == null
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: _selectedFloorNumber == null
+                                  ? Colors.white
+                                  : const Color(0xFF475569),
+                            ),
+                            selectedColor: const Color(0xFF0F172A),
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: _selectedFloorNumber == null
+                                    ? const Color(0xFF0F172A)
+                                    : const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            onSelected: (_) =>
+                                setState(() => _selectedFloorNumber = null),
+                          ),
+                        ),
+
+                        // My Floor Chip
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            selected:
+                                _selectedFloorNumber ==
+                                currentFloor.floorNumber,
+                            showCheckmark: false,
+                            avatar: Icon(
+                              LucideIcons.mapPin,
+                              size: 13,
+                              color:
+                                  _selectedFloorNumber ==
+                                      currentFloor.floorNumber
+                                  ? Colors.white
+                                  : const Color(0xFF10B981),
+                            ),
+                            label: Text(
+                              currentFloor.floorNumber < 0
+                                  ? 'My Floor (B${currentFloor.floorNumber.abs()})'
+                                  : 'My Floor (F${currentFloor.floorNumber})',
+                            ),
+                            labelStyle: TextStyle(
+                              fontSize: 12,
+                              fontWeight:
+                                  _selectedFloorNumber ==
+                                      currentFloor.floorNumber
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color:
+                                  _selectedFloorNumber ==
+                                      currentFloor.floorNumber
+                                  ? Colors.white
+                                  : const Color(0xFF065F46),
+                            ),
+                            selectedColor: const Color(0xFF10B981),
+                            backgroundColor: const Color(0xFFECFDF5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color:
+                                    _selectedFloorNumber ==
+                                        currentFloor.floorNumber
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFFA7F3D0),
+                              ),
+                            ),
+                            onSelected: (_) => setState(
+                              () => _selectedFloorNumber =
+                                  currentFloor.floorNumber,
+                            ),
+                          ),
+                        ),
+
+                        // Building Floors Chips
+                        ...widget.buildingProfile.floors.map((floor) {
+                          final isSelected =
+                              _selectedFloorNumber == floor.floorNumber;
+                          final String floorLabel = floor.floorNumber < 0
+                              ? 'B${floor.floorNumber.abs()}'
+                              : 'F${floor.floorNumber}';
+
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              selected: isSelected,
+                              showCheckmark: false,
+                              label: Text('$floorLabel (${floor.storesCount})'),
+                              labelStyle: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
                                 color: isSelected
                                     ? Colors.white
                                     : const Color(0xFF475569),
                               ),
+                              selectedColor: const Color(0xFF2563EB),
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? const Color(0xFF2563EB)
+                                      : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              onSelected: (_) => setState(
+                                () => _selectedFloorNumber = floor.floorNumber,
+                              ),
                             ),
-                          ],
-                        ),
-                        backgroundColor: Colors.white,
-                        selectedColor: const Color(0xFF2563EB),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: isSelected
-                                ? const Color(0xFF2563EB)
-                                : const Color(0xFFE2E8F0),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 2. Category Filter Row
+                  SizedBox(
+                    height: 36,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: _categories.length,
+                      itemBuilder: (context, index) {
+                        final cat = _categories[index];
+                        final isSelected = _selectedCategory == cat['label'];
+
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            selected: isSelected,
+                            showCheckmark: false,
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  cat['icon'],
+                                  size: 13,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : const Color(0xFF64748B),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  cat['label'],
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w500,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : const Color(0xFF475569),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: Colors.white,
+                            selectedColor: const Color(0xFF2563EB),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? const Color(0xFF2563EB)
+                                    : const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            onSelected: (_) => setState(
+                              () => _selectedCategory = cat['label'],
+                            ),
                           ),
-                        ),
-                        onSelected: (_) =>
-                            setState(() => _selectedCategory = cat['label']),
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 20)),
+            const SliverToBoxAdapter(child: SizedBox(height: 18)),
 
             // Section Header
             SliverToBoxAdapter(
@@ -413,25 +710,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
-                    Expanded(
-                      child: Text(
-                        'Mall Destinations & Stores',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF0F172A),
-                        ),
+                    Text(
+                      'Destinations & Stores',
+                      style: GoogleFonts.inter(
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${filteredPOIs.length} Stores',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w600,
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _selectedFloorNumber == null
+                            ? '${filteredPOIs.length} Stores'
+                            : _selectedFloorNumber == currentFloor.floorNumber
+                            ? 'My Floor (${filteredPOIs.length})'
+                            : 'F$_selectedFloorNumber (${filteredPOIs.length})',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: Color(0xFF475569),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -441,140 +748,233 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-            // Shops List
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final shop = filteredPOIs[index];
-                  final dist = calculateAccurate3DDistance(
-                    effectiveCoords,
-                    shop.location,
-                    userFloorNumber: currentFloor.floorNumber,
-                    targetFloorNumber: shop.floorNumber,
-                  );
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
+            if (filteredPOIs.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          LucideIcons.store,
+                          size: 36,
+                          color: Color(0xFF94A3B8),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No stores match your filters',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Try selecting "All Floors" or a different category',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _selectedCategory = 'ALL';
+                              _selectedFloorNumber = null;
+                              _searchQuery = '';
+                            });
+                          },
+                          icon: const Icon(LucideIcons.refreshCw, size: 14),
+                          label: const Text('Reset All Filters'),
                         ),
                       ],
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      onTap: () => _showShopDetails(shop),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          LucideIcons.store,
-                          color: Color(0xFF2563EB),
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(
-                        shop.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF2563EB),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                shop.floorNumber < 0
-                                    ? 'B${shop.floorNumber}'
-                                    : 'FLOOR ${shop.floorNumber}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                '${dist.toStringAsFixed(0)}m away',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      trailing: GestureDetector(
-                        onTap: () {
-                          widget.onSelectDestination(shop);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
+                  ),
+                ),
+              ),
+
+            // Shops List
+            if (filteredPOIs.isNotEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final shop = filteredPOIs[index];
+                    final dist = calculateAccurate3DDistance(
+                      effectiveCoords,
+                      shop.location,
+                      userFloorNumber: currentFloor.floorNumber,
+                      targetFloorNumber: shop.floorNumber,
+                    );
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
                           ),
+                        ],
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        onTap: () => _showShopDetails(shop),
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFDBEAFE)),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: const Icon(
+                            LucideIcons.store,
+                            color: Color(0xFF2563EB),
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          shop.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Row(
                             children: [
-                              Icon(
-                                LucideIcons.navigation,
-                                size: 12,
-                                color: Color(0xFF2563EB),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      shop.floorNumber ==
+                                          currentFloor.floorNumber
+                                      ? const Color(0xFFECFDF5)
+                                      : const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color:
+                                        shop.floorNumber ==
+                                            currentFloor.floorNumber
+                                        ? const Color(0xFFA7F3D0)
+                                        : const Color(0xFFDBEAFE),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (shop.floorNumber ==
+                                        currentFloor.floorNumber) ...[
+                                      const Icon(
+                                        LucideIcons.mapPin,
+                                        size: 10,
+                                        color: Color(0xFF059669),
+                                      ),
+                                      const SizedBox(width: 3),
+                                    ],
+                                    Text(
+                                      shop.floorNumber ==
+                                              currentFloor.floorNumber
+                                          ? (shop.floorNumber < 0
+                                                ? 'THIS FLOOR • B${shop.floorNumber.abs()}'
+                                                : 'THIS FLOOR • F${shop.floorNumber}')
+                                          : shop.floorNumber < 0
+                                          ? 'B${shop.floorNumber.abs()} BASEMENT'
+                                          : 'F${shop.floorNumber}',
+                                      style: TextStyle(
+                                        color:
+                                            shop.floorNumber ==
+                                                currentFloor.floorNumber
+                                            ? const Color(0xFF047857)
+                                            : const Color(0xFF1D4ED8),
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              SizedBox(width: 4),
-                              Text(
-                                'AR Nav',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2563EB),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  '${dist.toStringAsFixed(0)}m away',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF64748B),
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
+                        trailing: GestureDetector(
+                          onTap: () {
+                            widget.onSelectDestination(shop);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0xFFDBEAFE),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  LucideIcons.navigation,
+                                  size: 12,
+                                  color: Color(0xFF2563EB),
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'AR Nav',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2563EB),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  );
-                }, childCount: filteredPOIs.length),
+                    );
+                  }, childCount: filteredPOIs.length),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -582,16 +982,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildParkedVehicleHomeCard(MyVehicleLocation vehicle) {
+    final String floorDisplay =
+        vehicle.floorName.toLowerCase().contains('parking')
+        ? vehicle.floorName
+        : '${vehicle.floorName} Parking';
+
     return Container(
       margin: const EdgeInsets.only(top: 12),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF10B981), width: 1.5),
+        border: Border.all(
+          color: const Color(0xFF10B981).withValues(alpha: 0.8),
+          width: 1.5,
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x3310B981),
-            blurRadius: 16,
+            blurRadius: 18,
             offset: Offset(0, 6),
           ),
         ],
@@ -603,13 +1011,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Image.asset(
               'assets/images/parked_car_bg.jpg',
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: const Color(0xFF0F172A),
-              ),
+              errorBuilder: (context, error, stackTrace) =>
+                  Container(color: const Color(0xFF0F172A)),
             ),
           ),
 
-          // 2. Ultra-Sleek Dark Glassmorphism Gradient Overlay
+          // 2. Translucent Glassmorphism Gradient Overlay
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -617,9 +1024,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFA0F172A),
-                    const Color(0xDD0F172A),
-                    const Color(0xCC064E3B),
+                    const Color(0x990A0F1D), // 60% opacity dark slate top-left
+                    const Color(0x440A0F1D), // 27% opacity center
+                    const Color(
+                      0x88042F2E,
+                    ), // 53% opacity subtle emerald glow bottom right
                   ],
                 ),
               ),
@@ -628,22 +1037,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // 3. Card Content Overlay
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.20),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF10B981), width: 1.2),
-                      ),
-                      child: const Icon(LucideIcons.car, color: Color(0xFF34D399), size: 22),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -651,67 +1051,115 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             'MY PARKED VEHICLE',
                             style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
                               color: const Color(0xFF34D399),
-                              letterSpacing: 1.0,
+                              letterSpacing: 1.1,
+                              shadows: const [
+                                Shadow(
+                                  color: Colors.black54,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Stall ${vehicle.slotId}',
+                            style: GoogleFonts.inter(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              shadows: const [
+                                Shadow(
+                                  color: Colors.black54,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Stall ${vehicle.slotId} • ${vehicle.floorName}',
+                            floorDisplay,
                             style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white.withValues(alpha: 0.9),
+                              shadows: const [
+                                Shadow(
+                                  color: Colors.black54,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x5510B981),
+                            color: Color(0x4410B981),
                             blurRadius: 8,
+                            offset: Offset(0, 2),
                           ),
                         ],
                       ),
                       child: Text(
                         'PARKED',
                         style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          letterSpacing: 0.5,
+                          letterSpacing: 0.6,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
+                      flex: 6,
                       child: ElevatedButton.icon(
-                        icon: const Icon(LucideIcons.compass, size: 16, color: Colors.white),
+                        icon: const Icon(
+                          LucideIcons.compass,
+                          size: 16,
+                          color: Colors.white,
+                        ),
                         label: Text(
                           'Find My Car (AR)',
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF10B981),
-                          elevation: 4,
-                          shadowColor: const Color(0x6610B981),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 2,
+                          shadowColor: const Color(0x4410B981),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         onPressed: () {
-                          final int floorNum = vehicle.floorId.contains('B2') ? -2 : -1;
+                          final int floorNum = vehicle.floorId.contains('B2')
+                              ? -2
+                              : -1;
                           final poi = DestinationPOI(
                             id: vehicle.slotId,
                             name: 'My Parked Car (${vehicle.slotId})',
@@ -727,19 +1175,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    OutlinedButton.icon(
-                      icon: const Icon(LucideIcons.layers, size: 16, color: Colors.white),
-                      label: Text(
-                        'Map',
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                    Expanded(
+                      flex: 4,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(
+                          LucideIcons.layers,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          'Floor Map',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.black.withValues(alpha: 0.3),
+                          side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            width: 1.2,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: widget.onOpenFloorMap,
                       ),
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.12),
-                        side: const BorderSide(color: Colors.white38),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      onPressed: widget.onOpenFloorMap,
                     ),
                   ],
                 ),

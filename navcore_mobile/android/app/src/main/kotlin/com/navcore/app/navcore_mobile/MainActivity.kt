@@ -1,4 +1,4 @@
-package com.navcore.app.navcore_mobile
+package com.NexNav.app.NexNav_mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -98,8 +98,8 @@ class ShopDetailsScreen extends StatelessWidget {
                           ),
                           child: Text(
                             destination.floorNumber < 0
-                                ? 'B${destination.floorNumber}'
-                                : 'FLOOR ${destination.floorNumber}',
+                                ? 'B${destination.floorNumber.abs()}'
+                                : 'F${destination.floorNumber}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,

@@ -49,20 +49,19 @@ class ARMarkerRenderData {
   });
 }
 
-/// NavCore Modular AR Sensor & Floor Detection Engine
+/// NexNav Modular AR Sensor & Floor Detection Engine
 class ARSensorEngine {
   final MallBackendApi apiHook;
-  
+
   // Low-Pass Smoothing Filter Coefficient (0.0 < alpha <= 1.0)
   final double _alpha = 0.25;
   double _smoothedPitch = 0.0;
-  
+
   // Hysteresis Debounce Thresholds
   final double tiltDownThreshold = -15.0; // Pitch < -15° = Downward tilt
-  final double tiltUpThreshold = 15.0;   // Pitch > +15° = Upward tilt
+  final double tiltUpThreshold = 15.0; // Pitch > +15° = Upward tilt
 
-  ARSensorEngine({MallBackendApi? api})
-      : apiHook = api ?? RestMallBackendApi();
+  ARSensorEngine({MallBackendApi? api}) : apiHook = api ?? RestMallBackendApi();
 
   /// Modular Function 1: getSensorData()
   /// Ingests raw accelerometer & magnetometer events, calculates pitch, and applies low-pass filter
@@ -75,7 +74,10 @@ class ARSensorEngine {
   }) {
     // 1. Calculate raw pitch & roll in degrees from accelerometer
     final rollRad = math.atan2(accelY, accelZ);
-    final pitchRad = math.atan2(-accelX, math.sqrt(accelY * accelY + accelZ * accelZ));
+    final pitchRad = math.atan2(
+      -accelX,
+      math.sqrt(accelY * accelY + accelZ * accelZ),
+    );
 
     final rawPitchDeg = pitchRad * (180.0 / math.pi);
     final rawRollDeg = rollRad * (180.0 / math.pi);
@@ -84,7 +86,8 @@ class ARSensorEngine {
     _smoothedPitch = (_alpha * rawPitchDeg) + ((1.0 - _alpha) * _smoothedPitch);
 
     // 3. Estimate Barometric Altitude: h = 44330 * (1 - (p / p0)^(1/5.255))
-    final baroAltitude = 44330.0 * (1.0 - math.pow(barometricPressureHpa / 1013.25, 0.1903));
+    final baroAltitude =
+        44330.0 * (1.0 - math.pow(barometricPressureHpa / 1013.25, 0.1903));
 
     // 4. Determine Pitch Tilt Direction via detectFloor()
     final tiltDir = detectFloorDirection(_smoothedPitch);
@@ -184,7 +187,8 @@ class ARSensorEngine {
       final normX = relAngle / 30.0;
       double posX = (screenWidth / 2 - 97.5) + (normX * (screenWidth * 0.42));
       final floorDiff = poi.floorNumber - activeFloorNumber;
-      double posY = (screenHeight * 0.36) - (floorDiff * 40.0) + ((i % 3) * 25.0);
+      double posY =
+          (screenHeight * 0.36) - (floorDiff * 40.0) + ((i % 3) * 25.0);
 
       // Collision avoidance vertical shift
       if ((posX - lastX).abs() < 170 && (posY - lastY).abs() < 70) {
@@ -194,16 +198,18 @@ class ARSensorEngine {
       lastX = posX;
       lastY = posY;
 
-      markers.add(ARMarkerRenderData(
-        poi: poi,
-        distanceMeters: distM,
-        bearingDegrees: bearing,
-        directionBadge: directionStr,
-        relativeAngleDegrees: relAngle,
-        screenPosX: posX.clamp(16.0, screenWidth - 210.0),
-        screenPosY: posY.clamp(130.0, screenHeight - 330.0),
-        isTargetFloor: poi.floorNumber == activeFloorNumber,
-      ));
+      markers.add(
+        ARMarkerRenderData(
+          poi: poi,
+          distanceMeters: distM,
+          bearingDegrees: bearing,
+          directionBadge: directionStr,
+          relativeAngleDegrees: relAngle,
+          screenPosX: posX.clamp(16.0, screenWidth - 210.0),
+          screenPosY: posY.clamp(130.0, screenHeight - 330.0),
+          isTargetFloor: poi.floorNumber == activeFloorNumber,
+        ),
+      );
     }
 
     return markers;

@@ -15,7 +15,9 @@ class AdminMarkerConfigModal extends StatefulWidget {
 
 class _AdminMarkerConfigModalState extends State<AdminMarkerConfigModal> {
   final _formKey = GlobalKey<FormState>();
-  final _markerIdController = TextEditingController(text: 'REF-ENTRANCE-MARKER-01');
+  final _markerIdController = TextEditingController(
+    text: 'REF-ENTRANCE-MARKER-01',
+  );
   final _nameController = TextEditingController(text: 'North Atrium Entrance');
   final _latController = TextEditingController(text: '25.197197');
   final _lngController = TextEditingController(text: '55.274376');
@@ -49,7 +51,11 @@ class _AdminMarkerConfigModalState extends State<AdminMarkerConfigModal> {
                 children: [
                   Row(
                     children: [
-                      const Icon(LucideIcons.qrCode, color: Color(0xFF38BDF8), size: 20),
+                      const Icon(
+                        LucideIcons.qrCode,
+                        color: Color(0xFF38BDF8),
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Admin Reference Marker Config',
@@ -82,28 +88,51 @@ class _AdminMarkerConfigModalState extends State<AdminMarkerConfigModal> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: _buildTextField('Base Height (m)', _heightController)),
+                  Expanded(
+                    child: _buildTextField(
+                      'Base Height (m)',
+                      _heightController,
+                    ),
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Floor Level', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+                        const Text(
+                          'Floor Level',
+                          style: TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontSize: 10,
+                          ),
+                        ),
                         const SizedBox(height: 4),
                         DropdownButtonFormField<int>(
                           initialValue: _selectedFloor,
                           dropdownColor: const Color(0xFF1E293B),
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
                           decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
                             filled: true,
                             fillColor: const Color(0xFF1E293B),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           items: List.generate(10, (idx) {
-                            return DropdownMenuItem(value: idx + 1, child: Text('Floor ${idx + 1}'));
+                            return DropdownMenuItem(
+                              value: idx + 1,
+                              child: Text('Floor ${idx + 1}'),
+                            );
                           }),
-                          onChanged: (val) => setState(() => _selectedFloor = val ?? 1),
+                          onChanged: (val) =>
+                              setState(() => _selectedFloor = val ?? 1),
                         ),
                       ],
                     ),
@@ -115,7 +144,9 @@ class _AdminMarkerConfigModalState extends State<AdminMarkerConfigModal> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
                   minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
@@ -124,13 +155,15 @@ class _AdminMarkerConfigModalState extends State<AdminMarkerConfigModal> {
                       name: _nameController.text,
                       floorNumber: _selectedFloor,
                       position: GeodeticCoords(
-                        latitude: double.tryParse(_latController.text) ?? 25.197197,
-                        longitude: double.tryParse(_lngController.text) ?? 55.274376,
+                        latitude:
+                            double.tryParse(_latController.text) ?? 25.197197,
+                        longitude:
+                            double.tryParse(_lngController.text) ?? 55.274376,
                         height: double.tryParse(_heightController.text) ?? 1.65,
                       ),
                       physicalWidthMeters: _physicalWidth,
                       physicalHeightMeters: _physicalWidth,
-                      qrCodeData: 'NAVCORE:${_markerIdController.text}',
+                      qrCodeData: 'NexNav:${_markerIdController.text}',
                     );
                     widget.onSaveMarker(marker);
                     Navigator.pop(context);
@@ -138,7 +171,10 @@ class _AdminMarkerConfigModalState extends State<AdminMarkerConfigModal> {
                 },
                 child: const Text(
                   'SAVE REFERENCE MARKER',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -152,18 +188,28 @@ class _AdminMarkerConfigModalState extends State<AdminMarkerConfigModal> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+        Text(
+          label,
+          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+        ),
         const SizedBox(height: 4),
         TextFormField(
           controller: controller,
           style: const TextStyle(color: Colors.white, fontSize: 12),
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
             filled: true,
             fillColor: const Color(0xFF1E293B),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF334155))),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF334155)),
+            ),
           ),
-          validator: (val) => val == null || val.isEmpty ? 'Required field' : null,
+          validator: (val) =>
+              val == null || val.isEmpty ? 'Required field' : null,
         ),
       ],
     );

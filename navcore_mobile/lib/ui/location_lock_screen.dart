@@ -9,7 +9,8 @@ import '../data/mall_database_service.dart';
 class LocationLockScreen extends StatefulWidget {
   final RealSensorService sensorService;
   final MallDatabaseService mallService;
-  final Function(GeodeticCoords coords, MallMetadata detectedMall) onSetupCompleted;
+  final Function(GeodeticCoords coords, MallMetadata detectedMall)
+  onSetupCompleted;
 
   const LocationLockScreen({
     super.key,
@@ -23,7 +24,8 @@ class LocationLockScreen extends StatefulWidget {
 }
 
 class _LocationLockScreenState extends State<LocationLockScreen> {
-  int _currentStep = 1; // 1: Location, 2: Mall Detection, 3: Downloading, 4: Ready
+  int _currentStep =
+      1; // 1: Location, 2: Mall Detection, 3: Downloading, 4: Ready
   GeodeticCoords? _acquiredCoords;
   MallMetadata? _detectedMall;
   double _downloadProgress = 0.0;
@@ -63,14 +65,16 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
 
     setState(() {
       _currentStep = 2;
-      _statusText = 'GPS Locked! Nearest Mall Detected: ${_detectedMall!.name} (${_detectedMall!.city})';
+      _statusText =
+          'GPS Locked! Nearest Mall Detected: ${_detectedMall!.name} (${_detectedMall!.city})';
     });
     await Future.delayed(const Duration(milliseconds: 600));
 
     // Step 3: Auto-Download Mall Map Package for Particular Mall
     setState(() {
       _currentStep = 3;
-      _statusText = 'Auto-downloading map package for ${_detectedMall!.name}...';
+      _statusText =
+          'Auto-downloading map package for ${_detectedMall!.name}...';
     });
 
     await widget.mallService.autoDownloadAndActivateNearestMall(
@@ -121,14 +125,18 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
                         ),
                       ],
                     ),
-                    child: const Icon(LucideIcons.compass, color: Colors.white, size: 28),
+                    child: const Icon(
+                      LucideIcons.compass,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'NavCore',
+                        'NexNav',
                         style: GoogleFonts.inter(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
@@ -161,10 +169,7 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
               const SizedBox(height: 6),
               const Text(
                 'Complete these steps to unlock real-time indoor AR navigation:',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF64748B),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
               ),
 
               const SizedBox(height: 28),
@@ -182,7 +187,9 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
               _buildStepRow(
                 2,
                 'Detect Nearby Mall Database',
-                _detectedMall != null ? _detectedMall!.name : 'Searching cloud database...',
+                _detectedMall != null
+                    ? _detectedMall!.name
+                    : 'Searching cloud database...',
                 LucideIcons.building2,
               ),
               const SizedBox(height: 14),
@@ -237,13 +244,19 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
                         ),
                       )
                     else
-                      const Icon(LucideIcons.checkCircle2, color: Color(0xFF16A34A), size: 20),
+                      const Icon(
+                        LucideIcons.checkCircle2,
+                        color: Color(0xFF16A34A),
+                        size: 20,
+                      ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _statusText,
                         style: TextStyle(
-                          color: _isProcessing ? const Color(0xFF2563EB) : const Color(0xFF16A34A),
+                          color: _isProcessing
+                              ? const Color(0xFF2563EB)
+                              : const Color(0xFF16A34A),
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -271,13 +284,23 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
                     elevation: 0,
                   ),
                   onPressed: _currentStep == 4
-                      ? () => widget.onSetupCompleted(_acquiredCoords!, _detectedMall!)
+                      ? () => widget.onSetupCompleted(
+                          _acquiredCoords!,
+                          _detectedMall!,
+                        )
                       : _startStartupFlow,
-                  icon: Icon(_currentStep == 4 ? LucideIcons.compass : LucideIcons.refreshCw, size: 20),
+                  icon: Icon(
+                    _currentStep == 4
+                        ? LucideIcons.compass
+                        : LucideIcons.refreshCw,
+                    size: 20,
+                  ),
                   label: Text(
                     _currentStep == 4
-                        ? 'Enter NavCore AR Navigator'
-                        : (_isProcessing ? 'Setting Up...' : 'Retry Location Setup'),
+                        ? 'Enter NexNav AR Navigator'
+                        : (_isProcessing
+                              ? 'Setting Up...'
+                              : 'Retry Location Setup'),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -293,7 +316,12 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
     );
   }
 
-  Widget _buildStepRow(int stepNum, String title, String subtitle, IconData icon) {
+  Widget _buildStepRow(
+    int stepNum,
+    String title,
+    String subtitle,
+    IconData icon,
+  ) {
     bool isDone = _currentStep > stepNum || _currentStep == 4;
     bool isCurrent = _currentStep == stepNum;
 
@@ -327,7 +355,9 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
             decoration: BoxDecoration(
               color: isDone
                   ? const Color(0xFF16A34A)
-                  : (isCurrent ? const Color(0xFF2563EB) : const Color(0xFFCBD5E1)),
+                  : (isCurrent
+                        ? const Color(0xFF2563EB)
+                        : const Color(0xFFCBD5E1)),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -353,7 +383,9 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: isCurrent ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                    color: isCurrent
+                        ? const Color(0xFF2563EB)
+                        : const Color(0xFF64748B),
                     fontSize: 12,
                     fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
                   ),

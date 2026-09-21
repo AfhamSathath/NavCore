@@ -1,7 +1,7 @@
 import 'ecef_engine.dart';
 
-/// NavCore Perspective-n-Point (PnP) Height Calibration Engine in Dart
-/// Implements Section 3 of NavCore Technical Spec
+/// NexNav Perspective-n-Point (PnP) Height Calibration Engine in Dart
+/// Implements Section 3 of NexNav Technical Spec
 
 class EntranceMarkerNode {
   final String markerId;
@@ -51,7 +51,8 @@ PnPResult calibratePnP(
   double cameraFocalLengthPx = 800.0,
 }) {
   final distanceEstimate =
-      (cameraFocalLengthPx * marker.physicalWidthMeters) / observedMarkerWidthPx;
+      (cameraFocalLengthPx * marker.physicalWidthMeters) /
+      observedMarkerWidthPx;
   const computedCameraHeight = 1.65; // camera height offset above floor
   final absoluteHeight = marker.baseHeight + computedCameraHeight;
 
@@ -63,7 +64,8 @@ PnPResult calibratePnP(
     ),
     computedCameraHeightMeters: computedCameraHeight,
     estimatedDistanceMeters: distanceEstimate,
-    residualErrorPx: (observedMarkerWidthPx - observedMarkerHeightPx).abs() * 0.05,
+    residualErrorPx:
+        (observedMarkerWidthPx - observedMarkerHeightPx).abs() * 0.05,
     calibratedAt: DateTime.now(),
     markerId: marker.markerId,
   );

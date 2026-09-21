@@ -28,15 +28,24 @@ class FusedSpatialPose {
   });
 }
 
-/// NavCore SensorFusionService: Integrates IMU + Camera + Compass + PnP Reference Markers
+/// NexNav SensorFusionService: Integrates IMU + Camera + Compass + PnP Reference Markers
 class SensorFusionService {
-  final KalmanFilter _headingFilter = KalmanFilter(processNoise: 0.02, measurementNoise: 0.15);
-  final KalmanFilter _pitchFilter = KalmanFilter(processNoise: 0.03, measurementNoise: 0.10);
-  final KalmanFilter _rollFilter = KalmanFilter(processNoise: 0.03, measurementNoise: 0.10);
+  final KalmanFilter _headingFilter = KalmanFilter(
+    processNoise: 0.02,
+    measurementNoise: 0.15,
+  );
+  final KalmanFilter _pitchFilter = KalmanFilter(
+    processNoise: 0.03,
+    measurementNoise: 0.10,
+  );
+  final KalmanFilter _rollFilter = KalmanFilter(
+    processNoise: 0.03,
+    measurementNoise: 0.10,
+  );
 
   GeodeticCoords? _lastPnPPosition;
   DateTime? _lastPnPTime;
-  
+
   double _smoothHeading = 0.0;
   double _smoothPitch = 0.0;
   double _smoothRoll = 0.0;
@@ -79,9 +88,17 @@ class SensorFusionService {
     }
 
     // 4. Resolve fused geodetic position (PnP > GPS > Fallback)
-    GeodeticCoords effectivePosition = gpsCoords ?? const GeodeticCoords(latitude: 25.197197, longitude: 55.274376, height: 0.0);
+    GeodeticCoords effectivePosition =
+        gpsCoords ??
+        const GeodeticCoords(
+          latitude: 25.197197,
+          longitude: 55.274376,
+          height: 0.0,
+        );
     if (_lastPnPPosition != null && _lastPnPTime != null) {
-      final secondsSincePnP = DateTime.now().difference(_lastPnPTime!).inSeconds;
+      final secondsSincePnP = DateTime.now()
+          .difference(_lastPnPTime!)
+          .inSeconds;
       if (secondsSincePnP < 180) {
         effectivePosition = _lastPnPPosition!;
       }
@@ -91,7 +108,8 @@ class SensorFusionService {
     double confidenceScore = 0.95;
     TrackingConfidence confidenceLevel = TrackingConfidence.high;
 
-    final motionJitter = math.sqrt(accelX * accelX + accelY * accelY + accelZ * accelZ) - 9.81;
+    final motionJitter =
+        math.sqrt(accelX * accelX + accelY * accelY + accelZ * accelZ) - 9.81;
     if (motionJitter.abs() > 4.0) {
       confidenceScore -= 0.20;
     }

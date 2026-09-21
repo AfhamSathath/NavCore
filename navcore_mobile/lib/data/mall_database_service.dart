@@ -50,8 +50,8 @@ class FullMallPackage {
 }
 
 class MallDatabaseService {
-  static const String _downloadedMallsKey = 'navcore_downloaded_malls';
-  static const String _activeMallKey = 'navcore_active_mall_id';
+  static const String _downloadedMallsKey = 'NexNav_downloaded_malls';
+  static const String _activeMallKey = 'NexNav_active_mall_id';
 
   final List<MallMetadata> _catalog = [
     const MallMetadata(
@@ -205,7 +205,8 @@ class MallDatabaseService {
     final nearest = findNearestMall(userCoords);
 
     final prefs = await SharedPreferences.getInstance();
-    final downloaded = prefs.getStringList(_downloadedMallsKey) ?? ['mall-one-galle-face'];
+    final downloaded =
+        prefs.getStringList(_downloadedMallsKey) ?? ['mall-one-galle-face'];
 
     if (!downloaded.contains(nearest.id)) {
       await downloadMallPackage(nearest.id, (p) {

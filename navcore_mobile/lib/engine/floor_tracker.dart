@@ -1,5 +1,5 @@
-/// NavCore Geodetic Elevation Engine & Floor Level Manager in Dart
-/// Implements Section 4 of NavCore Technical Spec
+/// NexNav Geodetic Elevation Engine & Floor Level Manager in Dart
+/// Implements Section 4 of NexNav Technical Spec
 library;
 
 class FloorLevelConfig {

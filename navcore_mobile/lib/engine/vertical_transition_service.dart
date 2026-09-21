@@ -23,7 +23,7 @@ class TransitionStateUpdate {
   });
 }
 
-/// NavCore VerticalTransitionService: Manages multi-floor Elevator, Escalator & Stairs transitions
+/// NexNav VerticalTransitionService: Manages multi-floor Elevator, Escalator & Stairs transitions
 class VerticalTransitionService {
   TransitionStateUpdate evaluateTransitionStep({
     required double distanceToTransitionMeters,
@@ -41,20 +41,24 @@ class VerticalTransitionService {
         transitionType: transitionType,
         targetFloor: targetFloor,
         instructionTitle: 'Continue to $typeName',
-        instructionSubtitle: '$typeName Ahead • ${distanceToTransitionMeters.round()} m',
+        instructionSubtitle:
+            '$typeName Ahead • ${distanceToTransitionMeters.round()} m',
       );
     } else if (distanceToTransitionMeters > 4.0) {
       return TransitionStateUpdate(
         stage: VerticalTransitionStage.atTransition,
         transitionType: transitionType,
         targetFloor: targetFloor,
-        instructionTitle: '$typeName Ahead (${distanceToTransitionMeters.round()} m)',
+        instructionTitle:
+            '$typeName Ahead (${distanceToTransitionMeters.round()} m)',
         instructionSubtitle: 'Prepare to change floors',
       );
     } else if (distanceToTransitionMeters > 1.0) {
       final String actionStr = (transitionType == WaypointType.escalator)
           ? 'Take Escalator to Level $targetFloor'
-          : (transitionType == WaypointType.stairs ? 'Use Stairs to Level $targetFloor' : 'Enter Elevator & Select Floor $targetFloor');
+          : (transitionType == WaypointType.stairs
+                ? 'Use Stairs to Level $targetFloor'
+                : 'Enter Elevator & Select Floor $targetFloor');
 
       return TransitionStateUpdate(
         stage: VerticalTransitionStage.inTransition,

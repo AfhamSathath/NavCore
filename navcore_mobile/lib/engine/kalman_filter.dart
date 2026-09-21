@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'ecef_engine.dart';
 
-/// NavCore Telemetry & Smoothing - 60Hz Low-pass Kalman Filter Engine in Dart
-/// Implements Section 7 (Step C) of NavCore Technical Spec
+/// NexNav Telemetry & Smoothing - 60Hz Low-pass Kalman Filter Engine in Dart
+/// Implements Section 7 (Step C) of NexNav Technical Spec
 
 class KalmanState {
   double latitude;
@@ -47,7 +47,7 @@ class KalmanState {
 
 class KalmanPositionFilter {
   final KalmanState state;
-  final double processNoise;   // Q
+  final double processNoise; // Q
   final double measurementNoise; // R
 
   KalmanPositionFilter(
@@ -55,13 +55,18 @@ class KalmanPositionFilter {
     this.processNoise = 1e-6,
     this.measurementNoise = 1e-4,
   }) : state = KalmanState(
-          latitude: initialCoords.latitude,
-          longitude: initialCoords.longitude,
-          height: initialCoords.height,
-        );
+         latitude: initialCoords.latitude,
+         longitude: initialCoords.longitude,
+         height: initialCoords.height,
+       );
 
   /// Time update step (Prediction) fed by 60Hz IMU step vectors
-  KalmanState predict(double dtSeconds, {required double dx, required double dy, required double dz}) {
+  KalmanState predict(
+    double dtSeconds, {
+    required double dx,
+    required double dy,
+    required double dz,
+  }) {
     const metersPerDegreeLat = 111320.0;
     final metersPerDegreeLon = 111320.0 * cos((state.latitude * pi) / 180.0);
 
@@ -112,16 +117,13 @@ class KalmanPositionFilter {
 
 /// 1D Low-Pass Kalman Filter for scalar orientation angle & sensor telemetry smoothing
 class KalmanFilter {
-  final double processNoise;   // Q
+  final double processNoise; // Q
   final double measurementNoise; // R
   double _stateEstimate = 0.0;
   double _estimateError = 1.0;
   bool _initialized = false;
 
-  KalmanFilter({
-    this.processNoise = 0.02,
-    this.measurementNoise = 0.15,
-  });
+  KalmanFilter({this.processNoise = 0.02, this.measurementNoise = 0.15});
 
   double filter(double measurement) {
     if (!_initialized) {

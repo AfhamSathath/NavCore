@@ -1,1 +1,1 @@
-// Deprecated - Gemini AI features removed from NavCore app.
+// Deprecated - Gemini AI features removed from NexNav app.

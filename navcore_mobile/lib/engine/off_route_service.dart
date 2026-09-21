@@ -17,10 +17,12 @@ class OffRouteCheckResult {
   });
 }
 
-/// NavCore OffRouteService: Monitors corridor boundaries and user walking vector
+/// NexNav OffRouteService: Monitors corridor boundaries and user walking vector
 class OffRouteService {
-  final double corridorThresholdMeters = 6.0; // Max allowed distance from route segment
-  final double wrongDirectionThresholdDeg = 135.0; // Walking angle away from target
+  final double corridorThresholdMeters =
+      6.0; // Max allowed distance from route segment
+  final double wrongDirectionThresholdDeg =
+      135.0; // Walking angle away from target
 
   OffRouteCheckResult evaluateRouteCompliance({
     required GeodeticCoords userCoords,
@@ -37,16 +39,21 @@ class OffRouteService {
       );
     }
 
-    final targetWaypoint = activeRoute.waypoints[
-      math.min(currentWaypointIndex, activeRoute.waypoints.length - 1)
-    ];
+    final targetWaypoint =
+        activeRoute.waypoints[math.min(
+          currentWaypointIndex,
+          activeRoute.waypoints.length - 1,
+        )];
 
     final distToTarget = calculateAccurate3DDistance(
       userCoords,
       targetWaypoint.coords,
       targetFloorNumber: targetWaypoint.floorNumber,
     );
-    final targetBearing = calculateBearingAngle(userCoords, targetWaypoint.coords);
+    final targetBearing = calculateBearingAngle(
+      userCoords,
+      targetWaypoint.coords,
+    );
 
     // Compute relative angle between user heading and target bearing
     double headingDiff = (targetBearing - userHeading).abs();

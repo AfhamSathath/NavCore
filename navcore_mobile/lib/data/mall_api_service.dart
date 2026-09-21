@@ -2,7 +2,7 @@ import 'dart:async';
 import '../engine/floor_tracker.dart';
 import 'destinations.dart';
 
-/// NavCore Backend API Hook Layer Specification
+/// NexNav Backend API Hook Layer Specification
 /// Provides REST / GraphQL abstraction for fetching building floor plans & shop POIs.
 
 class MallApiShopFilter {
@@ -32,12 +32,14 @@ class RestMallBackendApi implements MallBackendApi {
   final bool useMockFallback;
 
   RestMallBackendApi({
-    this.baseUrl = 'https://api.navcore.io/v1',
+    this.baseUrl = 'https://api.NexNav.io/v1',
     this.useMockFallback = true,
   });
 
   @override
-  Future<BuildingElevationProfile> fetchBuildingProfile(String buildingId) async {
+  Future<BuildingElevationProfile> fetchBuildingProfile(
+    String buildingId,
+  ) async {
     if (useMockFallback) {
       await Future.delayed(const Duration(milliseconds: 100));
       return defaultBuildingProfile;
@@ -49,7 +51,9 @@ class RestMallBackendApi implements MallBackendApi {
   }
 
   @override
-  Future<List<DestinationPOI>> fetchShopsForFloor(MallApiShopFilter filter) async {
+  Future<List<DestinationPOI>> fetchShopsForFloor(
+    MallApiShopFilter filter,
+  ) async {
     if (useMockFallback) {
       await Future.delayed(const Duration(milliseconds: 80));
       return mockDestinations

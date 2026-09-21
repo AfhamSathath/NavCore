@@ -1,5 +1,5 @@
-name: navcore_mobile
-description: "NavCore — Zero-Hardware Indoor Navigator Native Flutter Mobile App"
+name: nexnav_mobile
+description: "NexNav — Zero-Hardware Indoor Navigator Native Flutter Mobile App"
 publish_to: 'none'
 
 version: 1.0.0+1

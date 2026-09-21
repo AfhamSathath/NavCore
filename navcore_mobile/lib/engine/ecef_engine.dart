@@ -1,12 +1,12 @@
 import 'dart:math';
 
-/// NavCore Core Math Engine - ECEF (Earth-Centered, Earth-Fixed) Positioning
-/// Implements Section 6 of NavCore Technical Spec (WGS 84 reference ellipsoid)
+/// NexNav Core Math Engine - ECEF (Earth-Centered, Earth-Fixed) Positioning
+/// Implements Section 6 of NexNav Technical Spec (WGS 84 reference ellipsoid)
 
 class GeodeticCoords {
-  final double latitude;  // degrees φ
+  final double latitude; // degrees φ
   final double longitude; // degrees λ
-  final double height;    // meters h above WGS 84 reference ellipsoid
+  final double height; // meters h above WGS 84 reference ellipsoid
 
   const GeodeticCoords({
     required this.latitude,
@@ -32,15 +32,11 @@ class ECEFCoords {
   final double y; // meters Y_ECEF
   final double z; // meters Z_ECEF
 
-  const ECEFCoords({
-    required this.x,
-    required this.y,
-    required this.z,
-  });
+  const ECEFCoords({required this.x, required this.y, required this.z});
 }
 
 // WGS 84 Ellipsoid Parameters
-const double wgs84A = 6378137.0;             // Semi-major axis (meters)
+const double wgs84A = 6378137.0; // Semi-major axis (meters)
 const double wgs84E2 = 0.006694379990141317; // First eccentricity squared (e²)
 
 /// Calculates radius of curvature in prime vertical N(φ)

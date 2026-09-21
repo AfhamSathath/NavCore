@@ -584,120 +584,167 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildParkedVehicleHomeCard(MyVehicleLocation vehicle) {
     return Container(
       margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(16),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF86EFAC)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF10B981), width: 1.5),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0C000000),
-            blurRadius: 8,
-            offset: Offset(0, 3),
+            color: Color(0x3310B981),
+            blurRadius: 16,
+            offset: Offset(0, 6),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(LucideIcons.car, color: Color(0xFF16A34A), size: 22),
+          // 1. Realistic 3D Isometric Parking Lot Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/parked_car_bg.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: const Color(0xFF0F172A),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          ),
+
+          // 2. Ultra-Sleek Dark Glassmorphism Gradient Overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFA0F172A),
+                    const Color(0xDD0F172A),
+                    const Color(0xCC064E3B),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // 3. Card Content Overlay
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      'MY PARKED VEHICLE',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF15803D),
-                        letterSpacing: 0.6,
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.20),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFF10B981), width: 1.2),
+                      ),
+                      child: const Icon(LucideIcons.car, color: Color(0xFF34D399), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'MY PARKED VEHICLE',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF34D399),
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Stall ${vehicle.slotId} • ${vehicle.floorName}',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      'Stall ${vehicle.slotId} • ${vehicle.floorName}',
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF0F172A),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x5510B981),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'PARKED',
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF16A34A),
-                  borderRadius: BorderRadius.circular(10),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(LucideIcons.compass, size: 16, color: Colors.white),
+                        label: Text(
+                          'Find My Car (AR)',
+                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF10B981),
+                          elevation: 4,
+                          shadowColor: const Color(0x6610B981),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        onPressed: () {
+                          final int floorNum = vehicle.floorId.contains('B2') ? -2 : -1;
+                          final poi = DestinationPOI(
+                            id: vehicle.slotId,
+                            name: 'My Parked Car (${vehicle.slotId})',
+                            category: 'PARKING',
+                            floorNumber: floorNum,
+                            rating: 5.0,
+                            location: vehicle.location,
+                            description: 'Your saved vehicle location',
+                            openStatus: '24/7',
+                          );
+                          widget.onSelectDestination(poi);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton.icon(
+                      icon: const Icon(LucideIcons.layers, size: 16, color: Colors.white),
+                      label: Text(
+                        'Map',
+                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.12),
+                        side: const BorderSide(color: Colors.white38),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: widget.onOpenFloorMap,
+                    ),
+                  ],
                 ),
-                child: Text(
-                  'PARKED',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  icon: const Icon(LucideIcons.compass, size: 16, color: Colors.white),
-                  label: Text(
-                    'Find My Car (AR)',
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF16A34A),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    final int floorNum = vehicle.floorId.contains('B2') ? -2 : -1;
-                    final poi = DestinationPOI(
-                      id: vehicle.slotId,
-                      name: 'My Parked Car (${vehicle.slotId})',
-                      category: 'PARKING',
-                      floorNumber: floorNum,
-                      rating: 5.0,
-                      location: vehicle.location,
-                      description: 'Your saved vehicle location',
-                      openStatus: '24/7',
-                    );
-                    widget.onSelectDestination(poi);
-                  },
-                ),
-              ),
-              const SizedBox(width: 10),
-              OutlinedButton.icon(
-                icon: const Icon(LucideIcons.layers, size: 16, color: Color(0xFF16A34A)),
-                label: Text(
-                  'Map',
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF16A34A)),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF16A34A)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: widget.onOpenFloorMap,
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

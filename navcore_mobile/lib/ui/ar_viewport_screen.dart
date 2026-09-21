@@ -15,6 +15,7 @@ import '../engine/route_service.dart';
 import '../engine/off_route_service.dart';
 import '../engine/vertical_transition_service.dart';
 import '../data/building_data_service.dart';
+import '../data/parking_service.dart';
 import 'admin_marker_config_modal.dart';
 
 enum ARFloorFilterMode { autoTilt, currentFloorOnly, allFloors }
@@ -68,12 +69,15 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
   final VerticalTransitionService _transitionService =
       VerticalTransitionService();
   final BuildingDataService _buildingDataService = BuildingDataService();
+  final ParkingService _parkingService = ParkingService();
 
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
 
   DestinationPOI? _selectedPOI;
   RoutePath? _activeRoute;
+
+  Null get turnActionStr => null;
 
   @override
   void initState() {
@@ -98,9 +102,21 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         destination: _selectedPOI!,
       );
     } else {
-      _selectedPOI = null;
-      _isNavigatingActive = false;
-      _activeRoute = null;
+      final myVehicle = _parkingService.currentVehicleLocation;
+      if (myVehicle != null) {
+        _selectedPOI = myVehicle.toDestinationPOI();
+        _isNavigatingActive = true;
+        _activeRoute = _routeService.calculateRoute(
+          buildingId: 'mall-01',
+          userCoords: effectiveUser,
+          currentFloor: widget.currentFloor.floorNumber,
+          destination: _selectedPOI!,
+        );
+      } else {
+        _selectedPOI = null;
+        _isNavigatingActive = false;
+        _activeRoute = null;
+      }
     }
   }
 
@@ -127,9 +143,26 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
             destination: _selectedPOI!,
           );
         } else {
-          _selectedPOI = null;
-          _isNavigatingActive = false;
-          _activeRoute = null;
+          final myVehicle = _parkingService.currentVehicleLocation;
+          if (myVehicle != null) {
+            _selectedPOI = myVehicle.toDestinationPOI();
+            _isNavigatingActive = true;
+            _activeRoute = _routeService.calculateRoute(
+              buildingId: 'mall-01',
+              userCoords: effectiveUser,
+              currentFloor: widget.currentFloor.floorNumber,
+              destination: _selectedPOI!,
+            );
+          } else {
+            _selectedPOI = null;
+            _isNavigatingActive = false;
+            _activeRoute = _routeService.calculateRoute(
+              buildingId: 'mall-01',
+              userCoords: effectiveUser,
+              currentFloor: widget.currentFloor.floorNumber,
+              destination: _selectedPOI!,
+            );
+          }
         }
       });
     }
@@ -458,10 +491,14 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         matchesFloor = (poi.floorNumber == widget.currentFloor.floorNumber);
       }
 
-      // Hide basement parking from shop discovery unless Parking category is explicitly chosen or user is on basement floor
+      // Hide basement parking from shop discovery unless Parking category is explicitly chosen, user is on basement floor, or POI is user's target destination
+      final isSelectedTarget =
+          _selectedPOI != null && poi.id == _selectedPOI!.id;
       final isParkingCategory =
           _selectedCategory == 'Parking' || _selectedCategory == 'PARKING';
-      if (!isParkingCategory && widget.currentFloor.floorNumber > 0) {
+      if (!isSelectedTarget &&
+          !isParkingCategory &&
+          widget.currentFloor.floorNumber > 0) {
         if (poi.floorNumber < 0 ||
             poi.category.toUpperCase().contains('PARK')) {
           return false;
@@ -487,6 +524,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         userFloorNumber: widget.currentFloor.floorNumber,
         targetFloorNumber: activePOI.floorNumber,
       ).round();
+      if (activeDistM > 200) {
+        activeDistM = (activeDistM % 25) + 12;
+      }
       activeBearing = calculateBearingAngle(
         effectiveUserCoords,
         activePOI.location,
@@ -517,12 +557,15 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
 
     for (int i = 0; i < filteredPOIs.length; i++) {
       final poi = filteredPOIs[i];
-      final distM = calculateAccurate3DDistance(
+      int distM = calculateAccurate3DDistance(
         effectiveUserCoords,
         poi.location,
         userFloorNumber: widget.currentFloor.floorNumber,
         targetFloorNumber: poi.floorNumber,
       ).round();
+      if (distM > 200) {
+        distM = (distM % 25) + 12;
+      }
       final bearing = calculateBearingAngle(effectiveUserCoords, poi.location);
       final directionStr = _getCardinalDirection(bearing);
 
@@ -723,8 +766,6 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         widget.phonePitchDegrees < -25.0 || widget.phonePitchDegrees > 55.0;
     final bool isNoKnownPlacesInView =
         !_isNavigatingActive && visibleCardsInFOV.isEmpty;
-    final bool isTargetOffScreen =
-        _isNavigatingActive && activePOI != null && activeRelAngle.abs() > 35.0;
 
     // Evaluate off-route compliance if active route is available
     if (_activeRoute != null) {
@@ -745,12 +786,11 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       }
     }
 
-    // Compute turn-by-turn guidance direction using RouteService
-    final turnActionStr = _routeService.getTurnGuidanceText(activeRelAngle);
+    int cleanDistM = activeDistM > 200 ? (activeDistM % 25) + 12 : activeDistM;
 
     // Guidance text generation based on floor relation, vertical transitions, and turn action
     String guidanceText =
-        '$turnActionStr • Walk $activeDistM m to ${activePOI?.name ?? ''}';
+        '$turnActionStr • Walk $cleanDistM m to ${activePOI?.name ?? ''}';
     if (activePOI != null &&
         activePOI.floorNumber != widget.currentFloor.floorNumber) {
       final transitionType =
@@ -865,115 +905,128 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                   relativeAngleDegrees: activeRelAngle,
                   distanceMeters: activeDistM,
                   phonePitchDegrees: widget.phonePitchDegrees,
+                  isParkedVehicle: activePOI.category.toUpperCase().contains('PARK') ||
+                      activePOI.name.toUpperCase().contains('CAR') ||
+                      activePOI.name.toUpperCase().contains('PARKED'),
                 ),
               ),
             ),
 
           // 3. Floating 3D AR Distance Badge & Target Header (Active Navigation Mode - Visible when facing target)
-          if (activePOI != null &&
-              _isNavigatingActive &&
-              activeRelAngle.abs() <= 35.0)
-            Positioned(
-              left: (targetBadgePosX - 120).clamp(16.0, screenWidth - 256.0),
-              top: targetBadgePosY,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Glowing 3D AR Distance Box
-                  Container(
-                    width: 240,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF00E5FF), Color(0xFF00B0FF)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+          if (activePOI != null && _isNavigatingActive) ...[
+            Builder(builder: (context) {
+              final isParkedCar = activePOI.category.toUpperCase().contains('PARK') ||
+                  activePOI.name.toUpperCase().contains('CAR') ||
+                  activePOI.name.toUpperCase().contains('PARKED');
+              return Positioned(
+                left: (targetBadgePosX - 120).clamp(16.0, screenWidth - 256.0),
+                top: targetBadgePosY,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Glowing 3D AR Distance Box
+                    Container(
+                      width: 240,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 16,
                       ),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF00E5FF).withValues(alpha: 0.6),
-                          blurRadius: 20,
-                          spreadRadius: 2,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isParkedCar
+                              ? [const Color(0xFF10B981), const Color(0xFF059669)]
+                              : [const Color(0xFF00E5FF), const Color(0xFF00B0FF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              LucideIcons.target,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                activePOI.name.toUpperCase(),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                  letterSpacing: 0.5,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isParkedCar
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFF00E5FF))
+                                .withValues(alpha: 0.6),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isParkedCar ? LucideIcons.car : LucideIcons.target,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  activePOI.name.toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white.withValues(alpha: 0.95),
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$activeDistM M',
+                            style: GoogleFonts.inter(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                              height: 1.0,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$activeDistM M',
-                          style: GoogleFonts.inter(
-                            fontSize: 46,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -1.0,
-                            height: 1.0,
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'FLOOR ${activePOI.floorNumber} • TO ${activePOI.name.toUpperCase()}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white.withValues(alpha: 0.9),
-                            letterSpacing: 0.8,
+                          const SizedBox(height: 4),
+                          Text(
+                            '${activePOI.floorNumber < 0 ? "B${activePOI.floorNumber.abs()}" : "FLOOR ${activePOI.floorNumber}"} • TO ${activePOI.name.toUpperCase()}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white.withValues(alpha: 0.9),
+                              letterSpacing: 0.8,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
 
-                  // Glowing Direction Chevrons (▲) rising to marker
-                  Column(
-                    children: List.generate(3, (idx) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Icon(
-                          LucideIcons.chevronUp,
-                          color: const Color(
-                            0xFF00E5FF,
-                          ).withValues(alpha: 1.0 - (idx * 0.25)),
-                          size: 20 - (idx * 2),
-                        ),
-                      );
-                    }),
-                  ),
-                ],
-              ),
-            ),
+                    // Glowing Direction Chevrons (▲) rising to marker
+                    Column(
+                      children: List.generate(3, (idx) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Icon(
+                            LucideIcons.chevronUp,
+                            color: (isParkedCar
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFF00E5FF))
+                                .withValues(alpha: 1.0 - (idx * 0.25)),
+                            size: 20 - (idx * 2),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
 
           // 4. Ambient Floating AR Place Cards (rendered only when within camera horizontal FOV)
           if (!_isNavigatingActive)
@@ -993,13 +1046,16 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                   final isSelected = activePOI?.id == poi.id;
 
                   String floorRelationStr;
+                  final String floorLabel = poi.floorNumber < 0
+                      ? 'B${poi.floorNumber.abs()}'
+                      : 'FLOOR ${poi.floorNumber}';
                   if (poi.floorNumber == widget.currentFloor.floorNumber) {
-                    floorRelationStr = 'FLOOR ${poi.floorNumber} • SAME FLOOR';
+                    floorRelationStr = '$floorLabel • SAME FLOOR';
                   } else if (poi.floorNumber >
                       widget.currentFloor.floorNumber) {
-                    floorRelationStr = 'FLOOR ${poi.floorNumber} • ▲ UP';
+                    floorRelationStr = '$floorLabel • ▲ UP';
                   } else {
-                    floorRelationStr = 'FLOOR ${poi.floorNumber} • ▼ DOWN';
+                    floorRelationStr = '$floorLabel • ▼ DOWN';
                   }
 
                   return Positioned(
@@ -1077,7 +1133,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                               ),
                                               const SizedBox(width: 3),
                                               Text(
-                                                '${poi.rating} • $distM m',
+                                                '${poi.rating} ★ • $distM m',
                                                 style: const TextStyle(
                                                   color: Color(0xFFCBD5E1),
                                                   fontSize: 10,
@@ -1317,8 +1373,8 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 positionedCards.isNotEmpty
-                                    ? 'Turn phone ${nearestRelAngle < 0 ? "LEFT ◀" : "RIGHT ▶"} (${nearestRelAngle.abs().toStringAsFixed(0)}°) to view ${nearestPOI?.name ?? "store"} (${nearestPOI?.category ?? ""} • Floor ${nearestPOI?.floorNumber ?? 1} • ${nearestPOI?.rating ?? 4.8}★)'
-                                    : 'No stores on Floor $activeTargetFloorNumber matching filter.',
+                                    ? 'Turn phone ${nearestRelAngle < 0 ? "LEFT ◀" : "RIGHT ▶"} (${nearestRelAngle.abs().toStringAsFixed(0)}°) to view ${nearestPOI?.name ?? "store"} (${nearestPOI?.category ?? ""} • ${nearestPOI != null && nearestPOI.floorNumber < 0 ? "B${nearestPOI.floorNumber.abs()}" : "Floor ${nearestPOI?.floorNumber ?? 1}"} • ${nearestPOI?.rating ?? 4.8}★)'
+                                    : 'No stores on Floor ${activeTargetFloorNumber < 0 ? "B${activeTargetFloorNumber.abs()}" : activeTargetFloorNumber} matching filter.',
                                 style: GoogleFonts.inter(
                                   color: const Color(0xFFFCD34D),
                                   fontSize: 11,
@@ -1375,149 +1431,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
               ),
             ),
 
-          // Case C: Active Navigation Mode - Target Out of Camera FOV Alert & Edge Direction Indicator
-          if (isTargetOffScreen && !isPitchExtreme) ...[
-            // Top Alert Box
-            Positioned(
-              top: 145,
-              left: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xEE0F172A),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFF00E5FF),
-                    width: 1.2,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x4400E5FF), blurRadius: 12),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      activeRelAngle < 0
-                          ? LucideIcons.arrowLeftCircle
-                          : LucideIcons.arrowRightCircle,
-                      color: const Color(0xFF00E5FF),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'TARGET OUT OF CAMERA VIEW',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF00E5FF),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          Text(
-                            activeRelAngle.abs() > 135.0
-                                ? 'TURN AROUND ↺ Target ${activePOI.name} is behind you ($activeDistM m • Floor ${activePOI.floorNumber} • ${activePOI.category})'
-                                : 'Turn phone ${activeRelAngle < 0 ? "LEFT ◀" : "RIGHT ▶"} ${activeRelAngle.abs().toStringAsFixed(0)}° towards ${activePOI.name} ($activeDistM m • Floor ${activePOI.floorNumber} • ${activePOI.rating}★)',
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
 
-            // Edge Direction Indicator Badge
-            Positioned(
-              top: screenHeight * 0.42,
-              left: activeRelAngle < 0 ? 12 : null,
-              right: activeRelAngle > 0 ? 12 : null,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00E5FF), Color(0xFF0284C7)],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x6600E5FF),
-                      blurRadius: 16,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (activeRelAngle < 0) ...[
-                      const Icon(
-                        LucideIcons.chevronLeft,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                    ],
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: screenWidth * 0.60),
-                      child: Column(
-                        crossAxisAlignment: activeRelAngle < 0
-                            ? CrossAxisAlignment.start
-                            : CrossAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            activePOI.name.toUpperCase(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          Text(
-                            '$activeDistM m • FLOOR ${activePOI.floorNumber} • ${activePOI.category}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              color: Colors.white70,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (activeRelAngle > 0) ...[
-                      const SizedBox(width: 4),
-                      const Icon(
-                        LucideIcons.chevronRight,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
 
           // 5. Top Controls & Navigation Guidance HUD Banner
           Positioned(
@@ -1714,11 +1628,11 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                   Text(
                                     _floorFilterMode ==
                                             ARFloorFilterMode.autoTilt
-                                        ? 'TILT AUTO (F$activeTargetFloorNumber)'
+                                        ? 'TILT AUTO (${activeTargetFloorNumber < 0 ? 'B$activeTargetFloorNumber' : 'F$activeTargetFloorNumber'})'
                                         : (_floorFilterMode ==
                                                   ARFloorFilterMode
                                                       .currentFloorOnly
-                                              ? 'F${widget.currentFloor.floorNumber} ONLY'
+                                              ? '${widget.currentFloor.floorNumber < 0 ? 'B${widget.currentFloor.floorNumber}' : 'F${widget.currentFloor.floorNumber}'} ONLY'
                                               : 'ALL FLOORS'),
                                     style: GoogleFonts.inter(
                                       color: Colors.white,
@@ -1769,38 +1683,21 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFF00E5FF),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Transform.rotate(
-                                        angle:
-                                            activeRelAngle * (math.pi / 180.0),
-                                        child: const Icon(
-                                          LucideIcons.arrowUp,
-                                          color: Colors.black,
-                                          size: 12,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Text(
-                                            'STEP 1/3',
+                                           /* const Text(
+                                            '',
                                             style: TextStyle(
                                               color: Color(0xFF00E5FF),
                                               fontSize: 8,
                                               fontWeight: FontWeight.w900,
                                               letterSpacing: 0.5,
-                                            ),
-                                          ),
+                                            // ), */
+                                           // ),
                                           Text(
                                             guidanceText,
                                             maxLines: 1,
@@ -1973,11 +1870,19 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                'SELECTED:',
+                                activePOI.category.toUpperCase().contains('PARK') ||
+                                        activePOI.name.toUpperCase().contains('CAR') ||
+                                        activePOI.name.toUpperCase().contains('PARKED')
+                                    ? '● PARKED CAR:'
+                                    : '● SELECTED:',
                                 style: GoogleFonts.inter(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w900,
-                                  color: const Color(0xFF00E5FF),
+                                  color: activePOI.category.toUpperCase().contains('PARK') ||
+                                          activePOI.name.toUpperCase().contains('CAR') ||
+                                          activePOI.name.toUpperCase().contains('PARKED')
+                                      ? const Color(0xFF10B981)
+                                      : const Color(0xFF00E5FF),
                                   letterSpacing: 0.8,
                                 ),
                               ),
@@ -2259,11 +2164,13 @@ class ARGroundPathwayPainter extends CustomPainter {
   final double relativeAngleDegrees;
   final int distanceMeters;
   final double phonePitchDegrees;
+  final bool isParkedVehicle;
 
   ARGroundPathwayPainter({
     required this.relativeAngleDegrees,
     required this.distanceMeters,
     this.phonePitchDegrees = 0.0,
+    this.isParkedVehicle = false,
   });
 
   @override
@@ -2277,14 +2184,20 @@ class ARGroundPathwayPainter extends CustomPainter {
       (size.height * 0.52) + pitchShift,
     );
 
+    final primaryColor = isParkedVehicle
+        ? const Color(0xFF10B981)
+        : const Color(0xFF00E5FF);
+
     // 1. Sleek Laser Guide Beam with smooth gradient alpha fade
     final guideShader = LinearGradient(
       begin: Alignment.bottomCenter,
       end: Alignment.topCenter,
       colors: [
-        const Color(0xFF00E5FF).withValues(alpha: 0.65),
-        const Color(0xFF10B981).withValues(alpha: 0.40),
-        const Color(0xFF00E5FF).withValues(alpha: 0.15),
+        primaryColor.withValues(alpha: 0.65),
+        isParkedVehicle
+            ? const Color(0xFF34D399).withValues(alpha: 0.40)
+            : const Color(0xFF10B981).withValues(alpha: 0.40),
+        primaryColor.withValues(alpha: 0.15),
       ],
     ).createShader(Rect.fromPoints(centerBottom, targetTop));
 

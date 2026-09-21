@@ -40,6 +40,20 @@ class ParkingSlot {
     required this.sensorId,
   });
 
+  DestinationPOI toDestinationPOI() {
+    final int floorNum = floorId == 'B2' ? -2 : (floorId == 'B1' ? -1 : 1);
+    return DestinationPOI(
+      id: id,
+      name: 'Parking Stall $id',
+      category: 'PARKING',
+      floorNumber: floorNum,
+      rating: 4.8,
+      location: location,
+      description: '${isEVCharging ? 'EV Charger ⚡ • ' : ''}${isHandicapAccessible ? 'Handicap Accessible ♿ • ' : ''}Basement Parking Slot $id',
+      openStatus: '24/7',
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'floorId': floorId,
@@ -103,6 +117,20 @@ class MyVehicleLocation {
     this.notes,
   });
 
+  DestinationPOI toDestinationPOI() {
+    final int floorNum = floorId.contains('B2') ? -2 : -1;
+    return DestinationPOI(
+      id: slotId,
+      name: 'My Parked Car ($slotId)',
+      category: 'PARKING',
+      floorNumber: floorNum,
+      rating: 5.0,
+      location: location,
+      description: 'Your saved vehicle location at $floorName ($slotId)',
+      openStatus: '24/7',
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'userId': userId,
         'vehicleId': vehicleId,
@@ -139,6 +167,10 @@ class MyVehicleLocation {
 class ParkingService extends ChangeNotifier {
   static const String _vehicleStorageKeyPrefix = 'navcore_my_vehicle_location_';
 
+  static final ParkingService _instance = ParkingService._internal();
+  factory ParkingService() => _instance;
+  static ParkingService get instance => _instance;
+
   final Map<String, List<ParkingSlot>> _floorSlots = {};
 
   // Auth state tracking
@@ -154,7 +186,7 @@ class ParkingService extends ChangeNotifier {
 
   bool _isLiveStreamActive = true;
 
-  ParkingService() {
+  ParkingService._internal() {
     _initializeMockParkingLayouts();
     _loadVehicleFromStorage();
     _startLiveIoTSensorStream();
@@ -216,8 +248,8 @@ class ParkingService extends ChangeNotifier {
     _floorSlots['B2'] = _generateGridSlots(
       floorId: 'B2',
       baseHeight: 35.0,
-      rows: 4,
-      cols: 6,
+      rows: 6,
+      cols: 4,
       sections: ['A', 'B'],
       baseLat: baseLat - 0.0003,
       baseLon: baseLon - 0.0003,
@@ -227,8 +259,8 @@ class ParkingService extends ChangeNotifier {
     _floorSlots['B1'] = _generateGridSlots(
       floorId: 'B1',
       baseHeight: 40.0,
-      rows: 4,
-      cols: 6,
+      rows: 6,
+      cols: 4,
       sections: ['A', 'B'],
       baseLat: baseLat - 0.0001,
       baseLon: baseLon - 0.0001,
@@ -257,14 +289,55 @@ class ParkingService extends ChangeNotifier {
   }) {
     final List<ParkingSlot> slots = [];
     final random = Random(floorId.hashCode);
-    int counter = 1;
 
+    if (floorId == 'B1' || floorId == 'B2') {
+      for (final sec in ['A', 'B']) {
+        for (int i = 1; i <= 12; i++) {
+          final numStr = i < 10 ? '0$i' : '$i';
+          final slotId = '$floorId-$sec-$numStr';
+          final isEV = (sec == 'A' && (i == 1 || i == 2));
+          final isHandicap = (sec == 'A' && (i == 3 || i == 4));
+
+          ParkingSlotStatus initialStatus = ParkingSlotStatus.free;
+          final randVal = random.nextDouble();
+          if (randVal < 0.35) {
+            initialStatus = ParkingSlotStatus.occupied;
+          } else if (randVal < 0.45) {
+            initialStatus = ParkingSlotStatus.reserved;
+          }
+
+          final r = (i - 1) ~/ 2;
+          final c = (i - 1) % 2;
+
+          slots.add(ParkingSlot(
+            id: slotId,
+            floorId: floorId,
+            section: sec,
+            slotNumber: i,
+            status: initialStatus,
+            location: GeodeticCoords(
+              latitude: baseLat + (r * 0.00004),
+              longitude: baseLon + (c * 0.00004),
+              height: baseHeight,
+            ),
+            gridRow: r,
+            gridCol: c,
+            isEVCharging: isEV,
+            isHandicapAccessible: isHandicap,
+            sensorId: 'IOT-SNS-$floorId-$sec$numStr',
+          ));
+        }
+      }
+      return slots;
+    }
+
+    int counter = 1;
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < cols; c++) {
         final sec = sections[(r + c) % sections.length];
-        final slotId = '$floorId-$sec${counter.toString().padLeft(2, '0')}';
+        final numStr = counter < 10 ? '0$counter' : '$counter';
+        final slotId = '$floorId-$sec-$numStr';
         
-        // Random occupancy initial state
         ParkingSlotStatus initialStatus = ParkingSlotStatus.free;
         final randVal = random.nextDouble();
         if (randVal < 0.55) {
@@ -273,7 +346,6 @@ class ParkingService extends ChangeNotifier {
           initialStatus = ParkingSlotStatus.reserved;
         }
 
-        // Dedicated EV / Handicap flags
         final isEV = (r == 0 && c < 2);
         final isHandicap = (r == 0 && c >= 2 && c < 4);
 
@@ -370,6 +442,20 @@ class ParkingService extends ChangeNotifier {
   Future<void> saveVehicleLocation(MyVehicleLocation vehicleRecord) async {
     if (!_isAuthenticated || vehicleRecord.userId != _currentUserId) {
       throw Exception('Unauthorized: Cannot save vehicle location for another user');
+    }
+
+    // Restriction: Prevent parking in a slot occupied or reserved by another vehicle
+    for (final floor in _floorSlots.values) {
+      for (final slot in floor) {
+        if (slot.id == vehicleRecord.slotId) {
+          final isParkedByOther = _userVehicleRecords.entries.any(
+            (e) => e.key != vehicleRecord.userId && e.value.status == 'parked' && e.value.slotId == slot.id,
+          );
+          if (isParkedByOther || (slot.status != ParkingSlotStatus.free && slot.id != _userVehicleRecords[_currentUserId]?.slotId)) {
+            throw Exception('Parking Restricted: Stall ${slot.id} is occupied by another vehicle.');
+          }
+        }
+      }
     }
 
     final updatedRecord = MyVehicleLocation(

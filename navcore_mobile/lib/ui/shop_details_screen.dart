@@ -97,7 +97,9 @@ class ShopDetailsScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'FLOOR ${destination.floorNumber}',
+                            destination.floorNumber < 0
+                                ? 'B${destination.floorNumber}'
+                                : 'FLOOR ${destination.floorNumber}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
@@ -152,7 +154,9 @@ class ShopDetailsScreen extends StatelessWidget {
                     child: _buildSpecTile(
                       LucideIcons.layers,
                       'Mall Floor',
-                      'Floor ${destination.floorNumber} (${destination.location.height.toStringAsFixed(0)}m)',
+                      destination.floorNumber < 0
+                          ? 'Basement ${destination.floorNumber} (${destination.location.height.toStringAsFixed(0)}m)'
+                          : 'Floor ${destination.floorNumber} (${destination.location.height.toStringAsFixed(0)}m)',
                     ),
                   ),
                 ],
@@ -172,7 +176,7 @@ class ShopDetailsScreen extends StatelessWidget {
                     child: _buildSpecTile(
                       LucideIcons.star,
                       'Rating',
-                      '${destination.rating} ★★★★★',
+                      '${destination.rating} ★',
                     ),
                   ),
                 ],

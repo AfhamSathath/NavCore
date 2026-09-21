@@ -11,13 +11,12 @@ import 'engine/real_sensor_service.dart';
 import 'engine/ar_sensor_engine.dart';
 import 'data/destinations.dart';
 import 'data/mall_database_service.dart';
-import 'data/parking_service.dart';
 
 import 'ui/location_lock_screen.dart';
+
 import 'ui/home_screen.dart';
 import 'ui/ar_viewport_screen.dart';
 import 'ui/floor_plan_screen.dart';
-import 'ui/parking_screen.dart';
 import 'ui/mall_explorer_screen.dart';
 
 void main() {
@@ -61,8 +60,8 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
 
   final RealSensorService _sensorService = RealSensorService();
   final MallDatabaseService _mallDatabaseService = MallDatabaseService();
-  final ParkingService _parkingService = ParkingService();
 
+  double? _userSelectedFloorHeight;
   GeodeticCoords _userCoords = entranceAnchor;
   double _compassHeading = 0.0;
   double _phonePitchDegrees = 0.0;
@@ -101,28 +100,7 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
     _initializeRealHardware();
   }
 
-  void _handleStartFindMyCarAR() {
-    final vehicle = _parkingService.findMyCar(_parkingService.currentUserId);
-    if (vehicle != null) {
-      final int floorNum = vehicle.floorId == 'B2'
-          ? -2
-          : (vehicle.floorId == 'B1' ? -1 : 1);
 
-      setState(() {
-        _arTargetDestination = DestinationPOI(
-          id: 'vehicle-${vehicle.slotId}',
-          name: 'My Parked Car (${vehicle.slotId})',
-          category: 'PARKING',
-          floorNumber: floorNum,
-          rating: 5.0,
-          location: vehicle.location,
-          description: 'Your parked vehicle at slot ${vehicle.slotId}.',
-          openStatus: 'PARKED',
-        );
-        _currentIndex = 1; // Switch to AR View
-      });
-    }
-  }
 
   Future<void> _initializeRealHardware() async {
     // 1. Request OS Permissions for Location & Camera
@@ -141,8 +119,12 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
     _sensorService.startHardwareStreams(
       onLocationUpdated: (coords, accuracy) {
         setState(() {
-          _userCoords = coords;
-          _kalmanFilter.setPosition(coords);
+          _userCoords = GeodeticCoords(
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            height: _userSelectedFloorHeight ?? coords.height,
+          );
+          _kalmanFilter.setPosition(_userCoords);
         });
       },
       onHeadingUpdated: (heading) {
@@ -178,7 +160,9 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
   }
 
   Future<void> _autoLoadNearestMallMap() async {
-    final pkg = await _mallDatabaseService.autoDownloadAndActivateNearestMall(_userCoords);
+    final pkg = await _mallDatabaseService.autoDownloadAndActivateNearestMall(
+      _userCoords,
+    );
     if (mounted) {
       setState(() {
         _buildingProfile = pkg.profile;
@@ -197,7 +181,10 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
           children: [
             Icon(LucideIcons.shieldAlert, color: Color(0xFF2563EB)),
             SizedBox(width: 8),
-            Text('Location & AR Access', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              'Location & AR Access',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         content: const Text(
@@ -205,7 +192,9 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
         ),
         actions: [
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+            ),
             onPressed: () async {
               Navigator.pop(context);
               await _sensorService.requestAllPermissions();
@@ -215,7 +204,10 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
                 await _autoLoadNearestMallMap();
               }
             },
-            child: const Text('Allow Real Location', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Allow Real Location',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -225,7 +217,6 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
   @override
   void dispose() {
     _sensorService.stopHardwareStreams();
-    _parkingService.dispose();
     _imuTimer?.cancel();
     super.dispose();
   }
@@ -242,6 +233,7 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
   }
 
   void _handleSelectFloor(FloorLevelConfig floor) {
+    _userSelectedFloorHeight = floor.absoluteHeightMeters;
     setState(() {
       _userCoords = GeodeticCoords(
         latitude: _userCoords.latitude,
@@ -253,6 +245,7 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
   }
 
   void _triggerPnPScan() {
+    _userSelectedFloorHeight = null;
     final marker = _entranceMarkers.isNotEmpty
         ? _entranceMarkers.first
         : const EntranceMarkerNode(
@@ -298,22 +291,22 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
       );
     }
 
-    final currentFloor = resolveFloorByHeight(_userCoords.height, _buildingProfile);
+    final currentFloor = resolveFloorByHeight(
+      _userCoords.height,
+      _buildingProfile,
+    );
 
     final screens = [
       HomeScreen(
         userCoords: _userCoords,
         buildingProfile: _buildingProfile,
         destinations: _destinations,
-        parkingService: _parkingService,
         onOpenARView: () => setState(() {
           _arTargetDestination = null;
           _currentIndex = 1;
         }),
         onOpenFloorMap: () => setState(() => _currentIndex = 2),
-        onOpenParking: () => setState(() => _currentIndex = 3),
-        onOpenMallExplorer: () => setState(() => _currentIndex = 4),
-        onFindMyCarAR: _handleStartFindMyCarAR,
+        onOpenMallExplorer: () => setState(() => _currentIndex = 3),
         onSelectDestination: (poi) {
           setState(() {
             _arTargetDestination = poi;
@@ -348,16 +341,10 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
         userCoords: _userCoords,
         destinations: _destinations,
         onSimulateMove: _handleSimulateMove,
-        parkingService: _parkingService,
         onSelectDestination: (poi) => setState(() {
           _arTargetDestination = poi;
           _currentIndex = 1;
         }),
-      ),
-      ParkingScreen(
-        parkingService: _parkingService,
-        userCoords: _userCoords,
-        onFindMyCarAR: _handleStartFindMyCarAR,
       ),
       MallExplorerScreen(
         mallService: _mallDatabaseService,
@@ -370,10 +357,7 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() {
@@ -398,11 +382,6 @@ class _NavCoreMainNavigationState extends State<NavCoreMainNavigation> {
             icon: Icon(LucideIcons.layers),
             selectedIcon: Icon(LucideIcons.layers, color: Color(0xFF2563EB)),
             label: 'Floor Map',
-          ),
-          NavigationDestination(
-            icon: Icon(LucideIcons.parkingCircle),
-            selectedIcon: Icon(LucideIcons.parkingCircle, color: Color(0xFF2563EB)),
-            label: 'Parking',
           ),
           NavigationDestination(
             icon: Icon(LucideIcons.store),

@@ -71,7 +71,9 @@ class BuildingConfigScreen extends StatelessWidget {
                   leading: CircleAvatar(
                     backgroundColor: const Color(0xFFEFF6FF),
                     child: Text(
-                      'F${floor.floorNumber}',
+                      floor.floorNumber < 0
+                          ? 'B${floor.floorNumber}'
+                          : 'F${floor.floorNumber}',
                       style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
                     ),
                   ),

@@ -66,6 +66,283 @@ class _HomeScreenState extends State<HomeScreen> {
     {'label': 'SERVICES', 'icon': LucideIcons.shieldCheck},
   ];
 
+  Widget _buildFloorDropdown(BuildingFloor currentFloor) {
+    final isMyFloorSelected = _selectedFloorNumber == currentFloor.floorNumber;
+    final isAllFloorsSelected = _selectedFloorNumber == null;
+
+    String floorLabelText = 'All Floors';
+    if (isMyFloorSelected) {
+      floorLabelText = currentFloor.floorNumber < 0
+          ? 'My Floor (B${currentFloor.floorNumber.abs()})'
+          : 'My Floor (F${currentFloor.floorNumber})';
+    } else if (_selectedFloorNumber != null) {
+      floorLabelText = _selectedFloorNumber! < 0
+          ? 'Floor B${_selectedFloorNumber!.abs()}'
+          : 'Floor F$_selectedFloorNumber';
+    }
+
+    return PopupMenuButton<int?>(
+      initialValue: _selectedFloorNumber,
+      onSelected: (int? value) {
+        setState(() {
+          _selectedFloorNumber = value;
+        });
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
+      color: Colors.white,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isMyFloorSelected
+              ? const Color(0xFFECFDF5)
+              : isAllFloorsSelected
+              ? Colors.white
+              : const Color(0xFFEFF6FF),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isMyFloorSelected
+                ? const Color(0xFFA7F3D0)
+                : isAllFloorsSelected
+                ? const Color(0xFFE2E8F0)
+                : const Color(0xFFBFDBFE),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(
+                    isMyFloorSelected
+                        ? LucideIcons.mapPin
+                        : isAllFloorsSelected
+                        ? LucideIcons.layers
+                        : LucideIcons.building,
+                    size: 15,
+                    color: isMyFloorSelected
+                        ? const Color(0xFF059669)
+                        : isAllFloorsSelected
+                        ? const Color(0xFF64748B)
+                        : const Color(0xFF2563EB),
+                  ),
+                  const SizedBox(width: 7),
+                  Flexible(
+                    child: Text(
+                      floorLabelText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: isMyFloorSelected
+                            ? const Color(0xFF065F46)
+                            : const Color(0xFF1E293B),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              LucideIcons.chevronDown,
+              size: 15,
+              color: Color(0xFF94A3B8),
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<int?>>[
+        PopupMenuItem<int?>(
+          value: null,
+          child: Row(
+            children: [
+              Icon(
+                LucideIcons.layers,
+                size: 16,
+                color: _selectedFloorNumber == null
+                    ? const Color(0xFF2563EB)
+                    : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'All Floors',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+              if (_selectedFloorNumber == null) ...[
+                const Spacer(),
+                const Icon(LucideIcons.check, size: 16, color: Color(0xFF2563EB)),
+              ],
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<int?>(
+          value: currentFloor.floorNumber,
+          child: Row(
+            children: [
+              const Icon(LucideIcons.mapPin, size: 16, color: Color(0xFF10B981)),
+              const SizedBox(width: 10),
+              Text(
+                currentFloor.floorNumber < 0
+                    ? 'My Floor (B${currentFloor.floorNumber.abs()})'
+                    : 'My Floor (F${currentFloor.floorNumber})',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF065F46),
+                ),
+              ),
+              if (_selectedFloorNumber == currentFloor.floorNumber) ...[
+                const Spacer(),
+                const Icon(LucideIcons.check, size: 16, color: Color(0xFF10B981)),
+              ],
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        ...widget.buildingProfile.floors.map((floor) {
+          final String floorLabel = floor.floorNumber < 0
+              ? 'Floor B${floor.floorNumber.abs()}'
+              : 'Floor F${floor.floorNumber}';
+          final isSelected = _selectedFloorNumber == floor.floorNumber;
+          return PopupMenuItem<int?>(
+            value: floor.floorNumber,
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.building,
+                  size: 16,
+                  color: isSelected
+                      ? const Color(0xFF2563EB)
+                      : const Color(0xFF64748B),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '$floorLabel (${floor.storesCount} stores)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+                if (isSelected) ...[
+                  const Spacer(),
+                  const Icon(LucideIcons.check, size: 16, color: Color(0xFF2563EB)),
+                ],
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    final currentCategoryItem = _categories.firstWhere(
+      (cat) => cat['label'] == _selectedCategory,
+      orElse: () => _categories.first,
+    );
+
+    return PopupMenuButton<String>(
+      initialValue: _selectedCategory,
+      onSelected: (String value) {
+        setState(() {
+          _selectedCategory = value;
+        });
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
+      color: Colors.white,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: _selectedCategory != 'ALL'
+              ? const Color(0xFFEFF6FF)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: _selectedCategory != 'ALL'
+                ? const Color(0xFFBFDBFE)
+                : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(
+                    currentCategoryItem['icon'] as IconData,
+                    size: 15,
+                    color: _selectedCategory != 'ALL'
+                        ? const Color(0xFF2563EB)
+                        : const Color(0xFF64748B),
+                  ),
+                  const SizedBox(width: 7),
+                  Flexible(
+                    child: Text(
+                      _selectedCategory == 'ALL'
+                          ? 'All Categories'
+                          : _selectedCategory,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: _selectedCategory != 'ALL'
+                            ? const Color(0xFF1E40AF)
+                            : const Color(0xFF1E293B),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              LucideIcons.chevronDown,
+              size: 15,
+              color: Color(0xFF94A3B8),
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (BuildContext context) => _categories.map((cat) {
+        final isSelected = _selectedCategory == cat['label'];
+        final String labelText = cat['label'] == 'ALL'
+            ? 'All Categories'
+            : cat['label'];
+        return PopupMenuItem<String>(
+          value: cat['label'],
+          child: Row(
+            children: [
+              Icon(
+                cat['icon'] as IconData,
+                size: 16,
+                color: isSelected
+                    ? const Color(0xFF2563EB)
+                    : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                labelText,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              if (isSelected) ...[
+                const Spacer(),
+                const Icon(LucideIcons.check, size: 16, color: Color(0xFF2563EB)),
+              ],
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   void _showShopDetails(DestinationPOI shop) {
     showModalBottomSheet(
       context: context,
@@ -491,255 +768,53 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Floor & Category Filter Chip Bars (Clean & Decluttered Layout)
-            SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 1. Floor Level Chips
-                  SizedBox(
-                    height: 36,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      children: [
-                        // All Floors Chip
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            selected: _selectedFloorNumber == null,
-                            showCheckmark: false,
-                            avatar: Icon(
-                              LucideIcons.layers,
-                              size: 13,
-                              color: _selectedFloorNumber == null
-                                  ? Colors.white
-                                  : const Color(0xFF64748B),
-                            ),
-                            label: const Text('All Floors'),
-                            labelStyle: TextStyle(
-                              fontSize: 12,
-                              fontWeight: _selectedFloorNumber == null
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                              color: _selectedFloorNumber == null
-                                  ? Colors.white
-                                  : const Color(0xFF475569),
-                            ),
-                            selectedColor: const Color(0xFF0F172A),
-                            backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: _selectedFloorNumber == null
-                                    ? const Color(0xFF0F172A)
-                                    : const Color(0xFFE2E8F0),
-                              ),
-                            ),
-                            onSelected: (_) =>
-                                setState(() => _selectedFloorNumber = null),
-                          ),
-                        ),
-
-                        // My Floor Chip
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            selected:
-                                _selectedFloorNumber ==
-                                currentFloor.floorNumber,
-                            showCheckmark: false,
-                            avatar: Icon(
-                              LucideIcons.mapPin,
-                              size: 13,
-                              color:
-                                  _selectedFloorNumber ==
-                                      currentFloor.floorNumber
-                                  ? Colors.white
-                                  : const Color(0xFF10B981),
-                            ),
-                            label: Text(
-                              currentFloor.floorNumber < 0
-                                  ? 'My Floor (B${currentFloor.floorNumber.abs()})'
-                                  : 'My Floor (F${currentFloor.floorNumber})',
-                            ),
-                            labelStyle: TextStyle(
-                              fontSize: 12,
-                              fontWeight:
-                                  _selectedFloorNumber ==
-                                      currentFloor.floorNumber
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                              color:
-                                  _selectedFloorNumber ==
-                                      currentFloor.floorNumber
-                                  ? Colors.white
-                                  : const Color(0xFF065F46),
-                            ),
-                            selectedColor: const Color(0xFF10B981),
-                            backgroundColor: const Color(0xFFECFDF5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color:
-                                    _selectedFloorNumber ==
-                                        currentFloor.floorNumber
-                                    ? const Color(0xFF10B981)
-                                    : const Color(0xFFA7F3D0),
-                              ),
-                            ),
-                            onSelected: (_) => setState(
-                              () => _selectedFloorNumber =
-                                  currentFloor.floorNumber,
-                            ),
-                          ),
-                        ),
-
-                        // Building Floors Chips
-                        ...widget.buildingProfile.floors.map((floor) {
-                          final isSelected =
-                              _selectedFloorNumber == floor.floorNumber;
-                          final String floorLabel = floor.floorNumber < 0
-                              ? 'B${floor.floorNumber.abs()}'
-                              : 'F${floor.floorNumber}';
-
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              selected: isSelected,
-                              showCheckmark: false,
-                              label: Text('$floorLabel (${floor.storesCount})'),
-                              labelStyle: TextStyle(
-                                fontSize: 12,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w500,
-                                color: isSelected
-                                    ? Colors.white
-                                    : const Color(0xFF475569),
-                              ),
-                              selectedColor: const Color(0xFF2563EB),
-                              backgroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(
-                                  color: isSelected
-                                      ? const Color(0xFF2563EB)
-                                      : const Color(0xFFE2E8F0),
-                                ),
-                              ),
-                              onSelected: (_) => setState(
-                                () => _selectedFloorNumber = floor.floorNumber,
-                              ),
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // 2. Category Filter Row
-                  SizedBox(
-                    height: 36,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: _categories.length,
-                      itemBuilder: (context, index) {
-                        final cat = _categories[index];
-                        final isSelected = _selectedCategory == cat['label'];
-
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            selected: isSelected,
-                            showCheckmark: false,
-                            label: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  cat['icon'],
-                                  size: 13,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : const Color(0xFF64748B),
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  cat['label'],
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w600
-                                        : FontWeight.w500,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : const Color(0xFF475569),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            backgroundColor: Colors.white,
-                            selectedColor: const Color(0xFF2563EB),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? const Color(0xFF2563EB)
-                                    : const Color(0xFFE2E8F0),
-                              ),
-                            ),
-                            onSelected: (_) => setState(
-                              () => _selectedCategory = cat['label'],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 18)),
-
-            // Section Header
+            // Destinations & Stores Section Header with Selection Dropdowns
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Destinations & Stores',
-                      style: GoogleFonts.inter(
-                        fontSize: 16.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0F172A),
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _selectedFloorNumber == null
-                            ? '${filteredPOIs.length} Stores'
-                            : _selectedFloorNumber == currentFloor.floorNumber
-                            ? 'My Floor (${filteredPOIs.length})'
-                            : 'F$_selectedFloorNumber (${filteredPOIs.length})',
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: Color(0xFF475569),
-                          fontWeight: FontWeight.w600,
+                    Row(
+                      children: [
+                        Text(
+                          'Destinations & Stores',
+                          style: GoogleFonts.inter(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF0F172A),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFBFDBFE)),
+                          ),
+                          child: Text(
+                            '${filteredPOIs.length}',
+                            style: GoogleFonts.inter(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF2563EB),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Modern Selection Dropdowns Bar (Floor & Category)
+                    Row(
+                      children: [
+                        Expanded(child: _buildFloorDropdown(currentFloor)),
+                        const SizedBox(width: 10),
+                        Expanded(child: _buildCategoryDropdown()),
+                      ],
                     ),
                   ],
                 ),

@@ -39,7 +39,7 @@ class NexNavApp extends StatelessWidget {
           primary: const Color(0xFF2D6CDF),
           surface: Colors.white,
         ),
-        textTheme: GoogleFonts.interTextTheme(),
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(),
         useMaterial3: true,
       ),
       home: const NexNavMainNavigation(),
@@ -91,12 +91,6 @@ class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
   void initState() {
     super.initState();
     _kalmanFilter = KalmanPositionFilter(entranceAnchor);
-
-    // 60Hz Telemetry filter loop
-    _imuTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-      _kalmanFilter.predict(1 / 60, dx: 0.0001, dy: 0.0001, dz: 0);
-    });
-
     _initializeRealHardware();
   }
 

@@ -72,7 +72,16 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
   DestinationPOI? _selectedPOI;
   RoutePath? _activeRoute;
 
-  Null get turnActionStr => null;
+  String get turnActionStr {
+    if (_activeRoute == null || _activeRoute!.waypoints.isEmpty) {
+      return 'Head straight';
+    }
+    final nextWp = _activeRoute!.waypoints.first;
+    if (nextWp.instruction.isNotEmpty) {
+      return nextWp.instruction;
+    }
+    return 'Follow AR path';
+  }
 
   @override
   void initState() {
@@ -302,9 +311,6 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         userFloorNumber: widget.currentFloor.floorNumber,
         targetFloorNumber: activePOI.floorNumber,
       ).round();
-      if (activeDistM > 200) {
-        activeDistM = (activeDistM % 25) + 12;
-      }
       activeBearing = calculateBearingAngle(
         effectiveUserCoords,
         activePOI.location,
@@ -341,9 +347,6 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         userFloorNumber: widget.currentFloor.floorNumber,
         targetFloorNumber: poi.floorNumber,
       ).round();
-      if (distM > 200) {
-        distM = (distM % 25) + 12;
-      }
       final bearing = calculateBearingAngle(effectiveUserCoords, poi.location);
       final directionStr = _getCardinalDirection(bearing);
 
@@ -355,8 +358,14 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         relAngle += 360;
       }
 
-      final normX = relAngle / 35.0;
-      double posX = (screenWidth / 2 - 97.5) + (normX * (screenWidth * 0.45));
+      // Accurate Optical Perspective Camera Projection (65° Horizontal FOV)
+      final double hFovRad = (65.0 * math.pi) / 180.0;
+      final double focalPx = (screenWidth / 2.0) / math.tan(hFovRad / 2.0);
+      final double relAngleRad = (relAngle * math.pi) / 180.0;
+      final double normX =
+          math.tan(relAngleRad.clamp(-1.2, 1.2)) *
+          (focalPx / (screenWidth * 0.5));
+      double posX = (screenWidth / 2 - 92.5) + (normX * (screenWidth * 0.46));
 
       // Physically Realistic 3D AR Perspective & Pitch Mapping:
       // Distance Depth Offset: Farther places (higher distM) sit higher up towards the horizon.
@@ -564,7 +573,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       }
     }
 
-    int cleanDistM = activeDistM > 200 ? (activeDistM % 25) + 12 : activeDistM;
+    int cleanDistM = activeDistM;
 
     // Guidance text generation based on floor relation, vertical transitions, and turn action
     String guidanceText =
@@ -606,7 +615,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                             (_cameraController!.value.aspectRatio > 1.0
                                 ? _cameraController!.value.aspectRatio
                                 : 1 / _cameraController!.value.aspectRatio),
-                        child: CameraPreview(_cameraController!),
+                        child: RepaintBoundary(
+                          child: CameraPreview(_cameraController!),
+                        ),
                       ),
                     ),
                   )
@@ -652,20 +663,19 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'LIVE AR CAMERA VIEWPORT ACTIVE',
-                              style: GoogleFonts.inter(
-                                color: const Color(0xFF38BDF8),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.0,
+                              'Aligning AR Camera Viewport',
+                              style: GoogleFonts.plusJakartaSans(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Sensors locked • Pitch: ${widget.phonePitchDegrees.toStringAsFixed(0)}° • Compass: ${widget.compassHeadingDegrees.toStringAsFixed(0)}°',
-                              style: GoogleFonts.inter(
-                                color: Colors.white54,
-                                fontSize: 10,
+                              'Point your camera towards stores or walkways',
+                              style: GoogleFonts.plusJakartaSans(
+                                color: const Color(0xFF94A3B8),
+                                fontSize: 12,
                               ),
                             ),
                           ],
@@ -678,15 +688,17 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
           // 2. Ground AR Navigation Pathway (3D Perspective Chevrons on Camera Floor)
           if (activePOI != null && _isNavigatingActive)
             Positioned.fill(
-              child: CustomPaint(
-                painter: ARGroundPathwayPainter(
-                  relativeAngleDegrees: activeRelAngle,
-                  distanceMeters: activeDistM,
-                  phonePitchDegrees: widget.phonePitchDegrees,
-                  isParkedVehicle:
-                      activePOI.category.toUpperCase().contains('PARK') ||
-                      activePOI.name.toUpperCase().contains('CAR') ||
-                      activePOI.name.toUpperCase().contains('PARKED'),
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  painter: ARGroundPathwayPainter(
+                    relativeAngleDegrees: activeRelAngle,
+                    distanceMeters: activeDistM,
+                    phonePitchDegrees: widget.phonePitchDegrees,
+                    isParkedVehicle:
+                        activePOI.category.toUpperCase().contains('PARK') ||
+                        activePOI.name.toUpperCase().contains('CAR') ||
+                        activePOI.name.toUpperCase().contains('PARKED'),
+                  ),
                 ),
               ),
             ),
@@ -762,7 +774,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     textAlign: TextAlign.center,
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.plusJakartaSans(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w900,
                                       color: Colors.white.withValues(
@@ -777,7 +789,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                             const SizedBox(height: 2),
                             Text(
                               '$activeDistM M',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.plusJakartaSans(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w900,
                                 color: Colors.white,
@@ -790,7 +802,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                               '${activePOI.floorNumber < 0 ? "B${activePOI.floorNumber.abs()}" : "FLOOR ${activePOI.floorNumber}"} • TO ${activePOI.name.toUpperCase()}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.plusJakartaSans(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white.withValues(alpha: 0.9),
@@ -914,7 +926,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                             poi.name,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.plusJakartaSans(
                                               color: Colors.white,
                                               fontSize: 12,
                                               fontWeight: FontWeight.bold,
@@ -1094,7 +1106,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                         children: [
                           Text(
                             'CAMERA TILTED ${widget.phonePitchDegrees < -25.0 ? "DOWNWARDS" : "UPWARDS"}',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.plusJakartaSans(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w900,
@@ -1104,7 +1116,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                           const SizedBox(height: 2),
                           Text(
                             'Level phone upright to view real-world indoor floor AR overlays.',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.plusJakartaSans(
                               color: const Color(0xFFA5B4FC),
                               fontSize: 10,
                             ),
@@ -1160,7 +1172,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                             children: [
                               Text(
                                 'NO KNOWN PLACES IN CAMERA VIEW',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.plusJakartaSans(
                                   color: Colors.white,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w900,
@@ -1172,7 +1184,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                 positionedCards.isNotEmpty
                                     ? 'Turn phone ${nearestRelAngle < 0 ? "LEFT ◀" : "RIGHT ▶"} (${nearestRelAngle.abs().toStringAsFixed(0)}°) to view ${nearestPOI?.name ?? "store"} (${nearestPOI?.category ?? ""} • ${nearestPOI != null && nearestPOI.floorNumber < 0 ? "B${nearestPOI.floorNumber.abs()}" : "Floor ${nearestPOI?.floorNumber ?? 1}"} • ${nearestPOI?.rating ?? 4.8}★)'
                                     : 'No stores on Floor ${activeTargetFloorNumber < 0 ? "B${activeTargetFloorNumber.abs()}" : activeTargetFloorNumber} matching filter.',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.plusJakartaSans(
                                   color: const Color(0xFFFCD34D),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -1211,7 +1223,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                 '${positionedCards.length} STORES ON FLOORS 1-10 LOCATED ${nearestRelAngle < 0 ? "TO YOUR LEFT ◀" : "TO YOUR RIGHT ▶"} (${nearestPOI?.name.toUpperCase() ?? ""})',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.plusJakartaSans(
                                   color: const Color(0xFF38BDF8),
                                   fontSize: 9,
                                   fontWeight: FontWeight.w900,
@@ -1335,7 +1347,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                             guidanceText,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.plusJakartaSans(
                                               color: Colors.white,
                                               fontSize: 10,
                                               fontWeight: FontWeight.bold,
@@ -1377,7 +1389,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                     const SizedBox(width: 4),
                                     Text(
                                       'EXIT',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.plusJakartaSans(
                                         color: Colors.white,
                                         fontSize: 10,
                                         fontWeight: FontWeight.w900,
@@ -1514,7 +1526,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                         )
                                     ? '● PARKED CAR:'
                                     : '● SELECTED:',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.plusJakartaSans(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w900,
                                   color:
@@ -1538,7 +1550,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                   activePOI.name,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.plusJakartaSans(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -1714,7 +1726,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                         _isNavigatingActive
                                             ? 'NAVIGATING'
                                             : 'START AR NAV',
-                                        style: GoogleFonts.inter(
+                                        style: GoogleFonts.plusJakartaSans(
                                           color: Colors.white,
                                           fontSize: 10,
                                           fontWeight: FontWeight.w900,
@@ -1932,7 +1944,12 @@ class ARGroundPathwayPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant ARGroundPathwayPainter oldDelegate) {
+    return oldDelegate.relativeAngleDegrees != relativeAngleDegrees ||
+        oldDelegate.distanceMeters != distanceMeters ||
+        oldDelegate.phonePitchDegrees != phonePitchDegrees ||
+        oldDelegate.isParkedVehicle != isParkedVehicle;
+  }
 }
 
 class DottedLinePainter extends CustomPainter {

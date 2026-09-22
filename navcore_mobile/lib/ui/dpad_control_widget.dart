@@ -53,7 +53,7 @@ class _DpadControlWidgetState extends State<DpadControlWidget> {
                 const SizedBox(width: 6),
                 Text(
                   'Move Controls',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -91,7 +91,7 @@ class _DpadControlWidgetState extends State<DpadControlWidget> {
               const SizedBox(width: 4),
               Text(
                 'D-PAD',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF94A3B8),

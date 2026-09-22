@@ -7,6 +7,7 @@ import '../engine/ecef_engine.dart';
 import '../engine/floor_tracker.dart';
 import '../engine/bearing_engine.dart';
 import 'shop_details_screen.dart';
+import 'widgets/shop_image_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   final GeodeticCoords userCoords;
@@ -671,7 +672,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Text(
                               'NexNav AR',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.plusJakartaSans(
                                 fontSize: 19,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF0F172A),
@@ -873,7 +874,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 16),
                             Text(
                               widget.buildingProfile.name,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.plusJakartaSans(
                                 color: Colors.white,
                                 fontSize: 22,
                                 fontWeight: FontWeight.w700,
@@ -891,15 +892,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                const Icon(
-                                  LucideIcons.layers,
-                                  color: Color(0xFF93C5FD),
-                                  size: 14,
-                                ),
-                                const SizedBox(width: 5),
                                 Text(
                                   '${widget.buildingProfile.floors.length} Floors Available',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.plusJakartaSans(
                                     color: Colors.white,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
@@ -1059,7 +1054,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   'Destinations & Stores',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.plusJakartaSans(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF0F172A),
@@ -1081,7 +1076,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 child: Text(
                                   '${filteredPOIs.length}',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.plusJakartaSans(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF2563EB),
@@ -1185,7 +1180,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 12),
                         Text(
                           'No stores match your filters',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF1E293B),
@@ -1255,42 +1250,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: SizedBox(
                                       width: 90,
                                       height: 90,
-                                      child: Image.network(
-                                        shop.effectiveImageUrl,
+                                      child: ShopImage(
+                                        imagePathOrUrl: shop.effectiveImageUrl,
                                         fit: BoxFit.cover,
-                                        loadingBuilder:
-                                            (context, child, loadingProgress) {
-                                              if (loadingProgress == null) {
-                                                return child;
-                                              }
-                                              return Container(
-                                                color: const Color(0xFFF1F5F9),
-                                                child: const Center(
-                                                  child: SizedBox(
-                                                    width: 18,
-                                                    height: 18,
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                        ),
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                Container(
-                                                  color: const Color(
-                                                    0xFFEFF6FF,
-                                                  ),
-                                                  child: const Center(
-                                                    child: Icon(
-                                                      LucideIcons.store,
-                                                      color: Color(0xFF2563EB),
-                                                      size: 28,
-                                                    ),
-                                                  ),
-                                                ),
                                       ),
                                     ),
                                   ),
@@ -1342,7 +1304,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       shop.name,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.plusJakartaSans(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 14.5,
                                         color: const Color(0xFF0F172A),
@@ -1483,41 +1445,27 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(width: 8),
 
-                              // 3. Action AR Nav Button
-                              GestureDetector(
-                                onTap: () {
-                                  widget.onSelectDestination(shop);
-                                },
+                              // 3. Right Action Symbol / Button (Open Details)
+                              InkWell(
+                                onTap: () => _showShopDetails(shop),
+                                borderRadius: BorderRadius.circular(20),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
-                                  ),
+                                  width: 32,
+                                  height: 32,
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFEFF6FF),
-                                    borderRadius: BorderRadius.circular(12),
+                                    shape: BoxShape.circle,
                                     border: Border.all(
                                       color: const Color(0xFFDBEAFE),
+                                      width: 1,
                                     ),
                                   ),
-                                  child: const Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        LucideIcons.navigation,
-                                        size: 14,
-                                        color: Color(0xFF2563EB),
-                                      ),
-                                      SizedBox(height: 3),
-                                      Text(
-                                        'AR Nav',
-                                        style: TextStyle(
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF2563EB),
-                                        ),
-                                      ),
-                                    ],
+                                  child: const Center(
+                                    child: Icon(
+                                      LucideIcons.chevronRight,
+                                      color: Color(0xFF2563EB),
+                                      size: 18,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1604,7 +1552,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             'MY PARKED VEHICLE',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.plusJakartaSans(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF34D399),
@@ -1621,7 +1569,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Stall ${vehicle.slotId}',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.plusJakartaSans(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -1647,7 +1595,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 2),
                           Text(
                             floorDisplay,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.plusJakartaSans(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -1692,7 +1640,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Text(
                         'PARKED',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -1715,7 +1663,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         label: Text(
                           'Find My Car (AR)',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -1759,7 +1707,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         label: Text(
                           'Floor Map',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,

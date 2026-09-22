@@ -31,16 +31,16 @@ class FusedSpatialPose {
 /// NexNav SensorFusionService: Integrates IMU + Camera + Compass + PnP Reference Markers
 class SensorFusionService {
   final KalmanFilter _headingFilter = KalmanFilter(
-    processNoise: 0.02,
-    measurementNoise: 0.15,
+    processNoise: 0.005,
+    measurementNoise: 0.04,
   );
   final KalmanFilter _pitchFilter = KalmanFilter(
-    processNoise: 0.03,
-    measurementNoise: 0.10,
+    processNoise: 0.01,
+    measurementNoise: 0.06,
   );
   final KalmanFilter _rollFilter = KalmanFilter(
-    processNoise: 0.03,
-    measurementNoise: 0.10,
+    processNoise: 0.01,
+    measurementNoise: 0.06,
   );
 
   GeodeticCoords? _lastPnPPosition;
@@ -64,8 +64,8 @@ class SensorFusionService {
     GeodeticCoords? gpsCoords,
     PnPResult? latestPnPResult,
   }) {
-    // 1. Filter orientation angles using Kalman filter
-    _smoothHeading = _headingFilter.filter(rawHeading);
+    // 1. Filter orientation angles using shortest-path angular Kalman filter
+    _smoothHeading = _headingFilter.filterAngle(rawHeading);
     _smoothPitch = _pitchFilter.filter(rawPitch);
     _smoothRoll = _rollFilter.filter(rawRoll);
 

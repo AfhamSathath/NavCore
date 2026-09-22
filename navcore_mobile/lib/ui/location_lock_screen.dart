@@ -137,7 +137,7 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
                     children: [
                       Text(
                         'NexNav',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF0F172A),
@@ -160,7 +160,7 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
 
               Text(
                 'Initial Setup & Map Lock',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF0F172A),

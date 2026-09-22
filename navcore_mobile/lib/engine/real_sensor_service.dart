@@ -132,6 +132,11 @@ class RealSensorService {
   double _smoothedPitch = 0.0;
   final double _alpha = 0.25;
 
+  DateTime _lastPitchNotifyTime = DateTime.now();
+  DateTime _lastHeadingNotifyTime = DateTime.now();
+  double _lastNotifiedHeading = -999.0;
+  double _lastNotifiedPitch = -999.0;
+
   void startHardwareStreams({
     required Function(GeodeticCoords coords, double accuracyMeters) onLocationUpdated,
     required Function(double headingDegrees) onHeadingUpdated,
@@ -163,8 +168,10 @@ class RealSensorService {
       }
     });
 
-    // 2. Accelerometer Stream for tilt compensation & phone pitch angle
-    _accelerometerSubscription = accelerometerEventStream().listen((AccelerometerEvent event) {
+    // 2. Accelerometer Stream for tilt compensation & phone pitch angle (Rate Limited ~30FPS max)
+    _accelerometerSubscription = accelerometerEventStream(
+      samplingPeriod: const Duration(milliseconds: 33),
+    ).listen((AccelerometerEvent event) {
       _accelX = event.x;
       _accelY = event.y;
       _accelZ = event.z;
@@ -182,13 +189,21 @@ class RealSensorService {
         dir = PitchTiltDirection.up;
       }
 
-      if (onPitchUpdated != null) {
-        onPitchUpdated(_smoothedPitch, dir);
+      final now = DateTime.now();
+      final pitchDelta = (_smoothedPitch - _lastNotifiedPitch).abs();
+      if (now.difference(_lastPitchNotifyTime).inMilliseconds >= 33 || pitchDelta >= 0.4) {
+        _lastPitchNotifyTime = now;
+        _lastNotifiedPitch = _smoothedPitch;
+        if (onPitchUpdated != null) {
+          onPitchUpdated(_smoothedPitch, dir);
+        }
       }
     });
 
-    // 3. Magnetometer Stream for real-world heading / compass
-    _magnetometerSubscription = magnetometerEventStream().listen((MagnetometerEvent event) {
+    // 3. Magnetometer Stream for real-world heading / compass (Rate Limited ~30FPS max)
+    _magnetometerSubscription = magnetometerEventStream(
+      samplingPeriod: const Duration(milliseconds: 33),
+    ).listen((MagnetometerEvent event) {
       double magX = event.x;
       double magY = event.y;
       double magZ = event.z;
@@ -206,8 +221,14 @@ class RealSensorService {
       double headingRad = math.atan2(-magCompY, magCompX);
       double headingDeg = (headingRad * (180 / math.pi) + 360) % 360;
 
-      _currentHeadingDegrees = headingDeg;
-      onHeadingUpdated(headingDeg);
+      final now = DateTime.now();
+      final headingDelta = (headingDeg - _lastNotifiedHeading).abs();
+      if (now.difference(_lastHeadingNotifyTime).inMilliseconds >= 33 || headingDelta >= 0.3) {
+        _lastHeadingNotifyTime = now;
+        _lastNotifiedHeading = headingDeg;
+        _currentHeadingDegrees = headingDeg;
+        onHeadingUpdated(headingDeg);
+      }
     });
   }
 

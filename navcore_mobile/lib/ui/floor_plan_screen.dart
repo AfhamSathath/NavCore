@@ -9,6 +9,7 @@ import '../data/destinations.dart';
 import '../data/parking_service.dart';
 import 'shop_details_screen.dart';
 import 'dpad_control_widget.dart';
+import 'widgets/shop_image_widget.dart';
 
 class FloorPlanScreen extends StatefulWidget {
   final BuildingElevationProfile buildingProfile;
@@ -111,7 +112,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
             Text(
               displayFloor.name,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF0F172A),
@@ -120,7 +121,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
             Text(
               'One Galle Face Mall • Colombo',
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF64748B),
@@ -148,7 +149,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                     const SizedBox(width: 5),
                     Text(
                       '${currentFloorPOIs.length} Shops',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF1E40AF),
@@ -209,7 +210,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                     const SizedBox(width: 5),
                     Text(
                       myVehicle != null ? 'Car: ${myVehicle.slotId}' : '$freeSlotsCount Free',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -290,7 +291,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                 floor.floorNumber < 0
                                     ? 'B${floor.floorNumber.abs()}'
                                     : 'F${floor.floorNumber}',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.plusJakartaSans(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                   color: isSelected
@@ -364,7 +365,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   Expanded(
                     child: Text(
                       'Vehicle parked at ${myVehicle.slotId} (${myVehicle.floorName})',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF15803D),
@@ -393,7 +394,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                       ),
                       child: Text(
                         'Go to ${myVehicle.floorId}',
-                        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
                   ),
@@ -596,17 +597,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                     children: [
                                       ClipRRect(
                                         borderRadius: BorderRadius.circular(10),
-                                        child: Image.network(
-                                          _getStoreImageUrl(_selectedPOI!.name),
+                                        child: ShopImage(
+                                          imagePathOrUrl: _selectedPOI!.effectiveImageUrl,
                                           width: 50,
                                           height: 50,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) => Container(
-                                            width: 50,
-                                            height: 50,
-                                            color: const Color(0xFFEFF6FF),
-                                            child: Icon(_getCategoryIcon(_selectedPOI!.category), color: const Color(0xFF2563EB)),
-                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 10),
@@ -618,7 +613,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                               _selectedPOI!.name,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.inter(
+                                              style: GoogleFonts.plusJakartaSans(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w800,
                                                 color: const Color(0xFF0F172A),
@@ -635,7 +630,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                                   ),
                                                   child: Text(
                                                     'OPEN NOW',
-                                                    style: GoogleFonts.inter(
+                                                    style: GoogleFonts.plusJakartaSans(
                                                       fontSize: 8,
                                                       fontWeight: FontWeight.w800,
                                                       color: const Color(0xFF15803D),
@@ -645,7 +640,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   '★ ${_selectedPOI!.rating}',
-                                                  style: GoogleFonts.inter(
+                                                  style: GoogleFonts.plusJakartaSans(
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.bold,
                                                     color: const Color(0xFFD97706),
@@ -673,7 +668,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                           icon: const Icon(LucideIcons.compass, size: 14, color: Colors.white),
                                           label: Text(
                                             'NAVIGATE HERE (AR)',
-                                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+                                            style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
                                           ),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(0xFF2563EB),
@@ -698,7 +693,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                         onPressed: () => _showStoreDetailsModal(context, _selectedPOI!),
                                         child: Text(
                                           'Details',
-                                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF2563EB)),
+                                          style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF2563EB)),
                                         ),
                                       ),
                                     ],
@@ -801,15 +796,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                       children: [
                         // Realistic Store Photography Background Image
                         Positioned.fill(
-                          child: Image.network(
-                            imageUrl,
+                          child: ShopImage(
+                            imagePathOrUrl: poi != null ? poi.effectiveImageUrl : imageUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: const Color(0xFFEFF6FF),
-                              child: Center(
-                                child: Icon(_getCategoryIcon(poi?.category ?? ''), color: const Color(0xFF2563EB), size: 24),
-                              ),
-                            ),
                           ),
                         ),
 
@@ -845,7 +834,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                 ),
                                 child: Text(
                                   roomCode,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.plusJakartaSans(
                                     fontSize: 8,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
@@ -861,7 +850,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                   ),
                                   child: Text(
                                     _getCategoryTag(poi.category),
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.plusJakartaSans(
                                       fontSize: 7.5,
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white,
@@ -895,7 +884,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                       storeName,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.plusJakartaSans(
                                         fontSize: 9.0,
                                         fontWeight: FontWeight.w800,
                                         color: Colors.white,
@@ -911,7 +900,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                   children: [
                                     Text(
                                       '★ ${poi.rating}',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.plusJakartaSans(
                                         fontSize: 8.5,
                                         fontWeight: FontWeight.bold,
                                         color: const Color(0xFFFBBF24),
@@ -965,7 +954,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
             const SizedBox(width: 4),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 color: isSelected ? Colors.white : const Color(0xFF334155),
@@ -1139,7 +1128,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                         'Parking Stall ${slot.id}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: const Color(0xFF0F172A),
@@ -1149,7 +1138,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                         '${displayFloor.name} • Zone ${slot.section}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
                           color: const Color(0xFF64748B),
                           fontWeight: FontWeight.w500,
@@ -1188,7 +1177,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                             : (slot.status == ParkingSlotStatus.occupied
                                 ? 'OCCUPIED'
                                 : 'RESERVED')),
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       color: isMyCar
@@ -1235,7 +1224,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                         children: [
                           Text(
                             'PARKING RESTRICTED',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.plusJakartaSans(
                               fontSize: 12,
                               fontWeight: FontWeight.w900,
                               color: const Color(0xFFDC2626),
@@ -1244,7 +1233,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                           const SizedBox(height: 2),
                           Text(
                             'Stall ${slot.id} is currently occupied by another vehicle.',
-                            style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF991B1B)),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF991B1B)),
                           ),
                         ],
                       ),
@@ -1260,7 +1249,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   icon: const Icon(LucideIcons.navigation, color: Color(0xFF2563EB), size: 18),
                   label: Text(
                     'NAVIGATE TO THIS SLOT',
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF2563EB)),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF2563EB)),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
@@ -1282,7 +1271,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   icon: const Icon(LucideIcons.car, color: Colors.white, size: 18),
                   label: Text(
                     'PARK MY VEHICLE HERE',
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF16A34A),
@@ -1334,7 +1323,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   icon: const Icon(LucideIcons.navigation, color: Color(0xFF2563EB), size: 18),
                   label: Text(
                     'NAVIGATE TO THIS SLOT',
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF2563EB)),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF2563EB)),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
@@ -1356,7 +1345,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   icon: const Icon(LucideIcons.compass, color: Colors.white, size: 18),
                   label: Text(
                     'NAVIGATE TO MY CAR',
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0284C7),
@@ -1379,7 +1368,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   icon: const Icon(LucideIcons.logOut, color: Colors.white, size: 18),
                   label: Text(
                     'UNPARK VEHICLE',
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFDC2626),
@@ -1420,7 +1409,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
       ),
       child: Text(
         label,
-        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+        style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: color),
       ),
     );
   }
@@ -1460,7 +1449,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                     const SizedBox(width: 8),
                     Text(
                       'Floor Directory (${displayFloor.name})',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF0F172A),
@@ -1476,7 +1465,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   ),
                   child: Text(
                     '${pois.length} Locations',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF2563EB),
@@ -1491,7 +1480,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   ? Center(
                       child: Text(
                         'No shops listed on this floor.',
-                        style: GoogleFonts.inter(color: const Color(0xFF64748B)),
+                        style: GoogleFonts.plusJakartaSans(color: const Color(0xFF64748B)),
                       ),
                     )
                   : ListView.separated(
@@ -1510,17 +1499,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
-                                child: Image.network(
-                                  _getStoreImageUrl(poi.name),
+                                child: ShopImage(
+                                  imagePathOrUrl: poi.effectiveImageUrl,
                                   width: 44,
                                   height: 44,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    width: 44,
-                                    height: 44,
-                                    color: const Color(0xFFEFF6FF),
-                                    child: Icon(_getCategoryIcon(poi.category), color: const Color(0xFF2563EB), size: 18),
-                                  ),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -1530,7 +1513,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                   children: [
                                     Text(
                                       poi.name,
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.plusJakartaSans(
                                         fontSize: 13,
                                         fontWeight: FontWeight.bold,
                                         color: const Color(0xFF0F172A),
@@ -1538,7 +1521,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                     ),
                                     Text(
                                       '${poi.category} • ★ ${poi.rating}',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.plusJakartaSans(
                                         fontSize: 11,
                                         color: const Color(0xFF64748B),
                                       ),
@@ -1594,49 +1577,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
   }
 
   String _getStoreImageUrl(String storeName) {
-    final name = storeName.toUpperCase();
-    if (name.contains('ODEL')) {
-      return 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('SPA CEYLON')) {
-      return 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('KEELLS')) {
-      return 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('DILMAH')) {
-      return 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('CONCIERGE') || name.contains('INFORMATION')) {
-      return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('COTTON')) {
-      return 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('KELLY FELDER')) {
-      return 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('HOUSE OF FASHION')) {
-      return 'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('BAREFOOT')) {
-      return 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('HUGO BOSS')) {
-      return 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('SINGER')) {
-      return 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('ABANS') || name.contains('APPLE')) {
-      return 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('DIALOG')) {
-      return 'https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('MOBITEL')) {
-      return 'https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('SAMSUNG')) {
-      return 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('FOOD STUDIO')) {
-      return 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('MINISTRY OF CRAB')) {
-      return 'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('BARISTA')) {
-      return 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('TACO BELL')) {
-      return 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=500&q=80';
-    } else if (name.contains('PVR') || name.contains('CINEMAS')) {
-      return 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=500&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=500&q=80';
+    return getFallbackShopImage(storeName, '');
   }
 
   String _getCategoryTag(String category) {
@@ -2189,7 +2130,7 @@ class ArchitecturalFloorPainter extends CustomPainter {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.plusJakartaSans(
           color: color,
           fontSize: fontSize,
           fontWeight: fontWeight,

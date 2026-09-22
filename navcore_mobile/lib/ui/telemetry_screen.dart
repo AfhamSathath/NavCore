@@ -33,7 +33,7 @@ class TelemetryScreen extends StatelessWidget {
         elevation: 0.5,
         title: Text(
           'Sensor Fusion & Real Telemetry',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 16,
             fontWeight: FontWeight.w800,
             color: const Color(0xFF0F172A),
@@ -110,7 +110,7 @@ class TelemetryScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
                   color: Colors.grey[500],

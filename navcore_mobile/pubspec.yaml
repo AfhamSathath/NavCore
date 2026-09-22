@@ -40,4 +40,6 @@ flutter:
     - assets/icon/NavCore_App_Icon.svg
     - assets/icon/app_icon.png
     - assets/images/
+    - assets/images/shops/
+
 

@@ -4,6 +4,7 @@ import '../data/destinations.dart';
 import '../engine/ecef_engine.dart';
 import '../engine/bearing_engine.dart';
 import '../engine/floor_tracker.dart';
+import 'widgets/shop_image_widget.dart';
 
 class ShopDetailsScreen extends StatelessWidget {
   final DestinationPOI destination;
@@ -51,34 +52,9 @@ class ShopDetailsScreen extends StatelessWidget {
                 SizedBox(
                   height: 180,
                   width: double.infinity,
-                  child: Image.network(
-                    destination.effectiveImageUrl,
+                  child: ShopImage(
+                    imagePathOrUrl: destination.effectiveImageUrl,
                     fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        color: const Color(0xFFF1F5F9),
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          _getCategoryIcon(destination.category),
-                          size: 48,
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ),
                   ),
                 ),
 
@@ -127,7 +103,10 @@ class ShopDetailsScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF2563EB),
                           borderRadius: BorderRadius.circular(10),
@@ -148,7 +127,10 @@ class ShopDetailsScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF16A34A),
                           borderRadius: BorderRadius.circular(10),
@@ -164,11 +146,17 @@ class ShopDetailsScreen extends StatelessWidget {
                       ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.65),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFFDE047), width: 1),
+                          border: Border.all(
+                            color: const Color(0xFFFDE047),
+                            width: 1,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -248,100 +236,100 @@ class ShopDetailsScreen extends StatelessWidget {
 
                   const SizedBox(height: 18),
 
-          // Specs Cards (3D Distance, Ground Floor Elevation, Rating)
-          Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildSpecTile(
-                      LucideIcons.mapPin,
-                      'Distance',
-                      '${distanceMeters.toStringAsFixed(0)} meters',
+                  // Specs Cards (3D Distance, Ground Floor Elevation, Rating)
+                  Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildSpecTile(
+                              LucideIcons.mapPin,
+                              'Distance',
+                              '${distanceMeters.toStringAsFixed(0)} meters',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildSpecTile(
+                              LucideIcons.layers,
+                              'Mall Floor',
+                              destination.floorNumber < 0
+                                  ? 'Basement ${destination.floorNumber} (${destination.location.height.toStringAsFixed(0)}m)'
+                                  : 'Floor ${destination.floorNumber} (${destination.location.height.toStringAsFixed(0)}m)',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildSpecTile(
+                              LucideIcons.mountain,
+                              'Ground Distance',
+                              '${distanceFromGroundMeters.toStringAsFixed(0)}m from Ground',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildSpecTile(
+                              LucideIcons.star,
+                              'Rating',
+                              '${destination.rating} ★',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Description
+                  const Text(
+                    'About this Store',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF334155),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildSpecTile(
-                      LucideIcons.layers,
-                      'Mall Floor',
-                      destination.floorNumber < 0
-                          ? 'Basement ${destination.floorNumber} (${destination.location.height.toStringAsFixed(0)}m)'
-                          : 'Floor ${destination.floorNumber} (${destination.location.height.toStringAsFixed(0)}m)',
+                  const SizedBox(height: 6),
+                  Text(
+                    destination.description,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF64748B),
+                      height: 1.5,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildSpecTile(
-                      LucideIcons.mountain,
-                      'Ground Distance',
-                      '${distanceFromGroundMeters.toStringAsFixed(0)}m from Ground',
+
+                  const SizedBox(height: 24),
+
+                  // Action Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: onStartARNavigation,
+                      icon: const Icon(LucideIcons.compass, size: 20),
+                      label: const Text(
+                        'Start Camera AR Navigation',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildSpecTile(
-                      LucideIcons.star,
-                      'Rating',
-                      '${destination.rating} ★',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // Description
-          const Text(
-            'About this Store',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF334155),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            destination.description,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF64748B),
-              height: 1.5,
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Action Button
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              onPressed: onStartARNavigation,
-              icon: const Icon(LucideIcons.compass, size: 20),
-              label: const Text(
-                'Start Camera AR Navigation',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
                 ],
               ),
             ),

@@ -107,11 +107,7 @@ double calculateAccurate3DDistance(
   final p1 = geodeticToECEF(userPoint);
   final p2 = geodeticToECEF(targetPoint);
 
-  final rawDist = ecefDistance(p1, p2);
-  if (rawDist > 200) {
-    return ((rawDist.round() % 25) + 12).toDouble();
-  }
-  return rawDist;
+  return ecefDistance(p1, p2);
 }
 
 /// Calculates precise 3D geometric distance of a place/POI from the Earth ground floor (Floor 1 Entrance level)

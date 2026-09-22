@@ -17,7 +17,7 @@ class BuildingConfigScreen extends StatelessWidget {
         elevation: 0.5,
         title: Text(
           'Building Geodetic Elevation Config',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 16,
             fontWeight: FontWeight.w800,
             color: const Color(0xFF0F172A),
@@ -39,12 +39,12 @@ class BuildingConfigScreen extends StatelessWidget {
               children: [
                 Text(
                   profile.name,
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Base Anchor Height: ${profile.entranceBaseAnchorHeight}m WGS84 | Gap: ${profile.floorGapMeters}m',
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -54,7 +54,7 @@ class BuildingConfigScreen extends StatelessWidget {
 
           Text(
             'MAPPED GEODETIC ELEVATION BANDS',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 11,
               fontWeight: FontWeight.w900,
               color: Colors.grey[500],
@@ -84,7 +84,7 @@ class BuildingConfigScreen extends StatelessWidget {
                   ),
                   trailing: Text(
                     '${floor.absoluteHeightMeters.toStringAsFixed(1)}m',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w900, color: const Color(0xFF0F172A)),
+                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w900, color: const Color(0xFF0F172A)),
                   ),
                 ),
               )),

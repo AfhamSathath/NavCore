@@ -37,44 +37,77 @@ String getFallbackShopImage(String name, String category) {
   final n = name.toLowerCase();
   final c = category.toLowerCase();
 
-  if (n.contains('coffee') || n.contains('barista') || n.contains('tea') || n.contains('espresso')) {
-    return 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80';
+  if (n.contains('coffee') || n.contains('barista') || n.contains('espresso')) {
+    return 'assets/images/shops/barista_ceylon_espresso_bar.jpg';
+  }
+  if (n.contains('tea') || n.contains('dilmah')) {
+    return 'assets/images/shops/dilmah_tea_lounge.jpg';
   }
   if (n.contains('crab') || n.contains('seafood')) {
-    return 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=800&auto=format&fit=crop&q=80';
+    return 'assets/images/shops/ministry_of_crab_express.jpg';
   }
   if (n.contains('taco') || n.contains('burrito') || n.contains('mexican')) {
-    return 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&auto=format&fit=crop&q=80';
+    return 'assets/images/shops/taco_bell_sri_lanka.jpg';
   }
   if (c.contains('food') || n.contains('food') || n.contains('dining') || n.contains('court')) {
-    return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80';
+    return 'assets/images/shops/food_studio_ceylon_court.jpg';
   }
   if (n.contains('cinema') || n.contains('imax') || n.contains('pvr') || c.contains('entertainment')) {
-    return 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80';
+    return 'assets/images/shops/pvr_scope_cinemas_imax.jpg';
   }
-  if (n.contains('apple') || n.contains('samsung') || n.contains('singer') || n.contains('dialog') || n.contains('mobitel') || c.contains('tech')) {
-    return 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&auto=format&fit=crop&q=80';
+  if (n.contains('apple') || n.contains('abans')) {
+    return 'assets/images/shops/abans_elite_apple_lg_store.jpg';
   }
-  if (n.contains('odel') || n.contains('hugo') || n.contains('fashion') || n.contains('cotton') || n.contains('kelly') || n.contains('barefoot') || c.contains('retail')) {
-    return 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80';
+  if (n.contains('samsung')) {
+    return 'assets/images/shops/samsung_smart_experience_zone.jpg';
+  }
+  if (n.contains('singer')) {
+    return 'assets/images/shops/singer_mega_experience_center.jpg';
+  }
+  if (n.contains('dialog')) {
+    return 'assets/images/shops/dialog_axiata_experience_centre.jpg';
+  }
+  if (n.contains('mobitel')) {
+    return 'assets/images/shops/mobitel_slt_broadband_lounge.jpg';
+  }
+  if (n.contains('odel')) {
+    return 'assets/images/shops/odel_flagship_store.jpg';
+  }
+  if (n.contains('hugo')) {
+    return 'assets/images/shops/hugo_boss_luxury_apparel.jpg';
+  }
+  if (n.contains('cotton')) {
+    return 'assets/images/shops/cotton_collection.jpg';
+  }
+  if (n.contains('kelly')) {
+    return 'assets/images/shops/kelly_felder_designer_lounge.jpg';
+  }
+  if (n.contains('barefoot')) {
+    return 'assets/images/shops/barefoot_ceylon_handwoven.jpg';
+  }
+  if (n.contains('house of fashion') || n.contains('fashion')) {
+    return 'assets/images/shops/house_of_fashion_outlet.jpg';
   }
   if (n.contains('supermarket') || n.contains('hypermarket') || n.contains('keells')) {
-    return 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80';
+    return 'assets/images/shops/keells_super_hypermarket.jpg';
   }
   if (n.contains('spa') || n.contains('ayurveda')) {
-    return 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&auto=format&fit=crop&q=80';
+    return 'assets/images/shops/spa_ceylon_luxury_ayurveda.jpg';
   }
   if (n.contains('ev') || n.contains('charging')) {
-    return 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&auto=format&fit=crop&q=80';
+    return 'assets/images/shops/b1_eco_ev_charging_hub.jpg';
   }
   if (n.contains('wash') || n.contains('car')) {
-    return 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=800&auto=format&fit=crop&q=80';
+    return 'assets/images/shops/b1_auto_car_wash.jpg';
   }
-  if (n.contains('valet') || n.contains('concierge') || n.contains('lockers') || c.contains('services')) {
-    return 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=80';
+  if (n.contains('valet') || n.contains('concierge') || n.contains('info')) {
+    return 'assets/images/shops/concierge_information_desk.jpg';
+  }
+  if (n.contains('lockers')) {
+    return 'assets/images/shops/b1_luggage_lockers.jpg';
   }
 
-  return 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=800&auto=format&fit=crop&q=80';
+  return 'assets/images/shops/odel_flagship_store.jpg';
 }
 
 /// Entrance Anchor for One Galle Face Mall, Colombo, Sri Lanka
@@ -97,9 +130,10 @@ final mockDestinations = [
       longitude: 79.845100,
       height: 40.0,
     ),
-    description: 'VIP valet drop-off, luggage storage, and premium parking concierge desk.',
+    description:
+        'VIP valet drop-off, luggage storage, and premium parking concierge desk.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/b1_executive_valet_concierge.jpg',
   ),
   const DestinationPOI(
     id: 'poi-b1-02',
@@ -112,9 +146,10 @@ final mockDestinations = [
       longitude: 79.846100,
       height: 40.0,
     ),
-    description: 'Express groceries, fresh takeaway snacks, cold beverages, and essentials.',
+    description:
+        'Express groceries, fresh takeaway snacks, cold beverages, and essentials.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/keells_express_supermarket_b1.jpg',
   ),
   const DestinationPOI(
     id: 'poi-b1-03',
@@ -127,9 +162,10 @@ final mockDestinations = [
       longitude: 79.844900,
       height: 40.0,
     ),
-    description: 'High-speed 120kW DC EV chargers for Tesla, Hyundai, Nissan & BYD vehicles.',
+    description:
+        'High-speed 120kW DC EV chargers for Tesla, Hyundai, Nissan & BYD vehicles.',
     openStatus: '24/7',
-    imageUrl: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/b1_eco_ev_charging_hub.jpg',
   ),
   const DestinationPOI(
     id: 'poi-b1-04',
@@ -142,9 +178,10 @@ final mockDestinations = [
       longitude: 79.846300,
       height: 40.0,
     ),
-    description: 'Eco-friendly waterless car wash, interior vacuuming & ceramic coating.',
+    description:
+        'Eco-friendly waterless car wash, interior vacuuming & ceramic coating.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/b1_auto_car_wash.jpg',
   ),
   const DestinationPOI(
     id: 'poi-b1-05',
@@ -157,9 +194,10 @@ final mockDestinations = [
       longitude: 79.845500,
       height: 40.0,
     ),
-    description: 'Automated smart luggage lockers, parcel pickup, and courier services.',
+    description:
+        'Automated smart luggage lockers, parcel pickup, and courier services.',
     openStatus: '24/7',
-    imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/b1_luggage_lockers.jpg',
   ),
 
   // FLOOR 1 - Ground Floor & Ceylon Atrium (5 Items)
@@ -176,7 +214,7 @@ final mockDestinations = [
     ),
     description: 'Premier Sri Lankan lifestyle, fashion & department store.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/odel_flagship_store.jpg',
   ),
   const DestinationPOI(
     id: 'poi-102',
@@ -189,9 +227,10 @@ final mockDestinations = [
       longitude: 79.845800,
       height: 45.0,
     ),
-    description: 'Sri Lanka tourist assistance, mall guide & lost property services.',
+    description:
+        'Sri Lanka tourist assistance, mall guide & lost property services.',
     openStatus: '24/7',
-    imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/concierge_information_desk.jpg',
   ),
   const DestinationPOI(
     id: 'poi-103',
@@ -204,9 +243,10 @@ final mockDestinations = [
       longitude: 79.845250,
       height: 45.0,
     ),
-    description: 'Royal Sri Lankan Ayurveda wellness, essential oils & skincare.',
+    description:
+        'Royal Sri Lankan Ayurveda wellness, essential oils & skincare.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/spa_ceylon_luxury_ayurveda.jpg',
   ),
   const DestinationPOI(
     id: 'poi-104',
@@ -219,9 +259,10 @@ final mockDestinations = [
       longitude: 79.845180,
       height: 45.0,
     ),
-    description: 'Handpicked single-origin Ceylon tea tasting, mocktails & high tea.',
+    description:
+        'Handpicked single-origin Ceylon tea tasting, mocktails & high tea.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/dilmah_tea_lounge.jpg',
   ),
   const DestinationPOI(
     id: 'poi-105',
@@ -234,9 +275,10 @@ final mockDestinations = [
       longitude: 79.846100,
       height: 45.0,
     ),
-    description: 'Gourmet groceries, fresh Sri Lankan produce, bakery & spices.',
+    description:
+        'Gourmet groceries, fresh Sri Lankan produce, bakery & spices.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/keells_super_hypermarket.jpg',
   ),
 
   // FLOOR 2 - Fashion & Apparel (5 Items)
@@ -251,9 +293,10 @@ final mockDestinations = [
       longitude: 79.845150,
       height: 50.0,
     ),
-    description: 'Casual island wear, linen garments, tropical resort fashion & accessories.',
+    description:
+        'Casual island wear, linen garments, tropical resort fashion & accessories.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/cotton_collection.jpg',
   ),
   const DestinationPOI(
     id: 'poi-202',
@@ -266,9 +309,10 @@ final mockDestinations = [
       longitude: 79.846400,
       height: 50.0,
     ),
-    description: 'Chic Sri Lankan womenswear, evening attire, and designer handbags.',
+    description:
+        'Chic Sri Lankan womenswear, evening attire, and designer handbags.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/kelly_felder_designer_lounge.jpg',
   ),
   const DestinationPOI(
     id: 'poi-203',
@@ -281,9 +325,10 @@ final mockDestinations = [
       longitude: 79.846600,
       height: 50.0,
     ),
-    description: 'Extensive selection of international trends and local Sri Lankan apparel.',
+    description:
+        'Extensive selection of international trends and local Sri Lankan apparel.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/house_of_fashion_outlet.jpg',
   ),
   const DestinationPOI(
     id: 'poi-204',
@@ -296,9 +341,10 @@ final mockDestinations = [
       longitude: 79.844850,
       height: 50.0,
     ),
-    description: 'Vibrant handwoven Sri Lankan textiles, books, toys, and artisanal crafts.',
+    description:
+        'Vibrant handwoven Sri Lankan textiles, books, toys, and artisanal crafts.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1606744824163-985d376605aa?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/barefoot_ceylon_handwoven.jpg',
   ),
   const DestinationPOI(
     id: 'poi-205',
@@ -311,9 +357,10 @@ final mockDestinations = [
       longitude: 79.845900,
       height: 50.0,
     ),
-    description: 'Premium luxury suits, formal wear, leather shoes & accessories.',
+    description:
+        'Premium luxury suits, formal wear, leather shoes & accessories.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/hugo_boss_luxury_apparel.jpg',
   ),
 
   // FLOOR 3 - Tech & Electronics Hub (5 Items)
@@ -328,9 +375,10 @@ final mockDestinations = [
       longitude: 79.846750,
       height: 55.0,
     ),
-    description: 'Smart TVs, home electronics, laptops, and consumer technology.',
+    description:
+        'Smart TVs, home electronics, laptops, and consumer technology.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/singer_mega_experience_center.jpg',
   ),
   const DestinationPOI(
     id: 'poi-302',
@@ -343,9 +391,10 @@ final mockDestinations = [
       longitude: 79.845300,
       height: 55.0,
     ),
-    description: 'Authorized Apple products, iPhones, MacBooks, and LG smart devices.',
+    description:
+        'Authorized Apple products, iPhones, MacBooks, and LG smart devices.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/abans_elite_apple_lg_store.jpg',
   ),
   const DestinationPOI(
     id: 'poi-303',
@@ -358,9 +407,10 @@ final mockDestinations = [
       longitude: 79.846500,
       height: 55.0,
     ),
-    description: '5G SIM connections, eSIM activation, fiber broadband & IoT gadgets.',
+    description:
+        '5G SIM connections, eSIM activation, fiber broadband & IoT gadgets.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/dialog_axiata_experience_centre.jpg',
   ),
   const DestinationPOI(
     id: 'poi-304',
@@ -373,9 +423,10 @@ final mockDestinations = [
       longitude: 79.844500,
       height: 55.0,
     ),
-    description: 'National telecom service desk, fiber routers, and mobile accessories.',
+    description:
+        'National telecom service desk, fiber routers, and mobile accessories.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1562976540-1502c2145186?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/mobitel_slt_broadband_lounge.jpg',
   ),
   const DestinationPOI(
     id: 'poi-305',
@@ -388,9 +439,10 @@ final mockDestinations = [
       longitude: 79.845600,
       height: 55.0,
     ),
-    description: 'Galaxy smartphones, tablets, smartwatches & home appliance displays.',
+    description:
+        'Galaxy smartphones, tablets, smartwatches & home appliance displays.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/samsung_smart_experience_zone.jpg',
   ),
 
   // FLOOR 4 - Food Court & Dining Layer (5 Items)
@@ -405,9 +457,10 @@ final mockDestinations = [
       longitude: 79.847150,
       height: 60.0,
     ),
-    description: 'Fresh Kottu Roti, Jaffna Crab Curry, Egg Hoppers & Ceylon street food.',
+    description:
+        'Fresh Kottu Roti, Jaffna Crab Curry, Egg Hoppers & Ceylon street food.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/food_studio_ceylon_court.jpg',
   ),
   const DestinationPOI(
     id: 'poi-402',
@@ -420,9 +473,10 @@ final mockDestinations = [
       longitude: 79.844600,
       height: 60.0,
     ),
-    description: 'World-renowned Sri Lankan giant lagoon crab & Garlic Chili Prawns.',
+    description:
+        'World-renowned Sri Lankan giant lagoon crab & Garlic Chili Prawns.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/ministry_of_crab_express.jpg',
   ),
   const DestinationPOI(
     id: 'poi-403',
@@ -435,9 +489,10 @@ final mockDestinations = [
       longitude: 79.847350,
       height: 60.0,
     ),
-    description: 'Artisanal local coffees, iced lattes, fresh pastries, and savories.',
+    description:
+        'Artisanal local coffees, iced lattes, fresh pastries, and savories.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/barista_ceylon_espresso_bar.jpg',
   ),
   const DestinationPOI(
     id: 'poi-404',
@@ -450,9 +505,10 @@ final mockDestinations = [
       longitude: 79.844100,
       height: 60.0,
     ),
-    description: 'Mexican inspired burritos, crunchy tacos, and spicy Sri Lankan sauces.',
+    description:
+        'Mexican inspired burritos, crunchy tacos, and spicy Sri Lankan sauces.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/taco_bell_sri_lanka.jpg',
   ),
   const DestinationPOI(
     id: 'poi-405',
@@ -465,8 +521,9 @@ final mockDestinations = [
       longitude: 79.847400,
       height: 60.0,
     ),
-    description: 'Premium 3D IMAX screen, Dolby Atmos surround sound & luxury recliners.',
+    description:
+        'Premium 3D IMAX screen, Dolby Atmos surround sound & luxury recliners.',
     openStatus: 'OPEN NOW',
-    imageUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/shops/pvr_scope_cinemas_imax.jpg',
   ),
 ];

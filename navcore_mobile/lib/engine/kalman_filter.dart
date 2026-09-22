@@ -143,6 +143,37 @@ class KalmanFilter {
     return _stateEstimate;
   }
 
+  /// Special 360-degree shortest angular distance Kalman filter for compass headings
+  double filterAngle(double measurement) {
+    if (!_initialized) {
+      _stateEstimate = measurement;
+      _initialized = true;
+      return _stateEstimate;
+    }
+
+    _estimateError += processNoise;
+    final kalmanGain = _estimateError / (_estimateError + measurementNoise);
+
+    double diff = measurement - _stateEstimate;
+    while (diff < -180.0) {
+      diff += 360.0;
+    }
+    while (diff > 180.0) {
+      diff -= 360.0;
+    }
+
+    _stateEstimate += kalmanGain * diff;
+    while (_stateEstimate < 0.0) {
+      _stateEstimate += 360.0;
+    }
+    while (_stateEstimate >= 360.0) {
+      _stateEstimate -= 360.0;
+    }
+
+    _estimateError *= (1.0 - kalmanGain);
+    return _stateEstimate;
+  }
+
   void reset() {
     _initialized = false;
     _estimateError = 1.0;

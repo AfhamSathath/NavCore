@@ -59,7 +59,7 @@ class _AdminMarkerConfigModalState extends State<AdminMarkerConfigModal> {
                       const SizedBox(width: 8),
                       Text(
                         'Admin Reference Marker Config',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

@@ -23,52 +23,61 @@ class _DpadControlWidgetState extends State<DpadControlWidget> {
   @override
   Widget build(BuildContext context) {
     if (!_isExpanded) {
-      return InkWell(
-        onTap: () => setState(() => _isExpanded = true),
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF2563EB),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x332563EB),
-                blurRadius: 8,
-                offset: Offset(0, 3),
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => setState(() => _isExpanded = true),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(LucideIcons.gamepad2, color: Colors.white, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                'Move Controls',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-              ),
-            ],
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(LucideIcons.gamepad2, color: Colors.white, size: 15),
+                const SizedBox(width: 6),
+                Text(
+                  'Move Controls',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(6),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.96),
+        color: const Color(0xFF0F172A).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFF2563EB), width: 1.5),
+        border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5), width: 1.5),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: Color(0x66000000),
+            blurRadius: 16,
+            offset: Offset(0, 6),
           ),
         ],
       ),
@@ -78,26 +87,29 @@ class _DpadControlWidgetState extends State<DpadControlWidget> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const Icon(LucideIcons.gamepad2, color: Color(0xFF38BDF8), size: 12),
+              const SizedBox(width: 4),
               Text(
-                'D-Pad',
+                'D-PAD',
                 style: GoogleFonts.inter(
                   fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1E293B),
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF94A3B8),
+                  letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 16),
               InkWell(
                 onTap: () => setState(() => _isExpanded = false),
                 borderRadius: BorderRadius.circular(10),
                 child: const Padding(
-                  padding: EdgeInsets.all(2),
-                  child: Icon(LucideIcons.x, size: 14, color: Color(0xFF64748B)),
+                  padding: EdgeInsets.all(3),
+                  child: Icon(LucideIcons.x, size: 14, color: Color(0xFF94A3B8)),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           // UP BUTTON (North)
           _buildDpadBtn(
             icon: LucideIcons.arrowUp,
@@ -148,12 +160,13 @@ class _DpadControlWidgetState extends State<DpadControlWidget> {
         child: Container(
           width: 36,
           height: 36,
-          decoration: const BoxDecoration(
-            color: Color(0xFF2563EB),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
             shape: BoxShape.circle,
-            boxShadow: [
+            border: Border.all(color: const Color(0xFF334155), width: 1),
+            boxShadow: const [
               BoxShadow(
-                color: Color(0x332563EB),
+                color: Color(0x33000000),
                 blurRadius: 4,
                 offset: Offset(0, 2),
               ),
@@ -162,7 +175,7 @@ class _DpadControlWidgetState extends State<DpadControlWidget> {
           child: Center(
             child: Icon(
               icon,
-              color: Colors.white,
+              color: const Color(0xFF38BDF8),
               size: 16,
             ),
           ),

@@ -9,6 +9,7 @@ class DestinationPOI {
   final GeodeticCoords location;
   final String description;
   final String openStatus;
+  final String? imageUrl;
 
   const DestinationPOI({
     required this.id,
@@ -19,7 +20,61 @@ class DestinationPOI {
     required this.location,
     required this.description,
     required this.openStatus,
+    this.imageUrl,
   });
+
+  /// Helper to return a guaranteed high-quality suitable image URL for the shop
+  String get effectiveImageUrl {
+    if (imageUrl != null && imageUrl!.trim().isNotEmpty) {
+      return imageUrl!;
+    }
+    return getFallbackShopImage(name, category);
+  }
+}
+
+/// Dynamic fallback resolver based on shop category and keywords
+String getFallbackShopImage(String name, String category) {
+  final n = name.toLowerCase();
+  final c = category.toLowerCase();
+
+  if (n.contains('coffee') || n.contains('barista') || n.contains('tea') || n.contains('espresso')) {
+    return 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.contains('crab') || n.contains('seafood')) {
+    return 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.contains('taco') || n.contains('burrito') || n.contains('mexican')) {
+    return 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&auto=format&fit=crop&q=80';
+  }
+  if (c.contains('food') || n.contains('food') || n.contains('dining') || n.contains('court')) {
+    return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.contains('cinema') || n.contains('imax') || n.contains('pvr') || c.contains('entertainment')) {
+    return 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.contains('apple') || n.contains('samsung') || n.contains('singer') || n.contains('dialog') || n.contains('mobitel') || c.contains('tech')) {
+    return 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.contains('odel') || n.contains('hugo') || n.contains('fashion') || n.contains('cotton') || n.contains('kelly') || n.contains('barefoot') || c.contains('retail')) {
+    return 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.contains('supermarket') || n.contains('hypermarket') || n.contains('keells')) {
+    return 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.contains('spa') || n.contains('ayurveda')) {
+    return 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.contains('ev') || n.contains('charging')) {
+    return 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.contains('wash') || n.contains('car')) {
+    return 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=800&auto=format&fit=crop&q=80';
+  }
+  if (n.contains('valet') || n.contains('concierge') || n.contains('lockers') || c.contains('services')) {
+    return 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=80';
+  }
+
+  return 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=800&auto=format&fit=crop&q=80';
 }
 
 /// Entrance Anchor for One Galle Face Mall, Colombo, Sri Lanka
@@ -30,51 +85,7 @@ const entranceAnchor = GeodeticCoords(
 );
 
 final mockDestinations = [
-  // FLOOR B2 - Basement 2 Parking & Facilities (80m - 140m 3D Dist)
-  const DestinationPOI(
-    id: 'poi-b2-01',
-    name: 'B2 Premium Long-Stay Parking Zone',
-    category: 'SERVICES',
-    floorNumber: -2,
-    rating: 4.8,
-    location: GeodeticCoords(
-      latitude: 6.926200,
-      longitude: 79.844700,
-      height: 35.0,
-    ),
-    description: 'Reserved long-stay bays, 24/7 CCTV surveillance & automated ticket kiosk.',
-    openStatus: '24/7',
-  ),
-  const DestinationPOI(
-    id: 'poi-b2-02',
-    name: 'B2 Security & Lost Property Desk',
-    category: 'SERVICES',
-    floorNumber: -2,
-    rating: 4.9,
-    location: GeodeticCoords(
-      latitude: 6.927800,
-      longitude: 79.845100,
-      height: 35.0,
-    ),
-    description: 'Mall security headquarters, lost & found items, and emergency assistance.',
-    openStatus: '24/7',
-  ),
-  const DestinationPOI(
-    id: 'poi-b2-03',
-    name: 'B2 Tyre & Battery Care Station',
-    category: 'SERVICES',
-    floorNumber: -2,
-    rating: 4.7,
-    location: GeodeticCoords(
-      latitude: 6.926400,
-      longitude: 79.846200,
-      height: 35.0,
-    ),
-    description: 'Automated air pressure, battery jumpstart, tyre pressure check & emergency care.',
-    openStatus: 'OPEN NOW',
-  ),
-
-  // FLOOR B1 - Basement 1 Parking & Express Services (60m - 120m 3D Dist)
+  // FLOOR -1 - Basement 1 Parking & Express Services (5 Items)
   const DestinationPOI(
     id: 'poi-b1-01',
     name: 'B1 Executive Valet & Concierge',
@@ -88,6 +99,7 @@ final mockDestinations = [
     ),
     description: 'VIP valet drop-off, luggage storage, and premium parking concierge desk.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-b1-02',
@@ -102,6 +114,7 @@ final mockDestinations = [
     ),
     description: 'Express groceries, fresh takeaway snacks, cold beverages, and essentials.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-b1-03',
@@ -116,6 +129,7 @@ final mockDestinations = [
     ),
     description: 'High-speed 120kW DC EV chargers for Tesla, Hyundai, Nissan & BYD vehicles.',
     openStatus: '24/7',
+    imageUrl: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-b1-04',
@@ -130,9 +144,25 @@ final mockDestinations = [
     ),
     description: 'Eco-friendly waterless car wash, interior vacuuming & ceramic coating.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=800&auto=format&fit=crop&q=80',
+  ),
+  const DestinationPOI(
+    id: 'poi-b1-05',
+    name: 'B1 Luggage Lockers & Express Counter',
+    category: 'SERVICES',
+    floorNumber: -1,
+    rating: 4.8,
+    location: GeodeticCoords(
+      latitude: 6.926800,
+      longitude: 79.845500,
+      height: 40.0,
+    ),
+    description: 'Automated smart luggage lockers, parcel pickup, and courier services.',
+    openStatus: '24/7',
+    imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80',
   ),
 
-  // FLOOR 1 - Ground Floor & Ceylon Tea / Retail (35m - 90m 3D Dist)
+  // FLOOR 1 - Ground Floor & Ceylon Atrium (5 Items)
   const DestinationPOI(
     id: 'poi-101',
     name: 'Odel Flagship Department Store',
@@ -146,6 +176,7 @@ final mockDestinations = [
     ),
     description: 'Premier Sri Lankan lifestyle, fashion & department store.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-102',
@@ -160,11 +191,12 @@ final mockDestinations = [
     ),
     description: 'Sri Lanka tourist assistance, mall guide & lost property services.',
     openStatus: '24/7',
+    imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-103',
     name: 'Spa Ceylon Luxury Ayurveda',
-    category: 'BEAUTY & HEALTH',
+    category: 'SERVICES',
     floorNumber: 1,
     rating: 4.9,
     location: GeodeticCoords(
@@ -174,6 +206,7 @@ final mockDestinations = [
     ),
     description: 'Royal Sri Lankan Ayurveda wellness, essential oils & skincare.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-104',
@@ -188,6 +221,7 @@ final mockDestinations = [
     ),
     description: 'Handpicked single-origin Ceylon tea tasting, mocktails & high tea.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-105',
@@ -202,9 +236,10 @@ final mockDestinations = [
     ),
     description: 'Gourmet groceries, fresh Sri Lankan produce, bakery & spices.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80',
   ),
 
-  // FLOOR 2 - Fashion & Apparel (75m - 140m 3D Dist)
+  // FLOOR 2 - Fashion & Apparel (5 Items)
   const DestinationPOI(
     id: 'poi-201',
     name: 'Cotton Collection',
@@ -218,6 +253,7 @@ final mockDestinations = [
     ),
     description: 'Casual island wear, linen garments, tropical resort fashion & accessories.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-202',
@@ -232,6 +268,7 @@ final mockDestinations = [
     ),
     description: 'Chic Sri Lankan womenswear, evening attire, and designer handbags.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-203',
@@ -246,6 +283,7 @@ final mockDestinations = [
     ),
     description: 'Extensive selection of international trends and local Sri Lankan apparel.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-204',
@@ -260,9 +298,25 @@ final mockDestinations = [
     ),
     description: 'Vibrant handwoven Sri Lankan textiles, books, toys, and artisanal crafts.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1606744824163-985d376605aa?w=800&auto=format&fit=crop&q=80',
+  ),
+  const DestinationPOI(
+    id: 'poi-205',
+    name: 'Hugo Boss & Luxury Apparel',
+    category: 'RETAIL & FASHION',
+    floorNumber: 2,
+    rating: 4.8,
+    location: GeodeticCoords(
+      latitude: 6.927200,
+      longitude: 79.845900,
+      height: 50.0,
+    ),
+    description: 'Premium luxury suits, formal wear, leather shoes & accessories.',
+    openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80',
   ),
 
-  // FLOOR 3 - Tech & Electronics Hub (100m - 180m 3D Dist)
+  // FLOOR 3 - Tech & Electronics Hub (5 Items)
   const DestinationPOI(
     id: 'poi-301',
     name: 'Singer Mega Experience Center',
@@ -276,6 +330,7 @@ final mockDestinations = [
     ),
     description: 'Smart TVs, home electronics, laptops, and consumer technology.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-302',
@@ -290,6 +345,7 @@ final mockDestinations = [
     ),
     description: 'Authorized Apple products, iPhones, MacBooks, and LG smart devices.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-303',
@@ -304,6 +360,7 @@ final mockDestinations = [
     ),
     description: '5G SIM connections, eSIM activation, fiber broadband & IoT gadgets.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
     id: 'poi-304',
@@ -318,299 +375,98 @@ final mockDestinations = [
     ),
     description: 'National telecom service desk, fiber routers, and mobile accessories.',
     openStatus: 'OPEN NOW',
-  ),
-
-  // FLOOR 4 - Gems, Jewelry & Sri Lankan Gold (140m - 220m 3D Dist)
-  const DestinationPOI(
-    id: 'poi-401',
-    name: 'Colombo Jewellery Stores (CJS)',
-    category: 'LUXURY',
-    floorNumber: 4,
-    rating: 5.0,
-    location: GeodeticCoords(
-      latitude: 6.928150,
-      longitude: 79.846950,
-      height: 60.0,
-    ),
-    description: 'Iconic Ceylon Blue Sapphires, natural gemstones, and luxury Swiss watches.',
-    openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1562976540-1502c2145186?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
-    id: 'poi-402',
-    name: 'Vogue Jewellers Lanka',
-    category: 'LUXURY',
-    floorNumber: 4,
+    id: 'poi-305',
+    name: 'Samsung Smart Experience Zone',
+    category: 'TECH & ELECTRONICS',
+    floorNumber: 3,
     rating: 4.9,
     location: GeodeticCoords(
-      latitude: 6.925750,
-      longitude: 79.846900,
-      height: 60.0,
+      latitude: 6.926800,
+      longitude: 79.845600,
+      height: 55.0,
     ),
-    description: 'Mastercrafted 22K Sri Lankan gold jewelry, bridal collections, and gems.',
+    description: 'Galaxy smartphones, tablets, smartwatches & home appliance displays.',
     openStatus: 'OPEN NOW',
-  ),
-  const DestinationPOI(
-    id: 'poi-403',
-    name: 'Raja Jewellers Gem Gallery',
-    category: 'LUXURY',
-    floorNumber: 4,
-    rating: 4.8,
-    location: GeodeticCoords(
-      latitude: 6.928500,
-      longitude: 79.844800,
-      height: 60.0,
-    ),
-    description: 'Fine Sri Lankan rubies, star sapphires, and custom handcrafted jewelry.',
-    openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&auto=format&fit=crop&q=80',
   ),
 
-  // FLOOR 5 - Food Studio & Sri Lankan Cuisine (160m - 250m 3D Dist)
+  // FLOOR 4 - Food Court & Dining Layer (5 Items)
   const DestinationPOI(
-    id: 'poi-501',
+    id: 'poi-401',
     name: 'Food Studio Ceylon Court',
     category: 'FOOD & DRINK',
-    floorNumber: 5,
+    floorNumber: 4,
     rating: 4.9,
     location: GeodeticCoords(
       latitude: 6.928450,
       longitude: 79.847150,
-      height: 65.0,
+      height: 60.0,
     ),
     description: 'Fresh Kottu Roti, Jaffna Crab Curry, Egg Hoppers & Ceylon street food.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
-    id: 'poi-502',
+    id: 'poi-402',
     name: 'Ministry of Crab Express',
     category: 'FOOD & DRINK',
-    floorNumber: 5,
+    floorNumber: 4,
     rating: 5.0,
     location: GeodeticCoords(
       latitude: 6.928800,
       longitude: 79.844600,
-      height: 65.0,
+      height: 60.0,
     ),
     description: 'World-renowned Sri Lankan giant lagoon crab & Garlic Chili Prawns.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
-    id: 'poi-503',
+    id: 'poi-403',
     name: 'Barista Ceylon Espresso Bar',
     category: 'FOOD & DRINK',
-    floorNumber: 5,
+    floorNumber: 4,
     rating: 4.7,
     location: GeodeticCoords(
       latitude: 6.925500,
       longitude: 79.847350,
-      height: 65.0,
+      height: 60.0,
     ),
     description: 'Artisanal local coffees, iced lattes, fresh pastries, and savories.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80',
   ),
   const DestinationPOI(
-    id: 'poi-504',
+    id: 'poi-404',
     name: 'Taco Bell Sri Lanka',
     category: 'FOOD & DRINK',
-    floorNumber: 5,
+    floorNumber: 4,
     rating: 4.6,
     location: GeodeticCoords(
       latitude: 6.927500,
       longitude: 79.844100,
-      height: 65.0,
+      height: 60.0,
     ),
     description: 'Mexican inspired burritos, crunchy tacos, and spicy Sri Lankan sauces.',
     openStatus: 'OPEN NOW',
+    imageUrl: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&auto=format&fit=crop&q=80',
   ),
-
-  // FLOOR 6 - Entertainment & Cinema (200m - 290m 3D Dist)
   const DestinationPOI(
-    id: 'poi-601',
+    id: 'poi-405',
     name: 'PVR / Scope Cinemas IMAX OGF',
     category: 'ENTERTAINMENT',
-    floorNumber: 6,
+    floorNumber: 4,
     rating: 5.0,
     location: GeodeticCoords(
       latitude: 6.928750,
       longitude: 79.847400,
-      height: 70.0,
+      height: 60.0,
     ),
     description: 'Premium 3D IMAX screen, Dolby Atmos surround sound & luxury recliners.',
     openStatus: 'OPEN NOW',
-  ),
-  const DestinationPOI(
-    id: 'poi-602',
-    name: 'Playzone Arcade & VR World',
-    category: 'ENTERTAINMENT',
-    floorNumber: 6,
-    rating: 4.8,
-    location: GeodeticCoords(
-      latitude: 6.925250,
-      longitude: 79.847650,
-      height: 70.0,
-    ),
-    description: 'Multiplayer arcade games, VR motion simulators, and kids play park.',
-    openStatus: 'OPEN NOW',
-  ),
-
-  // FLOOR 7 - Corporate & Tech Innovation (230m - 320m 3D Dist)
-  const DestinationPOI(
-    id: 'poi-701',
-    name: 'Virtusa Tech Innovation Hub',
-    category: 'SERVICES',
-    floorNumber: 7,
-    rating: 4.8,
-    location: GeodeticCoords(
-      latitude: 6.928950,
-      longitude: 79.847650,
-      height: 75.0,
-    ),
-    description: 'Global IT solution engineering, AI research, and agile co-working space.',
-    openStatus: 'OPEN NOW',
-  ),
-  const DestinationPOI(
-    id: 'poi-702',
-    name: 'WSO2 Open-Source Cloud Center',
-    category: 'TECH & ELECTRONICS',
-    floorNumber: 7,
-    rating: 4.9,
-    location: GeodeticCoords(
-      latitude: 6.925050,
-      longitude: 79.847950,
-      height: 75.0,
-    ),
-    description: 'API management, digital identity solutions, and tech community meetups.',
-    openStatus: 'OPEN NOW',
-  ),
-  const DestinationPOI(
-    id: 'poi-703',
-    name: 'SLT Mobitel 5G Smart Lab',
-    category: 'TECH & ELECTRONICS',
-    floorNumber: 7,
-    rating: 4.8,
-    location: GeodeticCoords(
-      latitude: 6.929250,
-      longitude: 79.844100,
-      height: 75.0,
-    ),
-    description: 'IoT innovation lab, smart city tech demonstrations, and 5G testbed.',
-    openStatus: 'OPEN NOW',
-  ),
-
-  // FLOOR 8 - Enterprise & Banking Suites (260m - 340m 3D Dist)
-  const DestinationPOI(
-    id: 'poi-801',
-    name: 'Commercial Bank Premier Lounge',
-    category: 'SERVICES',
-    floorNumber: 8,
-    rating: 4.8,
-    location: GeodeticCoords(
-      latitude: 6.924850,
-      longitude: 79.848100,
-      height: 80.0,
-    ),
-    description: 'Exclusive priority banking, forex exchange, and private wealth advisory.',
-    openStatus: 'OPEN NOW',
-  ),
-  const DestinationPOI(
-    id: 'poi-802',
-    name: 'Hatton National Bank (HNB) VIP Suite',
-    category: 'SERVICES',
-    floorNumber: 8,
-    rating: 4.7,
-    location: GeodeticCoords(
-      latitude: 6.929350,
-      longitude: 79.844300,
-      height: 80.0,
-    ),
-    description: 'Digital self-service banking center, corporate loans & trade desk.',
-    openStatus: 'OPEN NOW',
-  ),
-  const DestinationPOI(
-    id: 'poi-803',
-    name: 'Sampath Bank Smart Banking Kiosk',
-    category: 'SERVICES',
-    floorNumber: 8,
-    rating: 4.8,
-    location: GeodeticCoords(
-      latitude: 6.929550,
-      longitude: 79.847900,
-      height: 80.0,
-    ),
-    description: '24/7 automated cash deposit, ATM machines, and card services.',
-    openStatus: '24/7',
-  ),
-
-  // FLOOR 9 - VIP Gemology & Executive Suites (290m - 360m 3D Dist)
-  const DestinationPOI(
-    id: 'poi-901',
-    name: 'Ceylon Gem & Sapphire Guild Salon',
-    category: 'LUXURY',
-    floorNumber: 9,
-    rating: 5.0,
-    location: GeodeticCoords(
-      latitude: 6.929450,
-      longitude: 79.847750,
-      height: 85.0,
-    ),
-    description: 'Certified rare Ratnapura gemstones, padparadscha sapphires & custom cuts.',
-    openStatus: 'BY APPOINTMENT',
-  ),
-  const DestinationPOI(
-    id: 'poi-902',
-    name: 'Ocean View Executive Club',
-    category: 'SERVICES',
-    floorNumber: 9,
-    rating: 4.9,
-    location: GeodeticCoords(
-      latitude: 6.924650,
-      longitude: 79.848350,
-      height: 85.0,
-    ),
-    description: 'Private executive conference lounge overlooking the Indian Ocean coastline.',
-    openStatus: 'OPEN NOW',
-  ),
-
-  // FLOOR 10 - Sky Lounge & Ocean View Terrace (320m - 390m 3D Dist)
-  const DestinationPOI(
-    id: 'poi-1001',
-    name: 'Galle Face Sunset Sky Lounge',
-    category: 'ENTERTAINMENT',
-    floorNumber: 10,
-    rating: 5.0,
-    location: GeodeticCoords(
-      latitude: 6.929750,
-      longitude: 79.848250,
-      height: 90.0,
-    ),
-    description: '360-degree ocean view rooftop lounge with live acoustic music & mocktails.',
-    openStatus: 'OPEN NOW',
-  ),
-  const DestinationPOI(
-    id: 'poi-1002',
-    name: 'Indian Ocean Terrace Fine Dining',
-    category: 'FOOD & DRINK',
-    floorNumber: 10,
-    rating: 4.9,
-    location: GeodeticCoords(
-      latitude: 6.924450,
-      longitude: 79.843950,
-      height: 90.0,
-    ),
-    description: 'Fresh seafood grill, international fusion dishes & open-air terrace dining.',
-    openStatus: 'OPEN NOW',
-  ),
-  const DestinationPOI(
-    id: 'poi-1003',
-    name: 'Helipad & Executive Sky Gate',
-    category: 'SERVICES',
-    floorNumber: 10,
-    rating: 5.0,
-    location: GeodeticCoords(
-      latitude: 6.927300,
-      longitude: 79.845680,
-      height: 90.0,
-    ),
-    description: 'Rooftop helipad reception, VIP sky elevator & express check-in.',
-    openStatus: '24/7',
+    imageUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80',
   ),
 ];

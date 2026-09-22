@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,10 +34,16 @@ class FloorPlanScreen extends StatefulWidget {
   State<FloorPlanScreen> createState() => _FloorPlanScreenState();
 }
 
-class _FloorPlanScreenState extends State<FloorPlanScreen> {
+class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProviderStateMixin {
   DestinationPOI? _selectedPOI;
   FloorLevelConfig? _overrideFloor;
+  String _selectedCategoryFilter = 'ALL';
+  bool _showFilterChips = false;
+  final double _zoomScale = 1.0;
+  final bool _showDpad = false;
   final ParkingService _parkingService = ParkingService();
+
+  late AnimationController _pulseController;
 
   FloorLevelConfig get displayFloor => _overrideFloor ?? widget.currentFloor;
 
@@ -44,6 +51,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
   void initState() {
     super.initState();
     _parkingService.addListener(_onParkingStateChanged);
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
   }
 
   @override
@@ -57,6 +68,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
   @override
   void dispose() {
     _parkingService.removeListener(_onParkingStateChanged);
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -69,11 +81,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isParkingFloor = displayFloor.floorNumber < 0;
-    final currentFloorPOIs = isParkingFloor
-        ? <DestinationPOI>[]
-        : widget.destinations
-            .where((poi) => poi.floorNumber == displayFloor.floorNumber)
-            .toList();
+    final currentFloorPOIs = widget.destinations
+        .where((poi) => poi.floorNumber == displayFloor.floorNumber)
+        .toList();
 
     final String floorId = displayFloor.floorNumber == -1
         ? 'B1'
@@ -89,25 +99,31 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
         .length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
-        titleSpacing: 12,
-        title: Row(
+        titleSpacing: 16,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.layers, color: Color(0xFF2563EB), size: 18),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                'Floor Map',
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF0F172A),
-                ),
+            Text(
+              displayFloor.name,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            Text(
+              'One Galle Face Mall • Colombo',
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF64748B),
               ),
             ),
           ],
@@ -119,7 +135,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
               borderRadius: BorderRadius.circular(10),
               child: Container(
                 margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(10),
@@ -128,8 +144,8 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(LucideIcons.store, color: Color(0xFF2563EB), size: 13),
-                    const SizedBox(width: 4),
+                    const Icon(LucideIcons.store, color: Color(0xFF2563EB), size: 14),
+                    const SizedBox(width: 5),
                     Text(
                       '${currentFloorPOIs.length} Shops',
                       style: GoogleFonts.inter(
@@ -164,7 +180,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Tap any parking slot on the map to park your vehicle or navigate!'),
+                      content: Text('Tap any parking slot to reserve or navigate!'),
                       backgroundColor: Color(0xFF2563EB),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -174,7 +190,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
               borderRadius: BorderRadius.circular(10),
               child: Container(
                 margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: myVehicle != null ? const Color(0xFF16A34A) : const Color(0xFF0F172A),
                   borderRadius: BorderRadius.circular(10),
@@ -188,17 +204,15 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                     Icon(
                       myVehicle != null ? LucideIcons.car : LucideIcons.parkingCircle,
                       color: myVehicle != null ? Colors.white : const Color(0xFF38BDF8),
-                      size: 13,
+                      size: 14,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 5),
                     Text(
-                      myVehicle != null
-                          ? 'My Car: ${myVehicle.slotId}'
-                          : '$freeSlotsCount/24 Free',
+                      myVehicle != null ? 'Car: ${myVehicle.slotId}' : '$freeSlotsCount Free',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: myVehicle != null ? Colors.white : const Color(0xFF38BDF8),
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -209,100 +223,156 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
       ),
       body: Column(
         children: [
-          // Floor Level Selector Bar
+          // Single Compact Header Row: Floor Pills + Filter Toggle
           Container(
-            height: 52,
+            height: 48,
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: widget.buildingProfile.floors.length,
-              itemBuilder: (context, idx) {
-                final floor = widget.buildingProfile.floors[idx];
-                final isSelected = floor.floorNumber == displayFloor.floorNumber;
-                final isParkedFloor = myVehicle != null &&
-                    ((floor.floorNumber == -1 && myVehicle.floorId.contains('B1')) ||
-                        (floor.floorNumber == -2 && myVehicle.floorId.contains('B2')));
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.buildingProfile.floors.length,
+                    itemBuilder: (context, idx) {
+                      final floor = widget.buildingProfile.floors[idx];
+                      final isSelected = floor.floorNumber == displayFloor.floorNumber;
+                      final isParkedFloor = myVehicle != null &&
+                          ((floor.floorNumber == -1 && myVehicle.floorId.contains('B1')) ||
+                              (floor.floorNumber == -2 && myVehicle.floorId.contains('B2')));
 
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPOI = null;
-                      _overrideFloor = floor;
-                    });
-                    widget.onSelectFloor(floor);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF2563EB)
-                          : (isParkedFloor ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9)),
-                      borderRadius: BorderRadius.circular(12),
-                      border: isParkedFloor && !isSelected
-                          ? Border.all(color: const Color(0xFF22C55E), width: 1.5)
-                          : null,
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              )
-                            ]
-                          : null,
-                    ),
-                    alignment: Alignment.center,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isParkedFloor && !isSelected) ...[
-                          const Icon(LucideIcons.car, size: 12, color: Color(0xFF16A34A)),
-                          const SizedBox(width: 4),
-                        ],
-                        Text(
-                          floor.floorNumber < 0
-                              ? 'B${floor.floorNumber}'
-                              : 'F${floor.floorNumber}',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedPOI = null;
+                            _overrideFloor = floor;
+                          });
+                          widget.onSelectFloor(floor);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            gradient: isSelected
+                                ? const LinearGradient(
+                                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
                             color: isSelected
-                                ? Colors.white
-                                : (isParkedFloor ? const Color(0xFF15803D) : const Color(0xFF334155)),
+                                ? null
+                                : (isParkedFloor ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9)),
+                            borderRadius: BorderRadius.circular(10),
+                            border: isParkedFloor && !isSelected
+                                ? Border.all(color: const Color(0xFF22C55E), width: 1.5)
+                                : null,
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    )
+                                  ]
+                                : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isParkedFloor && !isSelected) ...[
+                                const Icon(LucideIcons.car, size: 12, color: Color(0xFF16A34A)),
+                                const SizedBox(width: 4),
+                              ],
+                              Text(
+                                floor.floorNumber < 0
+                                    ? 'B${floor.floorNumber.abs()}'
+                                    : 'F${floor.floorNumber}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isParkedFloor ? const Color(0xFF15803D) : const Color(0xFF334155)),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      );
+                    },
+                  ),
+                ),
+                if (!isParkingFloor) ...[
+                  const VerticalDivider(width: 12, indent: 6, endIndent: 6),
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _showFilterChips = !_showFilterChips;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _showFilterChips ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        LucideIcons.filter,
+                        size: 14,
+                        color: _showFilterChips ? Colors.white : const Color(0xFF64748B),
+                      ),
                     ),
                   ),
-                );
-              },
+                ],
+              ],
             ),
           ),
 
-          // Banner Notification if Parked on another floor
+          // Optional Expandable Category Filter Chips Bar
+          if (_showFilterChips && !isParkingFloor)
+            Container(
+              height: 40,
+              color: Colors.white,
+              padding: const EdgeInsets.only(left: 10, right: 10, bottom: 6),
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _buildCategoryFilterChip('ALL', 'All Places', LucideIcons.layoutGrid),
+                  _buildCategoryFilterChip('DINING', 'Dining 🍽️', LucideIcons.utensils),
+                  _buildCategoryFilterChip('FASHION', 'Fashion 👗', LucideIcons.shoppingBag),
+                  _buildCategoryFilterChip('BEAUTY', 'Beauty 💅', LucideIcons.sparkles),
+                  _buildCategoryFilterChip('TECH', 'Tech 💻', LucideIcons.laptop),
+                  _buildCategoryFilterChip('SERVICES', 'Services ℹ️', LucideIcons.info),
+                ],
+              ),
+            ),
+
+          // Parked Vehicle Quick Banner
           if (myVehicle != null && !isParkingFloor)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               color: const Color(0xFFDCFCE7),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.car, color: Color(0xFF16A34A), size: 18),
-                  const SizedBox(width: 8),
+                  const Icon(LucideIcons.car, color: Color(0xFF16A34A), size: 14),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Your vehicle is parked at ${myVehicle.slotId} (${myVehicle.floorName})',
+                      'Vehicle parked at ${myVehicle.slotId} (${myVehicle.floorName})',
                       style: GoogleFonts.inter(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF15803D),
                       ),
                     ),
                   ),
-                  TextButton.icon(
-                    onPressed: () {
+                  InkWell(
+                    onTap: () {
                       final targetFloorNumber = myVehicle.floorId.contains('B2') ? -2 : -1;
                       final targetFloorConfig = widget.buildingProfile.floors.firstWhere(
                         (f) => f.floorNumber == targetFloorNumber,
@@ -314,26 +384,40 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                       });
                       widget.onSelectFloor(targetFloorConfig);
                     },
-                    icon: const Icon(LucideIcons.arrowRight, size: 14, color: Color(0xFF16A34A)),
-                    label: Text(
-                      'Go to ${myVehicle.floorId}',
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF16A34A)),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF16A34A),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Go to ${myVehicle.floorId}',
+                        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
 
-          // Map Canvas + Pins & Clickable Parking Overlays Container
+          // Maximized Floor Map Canvas Container
           Expanded(
             child: Container(
-              margin: const EdgeInsets.all(12),
+              margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isParkingFloor ? const Color(0xFF0F172A) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(
+                  color: isParkingFloor ? const Color(0xFF1E293B) : const Color(0xFFCBD5E1),
+                  width: 1.5,
+                ),
                 boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4)),
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
                 ],
               ),
               child: ClipRRect(
@@ -346,83 +430,35 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                     return Stack(
                       children: [
                         // Architectural Custom Floor Canvas
-                        CustomPaint(
-                          size: Size(width, height),
-                          painter: ArchitecturalFloorPainter(
-                            floorNumber: displayFloor.floorNumber,
-                            floorName: displayFloor.name,
-                            selectedPOI: _selectedPOI,
-                            parkingSlots: floorSlots,
-                            myVehicle: myVehicle,
-                          ),
-                        ),
-
-                        // Render Interactive POI Pins over Non-Parking Floors
-                        if (!isParkingFloor)
-                          ...currentFloorPOIs.asMap().entries.map((entry) {
-                            final idx = entry.key;
-                            final poi = entry.value;
-
-                            final pos = _getRoomPositionForIndex(idx, currentFloorPOIs.length, width, height);
-                            final isSelected = _selectedPOI?.id == poi.id;
-
-                            return Positioned(
-                              left: (pos.dx - 45).clamp(10.0, width - 100.0),
-                              top: (pos.dy - 20).clamp(10.0, height - 60.0),
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedPOI = poi;
-                                  });
-                                  _showStoreDetailsModal(context, poi);
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  width: 90,
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? const Color(0xFF2563EB) : Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isSelected ? Colors.white : const Color(0xFF2563EB),
-                                      width: isSelected ? 2 : 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: isSelected ? const Color(0xFF2563EB).withValues(alpha: 0.4) : Colors.black12,
-                                        blurRadius: isSelected ? 8 : 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        _getCategoryIcon(poi.category),
-                                        size: 14,
-                                        color: isSelected ? Colors.white : const Color(0xFF2563EB),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        poi.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w800,
-                                          color: isSelected ? Colors.white : const Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                        AnimatedBuilder(
+                          animation: _pulseController,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: _zoomScale,
+                              alignment: Alignment.center,
+                              child: CustomPaint(
+                                size: Size(width, height),
+                                painter: ArchitecturalFloorPainter(
+                                  floorNumber: displayFloor.floorNumber,
+                                  floorName: displayFloor.name,
+                                  selectedPOI: _selectedPOI,
+                                  selectedCategoryFilter: _selectedCategoryFilter,
+                                  currentFloorPOIs: currentFloorPOIs,
+                                  parkingSlots: floorSlots,
+                                  myVehicle: myVehicle,
+                                  userCoords: widget.userCoords,
+                                  pulseAnimationValue: _pulseController.value,
                                 ),
                               ),
                             );
-                          }),
+                          },
+                        ),
 
-                        // Render Interactive Clickable Parking Slot Hitbox Overlays on Parking Floors
+                        // Render Realistic Shop Photo Cards over Retail Floor Rooms
+                        if (!isParkingFloor)
+                          ..._buildRetailStorePhotoCards(width, height, currentFloorPOIs),
+
+                        // Parking Slot Touch Overlays
                         if (isParkingFloor)
                           ..._buildClickableParkingSlotOverlays(
                             width,
@@ -432,7 +468,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                             myVehicle,
                           ),
 
-                        // Dynamic User Location Position Calculation on 2D Canvas
+                        // User Location Position Pin with Motion Pulsing Radar & Badge
                         () {
                           const double centerLat = 6.927079;
                           const double centerLon = 79.845612;
@@ -449,84 +485,228 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                           final double userY = rawUserY.clamp(20.0, height - 20.0);
 
                           return Positioned(
-                            left: userX - 14,
-                            top: userY - 14,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF2563EB).withValues(alpha: 0.2),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Container(
-                                      width: 14,
-                                      height: 14,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF2563EB),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white, width: 2.5),
-                                        boxShadow: const [
-                                          BoxShadow(color: Colors.black26, blurRadius: 4),
-                                        ],
+                            left: userX - 18,
+                            top: userY - 18,
+                            child: AnimatedBuilder(
+                              animation: _pulseController,
+                              builder: (context, child) {
+                                final pulse = _pulseController.value;
+                                return SizedBox(
+                                  width: 36,
+                                  height: 36,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      // Motion Radar Wave Ring 1
+                                      Transform.scale(
+                                        scale: 1.0 + (pulse * 0.8),
+                                        child: Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF2563EB).withValues(alpha: 0.3 * (1.0 - pulse)),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: const Color(0xFF3B82F6).withValues(alpha: 0.6 * (1.0 - pulse)),
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      // Motion Pulse Glow
+                                      Transform.scale(
+                                        scale: 1.0 + (pulse * 0.3),
+                                        child: Container(
+                                          width: 22,
+                                          height: 22,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                      // Core Location Pin Dot
+                                      Container(
+                                        width: 14,
+                                        height: 14,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF2563EB),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.white, width: 2.5),
+                                          boxShadow: const [
+                                            BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 2)),
+                                          ],
+                                        ),
+                                        child: Center(
+                                          child: Container(
+                                            width: 4,
+                                            height: 4,
+                                            decoration: const BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
                           );
                         }(),
 
-                        // Clean Map Legend Overlay
-                        Positioned(
-                          top: 12,
-                          left: 12,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.95),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFCBD5E1)),
-                              boxShadow: const [
-                                BoxShadow(color: Colors.black12, blurRadius: 4),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isParkingFloor ? LucideIcons.parkingCircle : LucideIcons.compass,
-                                  color: isParkingFloor ? const Color(0xFF0284C7) : const Color(0xFF2563EB),
-                                  size: 14,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  displayFloor.floorNumber < 0
-                                      ? 'B${displayFloor.floorNumber}'
-                                      : displayFloor.name,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF1E293B),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
 
-                        // Dynamic D-Pad Controls
-                        Positioned(
-                          bottom: 12,
-                          right: 12,
-                          child: DpadControlWidget(
-                            onSimulateMove: widget.onSimulateMove,
+                        // Dynamic Floating D-Pad Move Controls (Bottom Right)
+                        if (_showDpad)
+                          Positioned(
+                            bottom: 10,
+                            right: 10,
+                            child: DpadControlWidget(
+                              onSimulateMove: widget.onSimulateMove,
+                            ),
                           ),
-                        ),
+
+                        // Elevated Selected Store Preview Sheet (Bottom Floating)
+                        if (_selectedPOI != null && !isParkingFloor)
+                          Positioned(
+                            left: 10,
+                            bottom: 10,
+                            right: _showDpad ? 150 : 10,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(color: const Color(0xFF2563EB), width: 1.5),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x332563EB),
+                                    blurRadius: 12,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Image.network(
+                                          _getStoreImageUrl(_selectedPOI!.name),
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) => Container(
+                                            width: 50,
+                                            height: 50,
+                                            color: const Color(0xFFEFF6FF),
+                                            child: Icon(_getCategoryIcon(_selectedPOI!.category), color: const Color(0xFF2563EB)),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              _selectedPOI!.name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w800,
+                                                color: const Color(0xFF0F172A),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFDCFCE7),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text(
+                                                    'OPEN NOW',
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 8,
+                                                      fontWeight: FontWeight.w800,
+                                                      color: const Color(0xFF15803D),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  '★ ${_selectedPOI!.rating}',
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: const Color(0xFFD97706),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () => setState(() => _selectedPOI = null),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(4),
+                                          child: Icon(LucideIcons.x, size: 16, color: Color(0xFF64748B)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          icon: const Icon(LucideIcons.compass, size: 14, color: Colors.white),
+                                          label: Text(
+                                            'NAVIGATE HERE (AR)',
+                                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF2563EB),
+                                            padding: const EdgeInsets.symmetric(vertical: 8),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            elevation: 0,
+                                          ),
+                                          onPressed: () {
+                                            if (widget.onSelectDestination != null) {
+                                              widget.onSelectDestination!(_selectedPOI!);
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      OutlinedButton(
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                          side: const BorderSide(color: Color(0xFF2563EB), width: 1.2),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                        onPressed: () => _showStoreDetailsModal(context, _selectedPOI!),
+                                        child: Text(
+                                          'Details',
+                                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF2563EB)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     );
                   },
@@ -539,7 +719,265 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
     );
   }
 
-  /// Builds 24 interactive hitboxes placed exactly over every parking stall canvas box on B1/B2
+  /// Builds Realistic Store Photo Background Cards positioned over each room space on retail floors
+  List<Widget> _buildRetailStorePhotoCards(
+    double width,
+    double height,
+    List<DestinationPOI> pois,
+  ) {
+    const double roomTopPadding = 50.0;
+    final double availableHeight = height - roomTopPadding - 46.0;
+    final double roomH = availableHeight * 0.23;
+    final double gapY = (availableHeight - (roomH * 3)) / 4;
+    final double roomW = width * 0.31;
+    final double leftX = 18.0;
+    final double rightX = width - 18.0 - roomW;
+
+    final roomRects = [
+      Rect.fromLTWH(leftX, roomTopPadding + gapY, roomW, roomH),
+      Rect.fromLTWH(rightX, roomTopPadding + gapY, roomW, roomH),
+      Rect.fromLTWH(leftX, roomTopPadding + (gapY * 2) + roomH, roomW, roomH),
+      Rect.fromLTWH(rightX, roomTopPadding + (gapY * 2) + roomH, roomW, roomH),
+      Rect.fromLTWH(leftX, roomTopPadding + (gapY * 3) + (roomH * 2), roomW, roomH),
+      Rect.fromLTWH(rightX, roomTopPadding + (gapY * 3) + (roomH * 2), roomW, roomH),
+    ];
+
+    final List<Widget> widgets = [];
+    for (int i = 0; i < roomRects.length; i++) {
+      final rect = roomRects[i];
+      final poi = i < pois.length ? pois[i] : null;
+      final isSelected = poi != null && _selectedPOI?.id == poi.id;
+
+      final bool matchesCategory = _selectedCategoryFilter == 'ALL' ||
+          (poi != null && poi.category.toUpperCase().contains(_selectedCategoryFilter));
+
+      final roomCode = '#${displayFloor.floorNumber}0${i + 1}';
+      final storeName = poi != null ? poi.name : 'Store Space';
+      final imageUrl = _getStoreImageUrl(storeName);
+
+      widgets.add(
+        Positioned(
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: matchesCategory ? 1.0 : 0.3,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  if (poi != null) {
+                    setState(() {
+                      _selectedPOI = poi;
+                    });
+                    _showStoreDetailsModal(context, poi);
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFCBD5E1),
+                      width: isSelected ? 2.5 : 1.2,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : const [
+                            BoxShadow(color: Colors.black12, blurRadius: 4),
+                          ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Stack(
+                      children: [
+                        // Realistic Store Photography Background Image
+                        Positioned.fill(
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: const Color(0xFFEFF6FF),
+                              child: Center(
+                                child: Icon(_getCategoryIcon(poi?.category ?? ''), color: const Color(0xFF2563EB), size: 24),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Gradient Scrim for Content Contrast
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.3),
+                                  Colors.black.withValues(alpha: 0.85),
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Top Row: Room Tag Badge (Left) + Category Badge (Right)
+                        Positioned(
+                          top: 6,
+                          left: 6,
+                          right: 6,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFF2563EB) : Colors.black54,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: Text(
+                                  roomCode,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              if (poi != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2563EB).withValues(alpha: 0.85),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Text(
+                                    _getCategoryTag(poi.category),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 7.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        // Bottom Row: Store Title + Icon + Rating
+                        Positioned(
+                          left: 6,
+                          bottom: 6,
+                          right: 6,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _getCategoryIcon(poi?.category ?? ''),
+                                    size: 11,
+                                    color: const Color(0xFF60A5FA),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      storeName,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 9.0,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                        height: 1.1,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (poi != null) ...[
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '★ ${poi.rating}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFFFBBF24),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return widgets;
+  }
+
+  Widget _buildCategoryFilterChip(String catKey, String label, IconData icon) {
+    final isSelected = _selectedCategoryFilter == catKey;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedCategoryFilter = catKey;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        margin: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(10),
+          border: isSelected ? Border.all(color: const Color(0xFF2563EB), width: 1.2) : null,
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 12,
+              color: isSelected ? Colors.white : const Color(0xFF64748B),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF334155),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
   List<Widget> _buildClickableParkingSlotOverlays(
     double width,
     double height,
@@ -547,15 +985,15 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
     List<ParkingSlot> slots,
     MyVehicleLocation? myVehicle,
   ) {
-    const double roomTopPadding = 52.0;
-    final double availableHeight = height - roomTopPadding - 32.0;
+    const double roomTopPadding = 50.0;
+    final double availableHeight = height - roomTopPadding - 46.0;
     final double slotH = availableHeight * 0.135;
     final double gapY = (availableHeight - (slotH * 6)) / 5;
     final double slotW = (width * 0.34 - 18) / 2;
 
     final List<Widget> widgets = [];
 
-    // Left Wing: Zone A (Slots A-01 to A-12)
+    // Left Wing
     for (int row = 0; row < 6; row++) {
       for (int col = 0; col < 2; col++) {
         final int num = row * 2 + col + 1;
@@ -593,67 +1031,16 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(6),
-                splashColor: isMyCar
-                    ? const Color(0xFF22C55E).withValues(alpha: 0.3)
-                    : const Color(0xFF38BDF8).withValues(alpha: 0.3),
                 onTap: () => _showParkingSlotModal(context, slotObj, isMyCar),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                    border: isMyCar
-                        ? Border.all(color: const Color(0xFF22C55E), width: 2.5)
-                        : null,
-                  ),
-                ),
+                child: Container(),
               ),
             ),
           ),
         );
-
-        if (isMyCar) {
-          widgets.add(
-            Positioned(
-              left: (slotX + slotW / 2 - 38).clamp(8.0, width - 85.0),
-              top: (slotY - 14).clamp(6.0, height - 30.0),
-              child: IgnorePointer(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF16A34A),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white, width: 1.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x9922C55E),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('🚗', style: TextStyle(fontSize: 9)),
-                      const SizedBox(width: 3),
-                      Text(
-                        'MY CAR',
-                        style: GoogleFonts.inter(
-                          fontSize: 8,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
       }
     }
 
-    // Right Wing: Zone B (Slots B-01 to B-12)
+    // Right Wing
     for (int row = 0; row < 6; row++) {
       for (int col = 0; col < 2; col++) {
         final int num = row * 2 + col + 1;
@@ -689,70 +1076,18 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(6),
-                splashColor: isMyCar
-                    ? const Color(0xFF22C55E).withValues(alpha: 0.3)
-                    : const Color(0xFF38BDF8).withValues(alpha: 0.3),
                 onTap: () => _showParkingSlotModal(context, slotObj, isMyCar),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                    border: isMyCar
-                        ? Border.all(color: const Color(0xFF22C55E), width: 2.5)
-                        : null,
-                  ),
-                ),
+                child: Container(),
               ),
             ),
           ),
         );
-
-        if (isMyCar) {
-          widgets.add(
-            Positioned(
-              left: (slotX + slotW / 2 - 38).clamp(8.0, width - 85.0),
-              top: (slotY - 14).clamp(6.0, height - 30.0),
-              child: IgnorePointer(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF16A34A),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white, width: 1.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x9922C55E),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('🚗', style: TextStyle(fontSize: 9)),
-                      const SizedBox(width: 3),
-                      Text(
-                        'MY CAR',
-                        style: GoogleFonts.inter(
-                          fontSize: 8,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
       }
     }
 
     return widgets;
   }
 
-  /// Interactive Modal Bottom Sheet for Parking Stall (Functions Before & After Parking)
   void _showParkingSlotModal(BuildContext context, ParkingSlot slot, bool isMyCar) {
     showModalBottomSheet(
       context: context,
@@ -779,8 +1114,6 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                 ),
               ),
             ),
-
-            // Header Row: Slot Name + Status Pill
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -826,8 +1159,6 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-
-                // Status Badge Pill
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -849,116 +1180,43 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                                   : const Color(0xFFFDE68A))),
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isMyCar) ...[
-                        const Text('🚗 ', style: TextStyle(fontSize: 10)),
-                      ],
-                      Text(
-                        isMyCar
-                            ? 'PARKED'
-                            : (slot.status == ParkingSlotStatus.free
-                                ? 'AVAILABLE'
-                                : (slot.status == ParkingSlotStatus.occupied
-                                    ? 'OCCUPIED'
-                                    : 'RESERVED')),
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: isMyCar
-                              ? const Color(0xFF15803D)
-                              : (slot.status == ParkingSlotStatus.free
-                                  ? const Color(0xFF16A34A)
-                                  : (slot.status == ParkingSlotStatus.occupied
-                                      ? const Color(0xFFDC2626)
-                                      : const Color(0xFFD97706))),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    isMyCar
+                        ? 'PARKED'
+                        : (slot.status == ParkingSlotStatus.free
+                            ? 'AVAILABLE'
+                            : (slot.status == ParkingSlotStatus.occupied
+                                ? 'OCCUPIED'
+                                : 'RESERVED')),
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: isMyCar
+                          ? const Color(0xFF15803D)
+                          : (slot.status == ParkingSlotStatus.free
+                              ? const Color(0xFF16A34A)
+                              : (slot.status == ParkingSlotStatus.occupied
+                                  ? const Color(0xFFDC2626)
+                                  : const Color(0xFFD97706))),
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 18),
-
-            // Features chips
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 if (slot.isEVCharging)
-                  _buildFeatureChip(LucideIcons.zap, '⚡ 120kW EV Charging Station', const Color(0xFF16A34A)),
+                  _buildFeatureChip(LucideIcons.zap, '⚡ 120kW EV Charger', const Color(0xFF16A34A)),
                 if (slot.isHandicapAccessible)
-                  _buildFeatureChip(LucideIcons.accessibility, '♿ Handicap Accessible Bay', const Color(0xFF2563EB)),
+                  _buildFeatureChip(LucideIcons.accessibility, '♿ Handicap Bay', const Color(0xFF2563EB)),
                 _buildFeatureChip(LucideIcons.radio, '🛰️ Live IoT Sensor Active', const Color(0xFF64748B)),
               ],
             ),
             const SizedBox(height: 20),
-
-            // Info Box
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Stall ID', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B))),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          slot.id,
-                          textAlign: TextAlign.end,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Assigned Vehicle', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B))),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          isMyCar
-                              ? 'WP CAB-8821 (My Vehicle)'
-                              : (slot.status == ParkingSlotStatus.free
-                                  ? 'Unassigned'
-                                  : 'Occupied by another vehicle'),
-                          textAlign: TextAlign.end,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isMyCar
-                                ? const Color(0xFF16A34A)
-                                : (slot.status == ParkingSlotStatus.free
-                                    ? const Color(0xFF0F172A)
-                                    : const Color(0xFFDC2626)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // SUITABLE FUNCTIONS BEFORE & AFTER PARKING
             if (!isMyCar && slot.status != ParkingSlotStatus.free) ...[
-              // OCCUPIED RESTRICTION WARNING BOX
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
@@ -981,17 +1239,12 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                               fontSize: 12,
                               fontWeight: FontWeight.w900,
                               color: const Color(0xFFDC2626),
-                              letterSpacing: 0.5,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Stall ${slot.id} is occupied by another vehicle. Parking is restricted.',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: const Color(0xFF991B1B),
-                              fontWeight: FontWeight.w600,
-                            ),
+                            'Stall ${slot.id} is currently occupied by another vehicle.',
+                            style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF991B1B)),
                           ),
                         ],
                       ),
@@ -1002,16 +1255,16 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 48,
                 child: OutlinedButton.icon(
-                  icon: const Icon(LucideIcons.navigation, color: Color(0xFF2563EB), size: 20),
+                  icon: const Icon(LucideIcons.navigation, color: Color(0xFF2563EB), size: 18),
                   label: Text(
-                    'NAVIGATE TO THIS SLOT (AR VIEW)',
+                    'NAVIGATE TO THIS SLOT',
                     style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF2563EB)),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () {
                     Navigator.pop(context);
@@ -1022,20 +1275,19 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                 ),
               ),
             ] else if (!isMyCar) ...[
-              // FREE SLOT: PARK MY VEHICLE HERE
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 48,
                 child: ElevatedButton.icon(
-                  icon: const Icon(LucideIcons.car, color: Colors.white, size: 20),
+                  icon: const Icon(LucideIcons.car, color: Colors.white, size: 18),
                   label: Text(
                     'PARK MY VEHICLE HERE',
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF16A34A),
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () async {
                     try {
@@ -1053,13 +1305,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Row(
-                              children: [
-                                const Icon(LucideIcons.checkCircle, color: Colors.white),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text('Vehicle successfully parked at Stall ${slot.id}!')),
-                              ],
-                            ),
+                            content: Text('Vehicle parked at Stall ${slot.id}!'),
                             backgroundColor: const Color(0xFF16A34A),
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -1070,13 +1316,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Row(
-                              children: [
-                                const Icon(LucideIcons.alertTriangle, color: Colors.white),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(e.toString().replaceAll('Exception: ', ''))),
-                              ],
-                            ),
+                            content: Text(e.toString().replaceAll('Exception: ', '')),
                             backgroundColor: const Color(0xFFDC2626),
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -1087,19 +1327,18 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              // 2. NAVIGATE TO THIS SLOT (BEFORE PARKED FUNCTION)
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 48,
                 child: OutlinedButton.icon(
-                  icon: const Icon(LucideIcons.navigation, color: Color(0xFF2563EB), size: 20),
+                  icon: const Icon(LucideIcons.navigation, color: Color(0xFF2563EB), size: 18),
                   label: Text(
-                    'NAVIGATE TO THIS SLOT (AR VIEW)',
+                    'NAVIGATE TO THIS SLOT',
                     style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF2563EB)),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () {
                     Navigator.pop(context);
@@ -1110,20 +1349,19 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                 ),
               ),
             ] else ...[
-              // 1. NAVIGATE TO MY PARKED VEHICLE (AFTER PARKED FUNCTION)
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 48,
                 child: ElevatedButton.icon(
-                  icon: const Icon(LucideIcons.compass, color: Colors.white, size: 20),
+                  icon: const Icon(LucideIcons.compass, color: Colors.white, size: 18),
                   label: Text(
-                    'NAVIGATE TO MY PARKED VEHICLE',
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
+                    'NAVIGATE TO MY CAR',
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0284C7),
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () {
                     Navigator.pop(context);
@@ -1134,20 +1372,19 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              // 2. UNPARK VEHICLE / REMOVE SPOT (AFTER PARKED FUNCTION)
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 48,
                 child: ElevatedButton.icon(
-                  icon: const Icon(LucideIcons.logOut, color: Colors.white, size: 20),
+                  icon: const Icon(LucideIcons.logOut, color: Colors.white, size: 18),
                   label: Text(
-                    'UNPARK VEHICLE / REMOVE SPOT',
+                    'UNPARK VEHICLE',
                     style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFDC2626),
                     elevation: 1,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () async {
                     await _parkingService.clearVehicleLocation();
@@ -1155,13 +1392,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(LucideIcons.info, color: Colors.white),
-                              const SizedBox(width: 8),
-                              Expanded(child: Text('Vehicle unparked from Stall ${slot.id}.')),
-                            ],
-                          ),
+                          content: Text('Vehicle unparked from Stall ${slot.id}.'),
                           backgroundColor: const Color(0xFFDC2626),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -1181,10 +1412,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
 
   Widget _buildFeatureChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
@@ -1225,12 +1456,12 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(LucideIcons.store, color: Color(0xFF2563EB), size: 22),
+                    const Icon(LucideIcons.store, color: Color(0xFF2563EB), size: 20),
                     const SizedBox(width: 8),
                     Text(
                       'Floor Directory (${displayFloor.name})',
                       style: GoogleFonts.inter(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF0F172A),
                       ),
@@ -1238,10 +1469,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     '${pois.length} Locations',
@@ -1259,37 +1490,40 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
               child: pois.isEmpty
                   ? Center(
                       child: Text(
-                        'No shops or services listed on this floor.',
+                        'No shops listed on this floor.',
                         style: GoogleFonts.inter(color: const Color(0xFF64748B)),
                       ),
                     )
                   : ListView.separated(
                       itemCount: pois.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 10),
+                      separatorBuilder: (context, index) => const SizedBox(height: 8),
                       itemBuilder: (context, idx) {
                         final poi = pois[idx];
                         return Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
                           child: Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEFF6FF),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  _getCategoryIcon(poi.category),
-                                  color: const Color(0xFF2563EB),
-                                  size: 20,
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  _getStoreImageUrl(poi.name),
+                                  width: 44,
+                                  height: 44,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    width: 44,
+                                    height: 44,
+                                    color: const Color(0xFFEFF6FF),
+                                    child: Icon(_getCategoryIcon(poi.category), color: const Color(0xFF2563EB), size: 18),
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1303,7 +1537,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '${poi.category} • ${poi.rating} ★',
+                                      '${poi.category} • ★ ${poi.rating}',
                                       style: GoogleFonts.inter(
                                         fontSize: 11,
                                         color: const Color(0xFF64748B),
@@ -1318,15 +1552,16 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
+                                  elevation: 0,
                                 ),
                                 onPressed: () {
                                   Navigator.pop(context);
                                   setState(() => _selectedPOI = poi);
                                   _showStoreDetailsModal(context, poi);
                                 },
-                                child: const Text('View', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                child: const Text('View', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                               ),
                             ],
                           ),
@@ -1358,27 +1593,60 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
     );
   }
 
-  Offset _getRoomPositionForIndex(int index, int total, double width, double height) {
-    const roomTopPadding = 56.0;
-    final availableHeight = height - roomTopPadding - 24.0;
-    final roomH = availableHeight * 0.28;
-    final gapY = (availableHeight - (roomH * 3)) / 2;
+  String _getStoreImageUrl(String storeName) {
+    final name = storeName.toUpperCase();
+    if (name.contains('ODEL')) {
+      return 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('SPA CEYLON')) {
+      return 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('KEELLS')) {
+      return 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('DILMAH')) {
+      return 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('CONCIERGE') || name.contains('INFORMATION')) {
+      return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('COTTON')) {
+      return 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('KELLY FELDER')) {
+      return 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('HOUSE OF FASHION')) {
+      return 'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('BAREFOOT')) {
+      return 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('HUGO BOSS')) {
+      return 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('SINGER')) {
+      return 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('ABANS') || name.contains('APPLE')) {
+      return 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('DIALOG')) {
+      return 'https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('MOBITEL')) {
+      return 'https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('SAMSUNG')) {
+      return 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('FOOD STUDIO')) {
+      return 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('MINISTRY OF CRAB')) {
+      return 'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('BARISTA')) {
+      return 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('TACO BELL')) {
+      return 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=500&q=80';
+    } else if (name.contains('PVR') || name.contains('CINEMAS')) {
+      return 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=500&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=500&q=80';
+  }
 
-    final r1Y = roomTopPadding + roomH / 2;
-    final r2Y = roomTopPadding + roomH + gapY + roomH / 2;
-    final r3Y = roomTopPadding + (roomH + gapY) * 2 + roomH / 2;
-
-    final slots = [
-      Offset(width * 0.20, r1Y),
-      Offset(width * 0.81, r1Y),
-      Offset(width * 0.20, r2Y),
-      Offset(width * 0.81, r2Y),
-      Offset(width * 0.20, r3Y),
-      Offset(width * 0.81, r3Y),
-      Offset(width * 0.50, 42),
-      Offset(width * 0.50, height - 20),
-    ];
-    return slots[index % slots.length];
+  String _getCategoryTag(String category) {
+    final cat = category.toUpperCase();
+    if (cat.contains('FOOD')) return 'DINING';
+    if (cat.contains('TECH')) return 'TECH';
+    if (cat.contains('FASHION') || cat.contains('RETAIL')) return 'FASHION';
+    if (cat.contains('LUXURY') || cat.contains('BEAUTY')) return 'BEAUTY';
+    if (cat.contains('ENTERTAINMENT')) return 'CINEMA';
+    return 'SERVICES';
   }
 
   IconData _getCategoryIcon(String cat) {
@@ -1391,213 +1659,256 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
   }
 }
 
+class RoomCategoryProfile {
+  final Color bg;
+  final Color border;
+  final Color text;
+  final Color iconColor;
+  final IconData icon;
+
+  const RoomCategoryProfile({
+    required this.bg,
+    required this.border,
+    required this.text,
+    required this.iconColor,
+    required this.icon,
+  });
+}
+
 class ArchitecturalFloorPainter extends CustomPainter {
   final int floorNumber;
   final String floorName;
   final DestinationPOI? selectedPOI;
+  final String selectedCategoryFilter;
+  final List<DestinationPOI> currentFloorPOIs;
   final List<ParkingSlot> parkingSlots;
   final MyVehicleLocation? myVehicle;
+  final GeodeticCoords userCoords;
+  final double pulseAnimationValue;
 
   ArchitecturalFloorPainter({
     required this.floorNumber,
     required this.floorName,
     this.selectedPOI,
+    this.selectedCategoryFilter = 'ALL',
+    this.currentFloorPOIs = const [],
     this.parkingSlots = const [],
     this.myVehicle,
+    required this.userCoords,
+    required this.pulseAnimationValue,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final bool isBasement = floorNumber < 0;
-    final bool isParkingFloor = isBasement;
+    final bool isParkingFloor = floorNumber < 0;
 
+    // 1. Canvas Background
     final bgPaint = Paint()..color = isParkingFloor ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
+    // Concourse Architectural Tile Grid Lines
+    final gridPaint = Paint()
+      ..color = isParkingFloor ? const Color(0xFF1E293B).withValues(alpha: 0.4) : const Color(0xFFE2E8F0).withValues(alpha: 0.6)
+      ..strokeWidth = 0.8;
+
+    const double step = 22.0;
+    for (double x = 0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    }
+    for (double y = 0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    // 2. Outer Building Perimeter Wall & Glass Curtain Accents
+    final wallFillPaint = Paint()..color = isParkingFloor ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
     final outerBorderPaint = Paint()
-      ..color = isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFF94A3B8)
-      ..strokeWidth = 3.5
+      ..color = isParkingFloor ? const Color(0xFF0284C7) : const Color(0xFF64748B)
+      ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke;
 
-    final wallFillPaint = Paint()..color = isParkingFloor ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-
-    // 1. Draw Outer Building Boundary Wall
-    final outerRect = RRect.fromLTRBR(16, 16, size.width - 16, size.height - 16, const Radius.circular(24));
+    final outerRect = RRect.fromLTRBR(12, 12, size.width - 12, size.height - 12, const Radius.circular(20));
     canvas.drawRRect(outerRect, wallFillPaint);
     canvas.drawRRect(outerRect, outerBorderPaint);
 
-    // 2. Draw Central Driveway / Walking Corridor
-    final corridorPaint = Paint()..color = isParkingFloor ? const Color(0xFF334155) : Colors.white;
-    const roomTopPadding = 56.0;
-    final corridorRect = RRect.fromLTRBR(size.width * 0.38, roomTopPadding, size.width * 0.62, size.height - 24, const Radius.circular(16));
+    // 3. Central Concourse Walkway Corridor
+    const double roomTopPadding = 50.0;
+    final corridorRect = RRect.fromLTRBR(
+      size.width * 0.36,
+      roomTopPadding,
+      size.width * 0.64,
+      size.height - 18,
+      const Radius.circular(14),
+    );
+
+    final corridorPaint = Paint()..color = isParkingFloor ? const Color(0xFF1E293B) : Colors.white;
     canvas.drawRRect(corridorRect, corridorPaint);
 
     final corridorBorderPaint = Paint()
-      ..color = isParkingFloor ? const Color(0xFF00E5FF) : const Color(0xFFCBD5E1)
-      ..strokeWidth = 1.5
+      ..color = isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFFCBD5E1)
+      ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
     canvas.drawRRect(corridorRect, corridorBorderPaint);
 
-    // 3. Draw Room / Parking Stall Blocks
-    final roomColors = isParkingFloor
-        ? [
-            const Color(0xFF1E293B),
-            const Color(0xFF1E293B),
-            const Color(0xFF1E293B),
-            const Color(0xFF1E293B),
-          ]
-        : [
-            const Color(0xFFEFF6FF),
-            const Color(0xFFFDF2F8),
-            const Color(0xFFFEF3C7),
-            const Color(0xFFF0FDF4),
-          ];
+    // Central Concourse Compass Watermark
+    final compassCenter = Offset(size.width * 0.50, size.height * 0.50);
+    final compassCirclePaint = Paint()
+      ..color = (isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFF2563EB)).withValues(alpha: 0.08)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(compassCenter, 28, compassCirclePaint);
 
-    final roomBorderPaint = Paint()
-      ..color = isParkingFloor ? const Color(0xFF475569) : const Color(0xFF94A3B8)
-      ..strokeWidth = 1.8
-      ..style = PaintingStyle.stroke;
+    // 4. Floor Content Layout (Retail vs Basement)
+    Offset? selectedTargetDoorOffset;
 
-    final availableHeight = size.height - roomTopPadding - 24.0;
-    final roomH = availableHeight * 0.28;
-    final gapY = (availableHeight - (roomH * 3)) / 2;
-
-    // 3. Draw Floor Content: Parking Plan (Basement) vs Retail Plan (Ground & Upper Floors)
     if (isParkingFloor) {
-      _paintBasementParkingPlan(canvas, size, roomTopPadding, availableHeight, roomH, gapY);
+      _paintBasementParkingPlan(canvas, size, roomTopPadding);
     } else {
-      _paintRetailPlan(canvas, size, roomTopPadding, availableHeight, roomH, gapY, roomColors, roomBorderPaint);
+      selectedTargetDoorOffset = _paintRetailPlan(canvas, size, roomTopPadding);
     }
 
-    // 4. Draw Escalators & Elevator Hub
+    // 5. Entrance Lobby & Elevator Hub Header
+    final facilityRect = Rect.fromLTWH(size.width * 0.35, 16, size.width * 0.30, 24);
     final facilityPaint = Paint()..color = isParkingFloor ? const Color(0xFF0284C7) : const Color(0xFFE0F2FE);
-    final elevRect = Rect.fromLTWH(size.width * 0.38, 22, size.width * 0.24, 26);
-    canvas.drawRRect(RRect.fromRectAndRadius(elevRect, const Radius.circular(8)), facilityPaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(elevRect, const Radius.circular(8)), outerBorderPaint);
+    final facilityBorder = Paint()
+      ..color = isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFF0284C7)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawRRect(RRect.fromRectAndRadius(facilityRect, const Radius.circular(8)), facilityPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(facilityRect, const Radius.circular(8)), facilityBorder);
 
     final String hubText = floorNumber == 1
-        ? 'MAIN ENTRANCE LOBBY & RECEPTION'
-        : (isBasement ? 'PARKING ELEVATOR & STAIRS' : 'MALL ELEVATOR & LOBBY');
+        ? 'MAIN LOBBY & ESCALATOR'
+        : (isParkingFloor ? 'ELEVATOR & STAIR CORE' : 'ELEVATOR HUB & ESCALATOR');
 
-    final elevPainter = TextPainter(
-      text: TextSpan(
-        text: hubText,
-        style: TextStyle(
-          color: isParkingFloor ? Colors.white : const Color(0xFF0369A1),
-          fontSize: 7.5,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
+    _drawText(
+      canvas,
+      hubText,
+      Offset(facilityRect.left + 2, facilityRect.top + 6),
+      isParkingFloor ? Colors.white : const Color(0xFF0369A1),
+      fontSize: 7.0,
+      fontWeight: FontWeight.w800,
+      maxWidth: facilityRect.width - 4,
+      textAlign: TextAlign.center,
     );
-    elevPainter.layout();
-    elevPainter.paint(canvas, Offset(elevRect.left + (elevRect.width - elevPainter.width) / 2, elevRect.top + 7));
-  }
 
-  void _drawSingleParkingStall(
-    Canvas canvas,
-    Rect slotRect,
-    String slotCode, {
-    bool isEV = false,
-    bool isHandicap = false,
-    ParkingSlotStatus status = ParkingSlotStatus.free,
-    bool isMyCar = false,
-  }) {
-    Color fillPaintColor = const Color(0xFF1E293B);
-    Color borderPaintColor = isEV ? const Color(0xFF22C55E) : (isHandicap ? const Color(0xFF3B82F6) : const Color(0xFF475569));
-
-    if (isMyCar) {
-      fillPaintColor = const Color(0xFF047857);
-      borderPaintColor = const Color(0xFF4ADE80);
-
-      // Distinct Glowing Outer Halo for User's Parked Car
-      final glowRect = slotRect.inflate(3);
-      final glowPaint = Paint()
-        ..color = const Color(0xFF22C55E).withValues(alpha: 0.5)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.5;
-      canvas.drawRRect(RRect.fromRectAndRadius(glowRect, const Radius.circular(8)), glowPaint);
-    } else if (status == ParkingSlotStatus.occupied) {
-      fillPaintColor = const Color(0xFF334155);
-      borderPaintColor = const Color(0xFF64748B);
-    } else if (status == ParkingSlotStatus.reserved) {
-      fillPaintColor = const Color(0xFF1E293B);
-      borderPaintColor = const Color(0xFFF59E0B);
-    }
-
-    final fillPaint = Paint()..color = fillPaintColor;
-    final borderPaint = Paint()
-      ..color = borderPaintColor
-      ..strokeWidth = isMyCar ? 2.5 : 1.2
+    // Bottom Parking Ramp Banner
+    final rampRect = Rect.fromLTWH(size.width * 0.35, size.height - 40, size.width * 0.30, 22);
+    final rampPaint = Paint()..color = isParkingFloor ? const Color(0xFF0F172A) : const Color(0xFFDBEAFE);
+    final rampBorder = Paint()
+      ..color = isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFF2563EB)
+      ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
-    final rrect = RRect.fromRectAndRadius(slotRect, const Radius.circular(6));
-    canvas.drawRRect(rrect, fillPaint);
-    canvas.drawRRect(rrect, borderPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(rampRect, const Radius.circular(7)), rampPaint);
+    canvas.drawRRect(RRect.fromRectAndRadius(rampRect, const Radius.circular(7)), rampBorder);
 
-    if (isMyCar) {
-      _drawText(canvas, slotCode, Offset(slotRect.left + 3, slotRect.top + 4), Colors.white, fontSize: 7.0);
-      _drawText(canvas, 'PARKED', Offset(slotRect.left + 3, slotRect.top + 16), const Color(0xFF4ADE80), fontSize: 6.5);
-      return;
+    final String rampLabel = isParkingFloor ? '▼ EXIT / ENTRY RAMP' : '▼ PARKING RAMP (B1/B2)';
+    _drawText(
+      canvas,
+      rampLabel,
+      Offset(rampRect.left + 2, rampRect.top + 5),
+      isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFF1E40AF),
+      fontSize: 7.0,
+      fontWeight: FontWeight.w800,
+      maxWidth: rampRect.width - 4,
+      textAlign: TextAlign.center,
+    );
+
+    // 6. Draw Vector Pathfinding Line when POI is selected!
+    if (selectedTargetDoorOffset != null) {
+      _drawVectorWalkingRoutePath(canvas, size, selectedTargetDoorOffset, isParkingFloor);
     }
-
-    String tag = '';
-    Color tagColor = const Color(0xFF38BDF8);
-    if (isEV) {
-      tag = '⚡';
-      tagColor = const Color(0xFF4ADE80);
-    } else if (isHandicap) {
-      tag = '♿';
-      tagColor = const Color(0xFF60A5FA);
-    }
-
-    _drawText(canvas, '$slotCode $tag', Offset(slotRect.left + 3, slotRect.top + 4), tagColor, fontSize: 7.0);
-
-    final String statusLabel = status == ParkingSlotStatus.free ? 'FREE' : (status == ParkingSlotStatus.occupied ? 'OCCUPIED' : 'RESERVED');
-    final Color statusColor = status == ParkingSlotStatus.free ? const Color(0xFF22C55E) : (status == ParkingSlotStatus.occupied ? const Color(0xFFEF4444) : const Color(0xFFF59E0B));
-    _drawText(canvas, statusLabel, Offset(slotRect.left + 3, slotRect.top + 16), statusColor, fontSize: 6.5);
   }
 
-  void _paintBasementParkingPlan(
-    Canvas canvas,
-    Size size,
-    double topPadding,
-    double availHeight,
-    double rH,
-    double gY,
-  ) {
-    const double roomTopPadding = 52.0;
-    final double availableHeight = size.height - roomTopPadding - 32.0;
+  Offset? _paintRetailPlan(Canvas canvas, Size size, double roomTopPadding) {
+    final double availableHeight = size.height - roomTopPadding - 46.0;
+    final double roomH = availableHeight * 0.23;
+    final double gapY = (availableHeight - (roomH * 3)) / 4;
+    final double roomW = size.width * 0.31;
+    final double leftX = 18.0;
+    final double rightX = size.width - 18.0 - roomW;
+
+    final roomBoxes = [
+      Rect.fromLTWH(leftX, roomTopPadding + gapY, roomW, roomH),
+      Rect.fromLTWH(rightX, roomTopPadding + gapY, roomW, roomH),
+      Rect.fromLTWH(leftX, roomTopPadding + (gapY * 2) + roomH, roomW, roomH),
+      Rect.fromLTWH(rightX, roomTopPadding + (gapY * 2) + roomH, roomW, roomH),
+      Rect.fromLTWH(leftX, roomTopPadding + (gapY * 3) + (roomH * 2), roomW, roomH),
+      Rect.fromLTWH(rightX, roomTopPadding + (gapY * 3) + (roomH * 2), roomW, roomH),
+    ];
+
+    Offset? selectedDoorOffset;
+
+    for (int i = 0; i < roomBoxes.length; i++) {
+      final rect = roomBoxes[i];
+      final DestinationPOI? poi = i < currentFloorPOIs.length ? currentFloorPOIs[i] : null;
+      final bool isSelected = poi != null && selectedPOI?.id == poi.id;
+
+      final profile = _getProfileForCategory(poi?.category ?? '');
+
+      // Doorway Location
+      final isLeftWing = rect.left < size.width * 0.50;
+      final doorX = isLeftWing ? rect.right : rect.left;
+      final doorY = rect.top + (rect.height / 2);
+
+      if (isSelected) {
+        selectedDoorOffset = Offset(doorX, doorY);
+      }
+
+      // Render Doorway Arc into Corridor
+      final doorArcPaint = Paint()
+        ..color = profile.border.withValues(alpha: 0.6)
+        ..strokeWidth = 1.0
+        ..style = PaintingStyle.stroke;
+
+      final doorArcRect = Rect.fromCircle(center: Offset(doorX, doorY), radius: 10);
+      final double startAngle = isLeftWing ? -math.pi / 2 : math.pi / 2;
+      canvas.drawArc(doorArcRect, startAngle, math.pi / 2, false, doorArcPaint);
+
+      // Selection Glow Halo
+      if (isSelected) {
+        final glowHaloRadius = 1.0 + (pulseAnimationValue * 0.15);
+        final glowPaint = Paint()
+          ..color = const Color(0xFF2563EB).withValues(alpha: 0.25)
+          ..strokeWidth = 5.0
+          ..style = PaintingStyle.stroke;
+        canvas.drawRRect(RRect.fromRectAndRadius(rect.inflate(2 * glowHaloRadius), const Radius.circular(16)), glowPaint);
+      }
+    }
+
+    return selectedDoorOffset;
+  }
+
+  void _paintBasementParkingPlan(Canvas canvas, Size size, double roomTopPadding) {
+    final double availableHeight = size.height - roomTopPadding - 46.0;
     final double slotH = availableHeight * 0.135;
     final double gapY = (availableHeight - (slotH * 6)) / 5;
 
     final dashPaint = Paint()
       ..color = const Color(0xFFFBBF24)
-      ..strokeWidth = 1.5
+      ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
-    // Driving Corridor Arrows & Center Line
     final double midX = size.width * 0.50;
-    for (double y = roomTopPadding + 8; y < size.height - 35; y += 22) {
+    for (double y = roomTopPadding + 10; y < size.height - 45; y += 22) {
       canvas.drawLine(Offset(midX, y), Offset(midX, y + 10), dashPaint);
     }
 
-    const String laneText = '▲ DRIVING LANE (ONE-WAY) ▲';
-
-    final textPainter = TextPainter(
-      text: const TextSpan(
-        text: laneText,
-        style: TextStyle(color: Color(0xFFFBBF24), fontSize: 7.5, fontWeight: FontWeight.bold),
-      ),
-      textDirection: TextDirection.ltr,
+    _drawText(
+      canvas,
+      '▲ DRIVING LANE ▲',
+      Offset(midX - 40, roomTopPadding + 6),
+      const Color(0xFFFBBF24),
+      fontSize: 7.0,
+      fontWeight: FontWeight.bold,
+      maxWidth: 80,
+      textAlign: TextAlign.center,
     );
-    textPainter.layout();
-    textPainter.paint(canvas, Offset(midX - textPainter.width / 2, roomTopPadding + 8));
 
     final double slotW = (size.width * 0.34 - 18) / 2;
     final String prefix = floorNumber == -1 ? 'B1' : (floorNumber == -2 ? 'B2' : 'B');
 
-    // Left Wing: PARKING ZONE A (All 12 Slots: A-01 to A-12)
+    // Left Wing: Zone A
     for (int row = 0; row < 6; row++) {
       for (int col = 0; col < 2; col++) {
         final int num = row * 2 + col + 1;
@@ -1639,7 +1950,7 @@ class ArchitecturalFloorPainter extends CustomPainter {
       }
     }
 
-    // Right Wing: PARKING ZONE B (All 12 Slots: B-01 to B-12)
+    // Right Wing: Zone B
     for (int row = 0; row < 6; row++) {
       for (int col = 0; col < 2; col++) {
         final int num = row * 2 + col + 1;
@@ -1675,66 +1986,221 @@ class ArchitecturalFloorPainter extends CustomPainter {
         );
       }
     }
-
-    // Vehicle Ramp / Gate at Bottom Corridor
-    const String gateText = '▼ EXIT / ENTRY RAMP';
-    final rampRect = Rect.fromLTWH(size.width * 0.34, size.height - 44, size.width * 0.32, 26);
-    final rampPaint = Paint()..color = const Color(0xFF0284C7);
-    canvas.drawRRect(RRect.fromRectAndRadius(rampRect, const Radius.circular(8)), rampPaint);
-    _drawText(canvas, gateText, Offset(rampRect.left + 8, rampRect.top + 7), Colors.white, fontSize: 7.5);
   }
 
-  void _paintRetailPlan(
+  void _drawSingleParkingStall(
     Canvas canvas,
-    Size size,
-    double roomTopPadding,
-    double availableHeight,
-    double roomH,
-    double gapY,
-    List<Color> roomColors,
-    Paint roomBorderPaint,
-  ) {
-    final roomBoxes = [
-      Rect.fromLTWH(24, roomTopPadding, size.width * 0.32, roomH),
-      Rect.fromLTWH(24, roomTopPadding + roomH + gapY, size.width * 0.32, roomH),
-      Rect.fromLTWH(24, roomTopPadding + (roomH + gapY) * 2, size.width * 0.32, roomH),
-      Rect.fromLTWH(size.width * 0.66, roomTopPadding, size.width * 0.30, roomH),
-      Rect.fromLTWH(size.width * 0.66, roomTopPadding + roomH + gapY, size.width * 0.30, roomH),
-      Rect.fromLTWH(size.width * 0.66, roomTopPadding + (roomH + gapY) * 2, size.width * 0.30, roomH),
-    ];
+    Rect slotRect,
+    String slotCode, {
+    bool isEV = false,
+    bool isHandicap = false,
+    ParkingSlotStatus status = ParkingSlotStatus.free,
+    bool isMyCar = false,
+  }) {
+    Color fillPaintColor = const Color(0xFF1E293B);
+    Color borderPaintColor = isEV ? const Color(0xFF22C55E) : (isHandicap ? const Color(0xFF3B82F6) : const Color(0xFF475569));
 
-    for (int i = 0; i < roomBoxes.length; i++) {
-      final rect = roomBoxes[i];
-      final fillPaint = Paint()..color = roomColors[i % roomColors.length];
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(12)), fillPaint);
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(12)), roomBorderPaint);
+    if (isMyCar) {
+      fillPaintColor = const Color(0xFF047857);
+      borderPaintColor = const Color(0xFF4ADE80);
 
-      final roomCode = '#${floorNumber}0${i + 1}';
-      _drawText(canvas, roomCode, Offset(rect.left + 8, rect.top + 8), const Color(0xFF94A3B8));
+      final glowRect = slotRect.inflate(2);
+      final glowPaint = Paint()
+        ..color = const Color(0xFF22C55E).withValues(alpha: 0.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5;
+      canvas.drawRRect(RRect.fromRectAndRadius(glowRect, const Radius.circular(7)), glowPaint);
+    } else if (status == ParkingSlotStatus.occupied) {
+      fillPaintColor = const Color(0xFF334155);
+      borderPaintColor = const Color(0xFF64748B);
     }
 
-    // Dedicated Basement Parking Access Zone at Bottom Corridor for Ground/Upper Floors
-    final parkingAccessRect = Rect.fromLTWH(size.width * 0.38, size.height - 48, size.width * 0.24, 28);
-    final parkingAccessPaint = Paint()..color = const Color(0xFFDBEAFE);
-    final parkingAccessBorder = Paint()
-      ..color = const Color(0xFF2563EB)
-      ..strokeWidth = 1.5
+    final fillPaint = Paint()..color = fillPaintColor;
+    final borderPaint = Paint()
+      ..color = borderPaintColor
+      ..strokeWidth = isMyCar ? 2.0 : 1.0
       ..style = PaintingStyle.stroke;
 
-    canvas.drawRRect(RRect.fromRectAndRadius(parkingAccessRect, const Radius.circular(8)), parkingAccessPaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(parkingAccessRect, const Radius.circular(8)), parkingAccessBorder);
-    _drawText(canvas, '▼ PARKING RAMP (B1/B2)', Offset(parkingAccessRect.left + 6, parkingAccessRect.top + 8), const Color(0xFF1E40AF), fontSize: 7);
+    final rrect = RRect.fromRectAndRadius(slotRect, const Radius.circular(5));
+    canvas.drawRRect(rrect, fillPaint);
+    canvas.drawRRect(rrect, borderPaint);
+
+    if (isMyCar) {
+      _drawText(canvas, slotCode, Offset(slotRect.left + 2, slotRect.top + 3), Colors.white, fontSize: 6.5, fontWeight: FontWeight.bold);
+      _drawText(canvas, 'PARKED', Offset(slotRect.left + 2, slotRect.top + 14), const Color(0xFF4ADE80), fontSize: 6.0, fontWeight: FontWeight.bold);
+      return;
+    }
+
+    String tag = '';
+    Color tagColor = const Color(0xFF38BDF8);
+    if (isEV) {
+      tag = '⚡';
+      tagColor = const Color(0xFF4ADE80);
+    } else if (isHandicap) {
+      tag = '♿';
+      tagColor = const Color(0xFF60A5FA);
+    }
+
+    _drawText(canvas, '$slotCode $tag', Offset(slotRect.left + 2, slotRect.top + 3), tagColor, fontSize: 6.5, fontWeight: FontWeight.bold);
+
+    final String statusLabel = status == ParkingSlotStatus.free ? 'FREE' : (status == ParkingSlotStatus.occupied ? 'OCCUPIED' : 'RESERVED');
+    final Color statusColor = status == ParkingSlotStatus.free ? const Color(0xFF22C55E) : (status == ParkingSlotStatus.occupied ? const Color(0xFFEF4444) : const Color(0xFFF59E0B));
+    _drawText(canvas, statusLabel, Offset(slotRect.left + 2, slotRect.top + 14), statusColor, fontSize: 6.0, fontWeight: FontWeight.bold);
   }
 
-  void _drawText(Canvas canvas, String text, Offset offset, Color color, {double fontSize = 10}) {
+  void _drawVectorWalkingRoutePath(Canvas canvas, Size size, Offset targetDoor, bool isDark) {
+    const double centerLat = 6.927079;
+    const double centerLon = 79.845612;
+    const double pixelsPerDegLat = 800000.0;
+    const double pixelsPerDegLon = 800000.0;
+
+    final double deltaLat = userCoords.latitude - centerLat;
+    final double deltaLon = userCoords.longitude - centerLon;
+
+    final double rawUserX = (size.width / 2) + (deltaLon * pixelsPerDegLon);
+    final double rawUserY = (size.height / 2) - (deltaLat * pixelsPerDegLat);
+
+    final double userX = rawUserX.clamp(20.0, size.width - 20.0);
+    final double userY = rawUserY.clamp(20.0, size.height - 20.0);
+    final userPos = Offset(userX, userY);
+
+    final path = Path();
+    path.moveTo(userPos.dx, userPos.dy);
+    path.lineTo(size.width * 0.50, userPos.dy);
+    path.lineTo(size.width * 0.50, targetDoor.dy);
+    path.lineTo(targetDoor.dx, targetDoor.dy);
+
+    // Glowing Underlayer Path
+    final pathGlowPaint = Paint()
+      ..color = (isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB)).withValues(alpha: 0.25)
+      ..strokeWidth = 7.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, pathGlowPaint);
+
+    // Motion Dash Animated Path
+    final pathPaint = Paint()
+      ..color = isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB)
+      ..strokeWidth = 3.2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final double dashOffset = pulseAnimationValue * 20.0;
+
+    final pathMetrics = path.computeMetrics();
+    for (final metric in pathMetrics) {
+      double distance = dashOffset % 12.0;
+      while (distance < metric.length) {
+        final extract = metric.extractPath(distance, math.min(distance + 6.0, metric.length));
+        canvas.drawPath(extract, pathPaint);
+        distance += 12.0;
+      }
+
+      // Traveling Motion Light Energy Bead
+      final pulseDistance = (pulseAnimationValue * metric.length) % metric.length;
+      final tangent = metric.getTangentForOffset(pulseDistance);
+      if (tangent != null) {
+        final beadGlow = Paint()
+          ..color = (isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB)).withValues(alpha: 0.7)
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(tangent.position, 7.0, beadGlow);
+
+        final beadPaint = Paint()
+          ..color = isDark ? const Color(0xFFE0F2FE) : Colors.white
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(tangent.position, 4.0, beadPaint);
+      }
+    }
+
+    // Target Doorway Radar Beacon with Animated Expanding Waves
+    final beaconDotPaint = Paint()..color = isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB);
+    canvas.drawCircle(targetDoor, 5.5, beaconDotPaint);
+
+    final beaconRingRadius = 6.0 + (pulseAnimationValue * 9.0);
+    final beaconRingPaint = Paint()
+      ..color = (isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB)).withValues(alpha: (1.0 - pulseAnimationValue).clamp(0.0, 1.0))
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(targetDoor, beaconRingRadius, beaconRingPaint);
+  }
+
+  RoomCategoryProfile _getProfileForCategory(String category) {
+    final cat = category.toUpperCase();
+    if (cat.contains('FOOD')) {
+      return const RoomCategoryProfile(
+        bg: Color(0xFFFEF3C7),
+        border: Color(0xFFF59E0B),
+        text: Color(0xFF78350F),
+        iconColor: Color(0xFFD97706),
+        icon: LucideIcons.utensils,
+      );
+    } else if (cat.contains('TECH')) {
+      return const RoomCategoryProfile(
+        bg: Color(0xFFE0F2FE),
+        border: Color(0xFF0284C7),
+        text: Color(0xFF075985),
+        iconColor: Color(0xFF0284C7),
+        icon: LucideIcons.laptop,
+      );
+    } else if (cat.contains('FASHION') || cat.contains('RETAIL')) {
+      return const RoomCategoryProfile(
+        bg: Color(0xFFF3E8FF),
+        border: Color(0xFF8B5CF6),
+        text: Color(0xFF4C1D95),
+        iconColor: Color(0xFF7C3AED),
+        icon: LucideIcons.shoppingBag,
+      );
+    } else if (cat.contains('LUXURY') || cat.contains('BEAUTY')) {
+      return const RoomCategoryProfile(
+        bg: Color(0xFFFFE4E6),
+        border: Color(0xFFF43F5E),
+        text: Color(0xFF881337),
+        iconColor: Color(0xFFE11D48),
+        icon: LucideIcons.sparkles,
+      );
+    } else if (cat.contains('ENTERTAINMENT')) {
+      return const RoomCategoryProfile(
+        bg: Color(0xFFFDF4FF),
+        border: Color(0xFFD946EF),
+        text: Color(0xFF701A75),
+        iconColor: Color(0xFFC026D3),
+        icon: LucideIcons.film,
+      );
+    }
+    return const RoomCategoryProfile(
+      bg: Color(0xFFEEF2FF),
+      border: Color(0xFF6366F1),
+      text: Color(0xFF312E81),
+      iconColor: Color(0xFF4F46E5),
+      icon: LucideIcons.mapPin,
+    );
+  }
+
+  void _drawText(
+    Canvas canvas,
+    String text,
+    Offset offset,
+    Color color, {
+    double fontSize = 9.0,
+    FontWeight fontWeight = FontWeight.normal,
+    double maxWidth = 100.0,
+    TextAlign textAlign = TextAlign.left,
+  }) {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(color: color, fontSize: fontSize, fontWeight: FontWeight.bold),
+        style: GoogleFonts.inter(
+          color: color,
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+        ),
       ),
       textDirection: TextDirection.ltr,
+      textAlign: textAlign,
+      maxLines: 2,
+      ellipsis: '...',
     );
-    tp.layout();
+    tp.layout(maxWidth: maxWidth);
     tp.paint(canvas, offset);
   }
 

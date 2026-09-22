@@ -15,8 +15,6 @@ import '../engine/route_service.dart';
 import '../engine/off_route_service.dart';
 import '../engine/vertical_transition_service.dart';
 import '../data/building_data_service.dart';
-import '../data/parking_service.dart';
-import 'admin_marker_config_modal.dart';
 
 enum ARFloorFilterMode { autoTilt, currentFloorOnly, allFloors }
 
@@ -57,11 +55,9 @@ class ARViewportScreen extends StatefulWidget {
 class _ARViewportScreenState extends State<ARViewportScreen> {
   final String _searchQuery = '';
   String _selectedCategory = 'All';
-  ARFloorFilterMode _floorFilterMode = ARFloorFilterMode.autoTilt;
-  bool _isNavigatingActive = true;
+  final ARFloorFilterMode _floorFilterMode = ARFloorFilterMode.autoTilt;
+  bool _isNavigatingActive = false;
   bool _isFavorite = false;
-  bool _isMarkerLocked = false;
-  String _markerStatusText = 'Point phone camera at Entrance Reference Marker';
 
   final SensorFusionService _sensorFusion = SensorFusionService();
   final RouteService _routeService = RouteService();
@@ -69,7 +65,6 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
   final VerticalTransitionService _transitionService =
       VerticalTransitionService();
   final BuildingDataService _buildingDataService = BuildingDataService();
-  final ParkingService _parkingService = ParkingService();
 
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
@@ -102,21 +97,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         destination: _selectedPOI!,
       );
     } else {
-      final myVehicle = _parkingService.currentVehicleLocation;
-      if (myVehicle != null) {
-        _selectedPOI = myVehicle.toDestinationPOI();
-        _isNavigatingActive = true;
-        _activeRoute = _routeService.calculateRoute(
-          buildingId: 'mall-01',
-          userCoords: effectiveUser,
-          currentFloor: widget.currentFloor.floorNumber,
-          destination: _selectedPOI!,
-        );
-      } else {
-        _selectedPOI = null;
-        _isNavigatingActive = false;
-        _activeRoute = null;
-      }
+      _selectedPOI = null;
+      _isNavigatingActive = false;
+      _activeRoute = null;
     }
   }
 
@@ -143,26 +126,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
             destination: _selectedPOI!,
           );
         } else {
-          final myVehicle = _parkingService.currentVehicleLocation;
-          if (myVehicle != null) {
-            _selectedPOI = myVehicle.toDestinationPOI();
-            _isNavigatingActive = true;
-            _activeRoute = _routeService.calculateRoute(
-              buildingId: 'mall-01',
-              userCoords: effectiveUser,
-              currentFloor: widget.currentFloor.floorNumber,
-              destination: _selectedPOI!,
-            );
-          } else {
-            _selectedPOI = null;
-            _isNavigatingActive = false;
-            _activeRoute = _routeService.calculateRoute(
-              buildingId: 'mall-01',
-              userCoords: effectiveUser,
-              currentFloor: widget.currentFloor.floorNumber,
-              destination: _selectedPOI!,
-            );
-          }
+          _selectedPOI = null;
+          _isNavigatingActive = false;
+          _activeRoute = null;
         }
       });
     }
@@ -211,194 +177,6 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
             _isNavigatingActive = true;
           });
           widget.onSelectDestination(poi);
-        },
-      ),
-    );
-  }
-
-  void _showMarkerScannerModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.70,
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Color(0xFF0F172A),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border(
-              top: BorderSide(color: Color(0xFF10B981), width: 1.5),
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        LucideIcons.scan,
-                        color: Color(0xFF10B981),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Scan Entrance Reference Marker',
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: const Icon(LucideIcons.x, color: Colors.white70),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF030712),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(
-                              0xFF10B981,
-                            ).withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child:
-                            _isCameraInitialized &&
-                                _cameraController != null &&
-                                _cameraController!.value.isInitialized
-                            ? FittedBox(
-                                fit: BoxFit.cover,
-                                child: SizedBox(
-                                  width: screenWidth,
-                                  height:
-                                      screenWidth *
-                                      _cameraController!.value.aspectRatio,
-                                  child: CameraPreview(_cameraController!),
-                                ),
-                              )
-                            : const Center(
-                                child: Icon(
-                                  LucideIcons.camera,
-                                  color: Color(0xFF10B981),
-                                  size: 48,
-                                ),
-                              ),
-                      ),
-                    ),
-                    Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color(0xFF00E5FF),
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            LucideIcons.qrCode,
-                            color: Color(0xFF00E5FF),
-                            size: 36,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'ALIGN MARKER HERE',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF00E5FF),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _markerStatusText,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  color: const Color(0xFF94A3B8),
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                onPressed: () {
-                  setState(() {
-                    _isMarkerLocked = true;
-                    _markerStatusText =
-                        'Reference Point Locked! PnP Residual Error: 0.4px • AR Ready';
-                  });
-                  widget.onScanMarkerClick();
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Entrance Reference Locked • Real-World AR Navigation Ready!',
-                      ),
-                      backgroundColor: Color(0xFF10B981),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'LOCK REFERENCE MARKER (PnP)',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showAdminMarkerModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => AdminMarkerConfigModal(
-        onSaveMarker: (marker) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Marker ${marker.markerId} Saved Successfully!'),
-              backgroundColor: const Color(0xFF2563EB),
-            ),
-          );
         },
       ),
     );
@@ -768,7 +546,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         !_isNavigatingActive && visibleCardsInFOV.isEmpty;
 
     // Evaluate off-route compliance if active route is available
-    if (_activeRoute != null) {
+    if (_activeRoute != null && activePOI != null) {
       final compliance = _offRouteService.evaluateRouteCompliance(
         userCoords: fusedPose.position,
         userHeading: fusedPose.headingDegrees,
@@ -781,7 +559,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
           buildingId: 'mall-01',
           userCoords: fusedPose.position,
           currentFloor: widget.currentFloor.floorNumber,
-          destination: activePOI ?? widget.destinations.first,
+          destination: activePOI,
         );
       }
     }
@@ -905,7 +683,8 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                   relativeAngleDegrees: activeRelAngle,
                   distanceMeters: activeDistM,
                   phonePitchDegrees: widget.phonePitchDegrees,
-                  isParkedVehicle: activePOI.category.toUpperCase().contains('PARK') ||
+                  isParkedVehicle:
+                      activePOI.category.toUpperCase().contains('PARK') ||
                       activePOI.name.toUpperCase().contains('CAR') ||
                       activePOI.name.toUpperCase().contains('PARKED'),
                 ),
@@ -914,118 +693,136 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
 
           // 3. Floating 3D AR Distance Badge & Target Header (Active Navigation Mode - Visible when facing target)
           if (activePOI != null && _isNavigatingActive) ...[
-            Builder(builder: (context) {
-              final isParkedCar = activePOI.category.toUpperCase().contains('PARK') ||
-                  activePOI.name.toUpperCase().contains('CAR') ||
-                  activePOI.name.toUpperCase().contains('PARKED');
-              return Positioned(
-                left: (targetBadgePosX - 120).clamp(16.0, screenWidth - 256.0),
-                top: targetBadgePosY,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Glowing 3D AR Distance Box
-                    Container(
-                      width: 240,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 14,
-                        horizontal: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isParkedCar
-                              ? [const Color(0xFF10B981), const Color(0xFF059669)]
-                              : [const Color(0xFF00E5FF), const Color(0xFF00B0FF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+            Builder(
+              builder: (context) {
+                final isParkedCar =
+                    activePOI.category.toUpperCase().contains('PARK') ||
+                    activePOI.name.toUpperCase().contains('CAR') ||
+                    activePOI.name.toUpperCase().contains('PARKED');
+                return Positioned(
+                  left: (targetBadgePosX - 120).clamp(
+                    16.0,
+                    screenWidth - 256.0,
+                  ),
+                  top: targetBadgePosY,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Glowing 3D AR Distance Box
+                      Container(
+                        width: 240,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 16,
                         ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (isParkedCar
-                                    ? const Color(0xFF10B981)
-                                    : const Color(0xFF00E5FF))
-                                .withValues(alpha: 0.6),
-                            blurRadius: 20,
-                            spreadRadius: 2,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isParkedCar
+                                ? [
+                                    const Color(0xFF10B981),
+                                    const Color(0xFF059669),
+                                  ]
+                                : [
+                                    const Color(0xFF00E5FF),
+                                    const Color(0xFF00B0FF),
+                                  ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                isParkedCar ? LucideIcons.car : LucideIcons.target,
-                                color: Colors.white,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  activePOI.name.toUpperCase(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.white.withValues(alpha: 0.95),
-                                    letterSpacing: 0.5,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  (isParkedCar
+                                          ? const Color(0xFF10B981)
+                                          : const Color(0xFF00E5FF))
+                                      .withValues(alpha: 0.6),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  isParkedCar
+                                      ? LucideIcons.car
+                                      : LucideIcons.target,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    activePOI.name.toUpperCase(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.95,
+                                      ),
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '$activeDistM M',
+                              style: GoogleFonts.inter(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                                height: 1.0,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$activeDistM M',
-                            style: GoogleFonts.inter(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                              height: 1.0,
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${activePOI.floorNumber < 0 ? "B${activePOI.floorNumber.abs()}" : "FLOOR ${activePOI.floorNumber}"} • TO ${activePOI.name.toUpperCase()}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white.withValues(alpha: 0.9),
-                              letterSpacing: 0.8,
+                            const SizedBox(height: 4),
+                            Text(
+                              '${activePOI.floorNumber < 0 ? "B${activePOI.floorNumber.abs()}" : "FLOOR ${activePOI.floorNumber}"} • TO ${activePOI.name.toUpperCase()}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white.withValues(alpha: 0.9),
+                                letterSpacing: 0.8,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // Glowing Direction Chevrons (▲) rising to marker
-                    Column(
-                      children: List.generate(3, (idx) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Icon(
-                            LucideIcons.chevronUp,
-                            color: (isParkedCar
-                                    ? const Color(0xFF10B981)
-                                    : const Color(0xFF00E5FF))
-                                .withValues(alpha: 1.0 - (idx * 0.25)),
-                            size: 20 - (idx * 2),
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-              );
-            }),
+                      // Glowing Direction Chevrons (▲) rising to marker
+                      Column(
+                        children: List.generate(3, (idx) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Icon(
+                              LucideIcons.chevronUp,
+                              color:
+                                  (isParkedCar
+                                          ? const Color(0xFF10B981)
+                                          : const Color(0xFF00E5FF))
+                                      .withValues(alpha: 1.0 - (idx * 0.25)),
+                              size: 20 - (idx * 2),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ],
 
           // 4. Ambient Floating AR Place Cards (rendered only when within camera horizontal FOV)
@@ -1431,8 +1228,6 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
               ),
             ),
 
-
-
           // 5. Top Controls & Navigation Guidance HUD Banner
           Positioned(
             top: 0,
@@ -1454,52 +1249,15 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Live Motion & Pitch Telemetry Status Chip
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 3,
-                      ),
-                      margin: const EdgeInsets.only(top: 2, bottom: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xAA030712),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF1E293B)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            widget.phonePitchDegrees > 12.0
-                                ? LucideIcons.arrowUpRight
-                                : (widget.phonePitchDegrees < -12.0
-                                      ? LucideIcons.arrowDownRight
-                                      : LucideIcons.moveHorizontal),
-                            color: const Color(0xFF38BDF8),
-                            size: 11,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'PITCH ${widget.phonePitchDegrees > 0 ? '+' : ''}${widget.phonePitchDegrees.toStringAsFixed(0)}° • ${_floorFilterMode == ARFloorFilterMode.autoTilt ? "AUTO-TILT FOCUS: FLOOR $activeTargetFloorNumber" : (_floorFilterMode == ARFloorFilterMode.currentFloorOnly ? "FOCUS: FLOOR ${widget.currentFloor.floorNumber} ONLY" : "FOCUS: ALL FLOORS (F1-F10)")}',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF38BDF8),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Top Bar Actions (Back, Scan Marker, Ask AI, Floor Filter)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 4,
-                      ),
-                      child: Row(
-                        children: [
-                          if (widget.onBackClicked != null)
+                    // Top Bar Actions (Back)
+                    if (widget.onBackClicked != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 4,
+                        ),
+                        child: Row(
+                          children: [
                             GestureDetector(
                               onTap: widget.onBackClicked,
                               child: Container(
@@ -1519,134 +1277,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                 ),
                               ),
                             ),
-                          // Marker Scan Calibration Button
-                          GestureDetector(
-                            onTap: () => _showMarkerScannerModal(context),
-                            onLongPress: () => _showAdminMarkerModal(context),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: (widget.isCalibrated || _isMarkerLocked)
-                                    ? const Color(0xDD064E3B)
-                                    : const Color(0xDD1E293B),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color:
-                                      (widget.isCalibrated || _isMarkerLocked)
-                                      ? const Color(0xFF10B981)
-                                      : const Color(0xFF38BDF8),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    (widget.isCalibrated || _isMarkerLocked)
-                                        ? LucideIcons.checkCircle
-                                        : LucideIcons.qrCode,
-                                    color:
-                                        (widget.isCalibrated || _isMarkerLocked)
-                                        ? const Color(0xFF34D399)
-                                        : const Color(0xFF38BDF8),
-                                    size: 13,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    (widget.isCalibrated || _isMarkerLocked)
-                                        ? 'PnP LOCKED ✓'
-                                        : 'SCAN MARKER',
-                                    style: TextStyle(
-                                      color:
-                                          (widget.isCalibrated ||
-                                              _isMarkerLocked)
-                                          ? const Color(0xFF34D399)
-                                          : Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          // Floor Filter Mode Toggle Button
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (_floorFilterMode ==
-                                    ARFloorFilterMode.autoTilt) {
-                                  _floorFilterMode =
-                                      ARFloorFilterMode.currentFloorOnly;
-                                } else if (_floorFilterMode ==
-                                    ARFloorFilterMode.currentFloorOnly) {
-                                  _floorFilterMode =
-                                      ARFloorFilterMode.allFloors;
-                                } else {
-                                  _floorFilterMode = ARFloorFilterMode.autoTilt;
-                                }
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    _floorFilterMode ==
-                                        ARFloorFilterMode.autoTilt
-                                    ? const Color(0xFF10B981)
-                                    : (_floorFilterMode ==
-                                              ARFloorFilterMode.currentFloorOnly
-                                          ? const Color(0xFF2563EB)
-                                          : const Color(0xDD0D1B2A)),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color:
-                                      _floorFilterMode ==
-                                          ARFloorFilterMode.autoTilt
-                                      ? const Color(0xFF34D399)
-                                      : const Color(0xFF2563EB),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _floorFilterMode ==
-                                            ARFloorFilterMode.autoTilt
-                                        ? LucideIcons.smartphone
-                                        : LucideIcons.layers,
-                                    color: Colors.white,
-                                    size: 12,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    _floorFilterMode ==
-                                            ARFloorFilterMode.autoTilt
-                                        ? 'TILT AUTO (${activeTargetFloorNumber < 0 ? 'B$activeTargetFloorNumber' : 'F$activeTargetFloorNumber'})'
-                                        : (_floorFilterMode ==
-                                                  ARFloorFilterMode
-                                                      .currentFloorOnly
-                                              ? '${widget.currentFloor.floorNumber < 0 ? 'B${widget.currentFloor.floorNumber}' : 'F${widget.currentFloor.floorNumber}'} ONLY'
-                                              : 'ALL FLOORS'),
-                                    style: GoogleFonts.inter(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
 
                     // Top Navigation Guidance Banner (STEP 1/3 + Red EXIT Button)
                     if (activePOI != null && _isNavigatingActive)
@@ -1689,7 +1322,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                             CrossAxisAlignment.start,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                           /* const Text(
+                                          /* const Text(
                                             '',
                                             style: TextStyle(
                                               color: Color(0xFF00E5FF),
@@ -1697,7 +1330,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                               fontWeight: FontWeight.w900,
                                               letterSpacing: 0.5,
                                             // ), */
-                                           // ),
+                                          // ),
                                           Text(
                                             guidanceText,
                                             maxLines: 1,
@@ -1870,17 +1503,30 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                activePOI.category.toUpperCase().contains('PARK') ||
-                                        activePOI.name.toUpperCase().contains('CAR') ||
-                                        activePOI.name.toUpperCase().contains('PARKED')
+                                activePOI.category.toUpperCase().contains(
+                                          'PARK',
+                                        ) ||
+                                        activePOI.name.toUpperCase().contains(
+                                          'CAR',
+                                        ) ||
+                                        activePOI.name.toUpperCase().contains(
+                                          'PARKED',
+                                        )
                                     ? '● PARKED CAR:'
                                     : '● SELECTED:',
                                 style: GoogleFonts.inter(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w900,
-                                  color: activePOI.category.toUpperCase().contains('PARK') ||
-                                          activePOI.name.toUpperCase().contains('CAR') ||
-                                          activePOI.name.toUpperCase().contains('PARKED')
+                                  color:
+                                      activePOI.category.toUpperCase().contains(
+                                            'PARK',
+                                          ) ||
+                                          activePOI.name.toUpperCase().contains(
+                                            'CAR',
+                                          ) ||
+                                          activePOI.name.toUpperCase().contains(
+                                            'PARKED',
+                                          )
                                       ? const Color(0xFF10B981)
                                       : const Color(0xFF00E5FF),
                                   letterSpacing: 0.8,

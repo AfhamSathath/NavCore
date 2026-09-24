@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../data/destinations.dart';
 import '../engine/ecef_engine.dart';
 import '../engine/bearing_engine.dart';

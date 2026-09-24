@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// High-performance D-Pad simulation control for testing 2D Map & AR indoor navigation workflows
 class DpadControlWidget extends StatefulWidget {

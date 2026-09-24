@@ -19,11 +19,13 @@ class ShopImage extends StatelessWidget {
   });
 
   bool get isNetworkUrl =>
-      imagePathOrUrl.startsWith('http://') || imagePathOrUrl.startsWith('https://');
+      imagePathOrUrl.startsWith('http://') ||
+      imagePathOrUrl.startsWith('https://');
 
   @override
   Widget build(BuildContext context) {
-    final defaultFallback = fallbackWidget ??
+    final defaultFallback =
+        fallbackWidget ??
         Container(
           width: width,
           height: height,

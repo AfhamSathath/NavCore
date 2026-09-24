@@ -29,7 +29,7 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
   GeodeticCoords? _acquiredCoords;
   MallMetadata? _detectedMall;
   double _downloadProgress = 0.0;
-  String _statusText = 'Ready to acquire real-world GPS location lock...';
+  String _statusText = 'Finding your location...';
   bool _isProcessing = false;
 
   @override
@@ -42,10 +42,10 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
     setState(() {
       _isProcessing = true;
       _currentStep = 1;
-      _statusText = 'Requesting live GPS location permissions...';
+      _statusText = 'Finding your location...';
     });
 
-    // Step 1: Request Location & Lock GPS
+    // Step 1: Request Location
     final report = await widget.sensorService.requestAllPermissions();
     if (report.hasLocationPermission) {
       final pos = await widget.sensorService.getCurrentPosition();
@@ -60,21 +60,19 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
       height: 45.0,
     );
 
-    // Step 2: Detect Nearest Mall by Current GPS Position
+    // Step 2: Detect Nearest Mall
     _detectedMall = widget.mallService.findNearestMall(_acquiredCoords!);
 
     setState(() {
       _currentStep = 2;
-      _statusText =
-          'GPS Locked! Nearest Mall Detected: ${_detectedMall!.name} (${_detectedMall!.city})';
+      _statusText = 'Connected to ${_detectedMall!.name}!';
     });
     await Future.delayed(const Duration(milliseconds: 600));
 
-    // Step 3: Auto-Download Mall Map Package for Particular Mall
+    // Step 3: Load Mall Map
     setState(() {
       _currentStep = 3;
-      _statusText =
-          'Auto-downloading map package for ${_detectedMall!.name}...';
+      _statusText = 'Loading map for ${_detectedMall!.name}...';
     });
 
     await widget.mallService.autoDownloadAndActivateNearestMall(
@@ -93,7 +91,7 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
       _currentStep = 4;
       _downloadProgress = 1.0;
       _isProcessing = false;
-      _statusText = 'Mall Map Downloaded & Unlocked! Ready for AR Navigation.';
+      _statusText = 'Map ready! You can now start navigating.';
     });
   }
 
@@ -144,7 +142,7 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
                         ),
                       ),
                       const Text(
-                        'Real-World Indoor Navigator',
+                        'Smart Indoor Navigation',
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF64748B),
@@ -159,7 +157,7 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
               const SizedBox(height: 36),
 
               Text(
-                'Initial Setup & Map Lock',
+                'Welcome to NexNav',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -168,7 +166,7 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Complete these steps to unlock real-time indoor AR navigation:',
+                'Setting up your indoor navigation:',
                 style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
               ),
 
@@ -177,28 +175,28 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
               // Steps List
               _buildStepRow(
                 1,
-                'Acquire Live GPS Location',
+                'Finding Your Location',
                 _acquiredCoords != null
-                    ? '${_acquiredCoords!.latitude.toStringAsFixed(4)}° N, ${_acquiredCoords!.longitude.toStringAsFixed(4)}° W'
-                    : 'Requesting GPS access...',
+                    ? 'Location confirmed'
+                    : 'Finding your device position...',
                 LucideIcons.navigation,
               ),
               const SizedBox(height: 14),
               _buildStepRow(
                 2,
-                'Detect Nearby Mall Database',
+                'Identifying Your Mall',
                 _detectedMall != null
                     ? _detectedMall!.name
-                    : 'Searching cloud database...',
+                    : 'Looking for nearby mall...',
                 LucideIcons.building2,
               ),
               const SizedBox(height: 14),
               _buildStepRow(
                 3,
-                'Download Mall Map Package',
+                'Loading Indoor Map',
                 _currentStep >= 3
-                    ? '${(_downloadProgress * 100).toInt()}% Downloaded (${_detectedMall?.packageSizeBytesMB ?? 14.2} MB)'
-                    : 'Pending download...',
+                    ? '${(_downloadProgress * 100).toInt()}% Loaded'
+                    : 'Preparing map...',
                 LucideIcons.downloadCloud,
               ),
 
@@ -297,10 +295,10 @@ class _LocationLockScreenState extends State<LocationLockScreen> {
                   ),
                   label: Text(
                     _currentStep == 4
-                        ? 'Enter NexNav AR Navigator'
+                        ? 'Start Navigation'
                         : (_isProcessing
-                              ? 'Setting Up...'
-                              : 'Retry Location Setup'),
+                              ? 'Loading...'
+                              : 'Try Again'),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

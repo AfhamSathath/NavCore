@@ -29,11 +29,6 @@ class ShopDetailsScreen extends StatelessWidget {
       userFloorNumber: userFloor.floorNumber,
       targetFloorNumber: destination.floorNumber,
     );
-    final distanceFromGroundMeters = calculateDistanceFromEarthGround(
-      destination.location,
-      targetFloorNumber: destination.floorNumber,
-      groundElevationMeters: 45.0,
-    );
 
     return Container(
       decoration: const BoxDecoration(
@@ -105,13 +100,17 @@ class ShopDetailsScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
-                          vertical: 4,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB),
+                          color: Colors.black.withValues(alpha: 0.75),
                           borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 1,
+                          ),
                           boxShadow: const [
-                            BoxShadow(color: Colors.black26, blurRadius: 4),
+                            BoxShadow(color: Colors.black38, blurRadius: 6),
                           ],
                         ),
                         child: Text(
@@ -122,26 +121,49 @@ class ShopDetailsScreen extends StatelessWidget {
                             color: Colors.white,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
+                            letterSpacing: 0.4,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4,
+                          horizontal: 10,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF16A34A),
+                          color: Colors.black.withValues(alpha: 0.75),
                           borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          destination.openStatus,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 1,
                           ),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black38, blurRadius: 6),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF22C55E),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              destination.openStatus,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const Spacer(),
@@ -191,44 +213,24 @@ class ShopDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title & Category Row
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFDBEAFE)),
-                        ),
-                        child: Icon(
-                          _getCategoryIcon(destination.category),
-                          size: 22,
-                          color: const Color(0xFF2563EB),
+                      Text(
+                        destination.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
                         ),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              destination.name,
-                              style: const TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              destination.category,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 3),
+                      Text(
+                        destination.category,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF64748B),
                         ),
                       ),
                     ],
@@ -243,19 +245,19 @@ class ShopDetailsScreen extends StatelessWidget {
                         children: [
                           Expanded(
                             child: _buildSpecTile(
-                              LucideIcons.mapPin,
+                              LucideIcons.navigation,
                               'Distance',
-                              '${distanceMeters.toStringAsFixed(0)} meters',
+                              '${distanceMeters.toStringAsFixed(0)} meters away',
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildSpecTile(
-                              LucideIcons.layers,
-                              'Mall Floor',
+                              LucideIcons.building,
+                              'Floor Level',
                               destination.floorNumber < 0
-                                  ? 'Basement ${destination.floorNumber} (${destination.location.height.toStringAsFixed(0)}m)'
-                                  : 'Floor ${destination.floorNumber} (${destination.location.height.toStringAsFixed(0)}m)',
+                                  ? 'Basement B${destination.floorNumber.abs()}'
+                                  : 'Floor ${destination.floorNumber}',
                             ),
                           ),
                         ],
@@ -265,17 +267,17 @@ class ShopDetailsScreen extends StatelessWidget {
                         children: [
                           Expanded(
                             child: _buildSpecTile(
-                              LucideIcons.mountain,
-                              'Ground Distance',
-                              '${distanceFromGroundMeters.toStringAsFixed(0)}m from Ground',
+                              LucideIcons.clock,
+                              'Opening Hours',
+                              destination.openStatus,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildSpecTile(
-                              LucideIcons.star,
-                              'Rating',
-                              '${destination.rating} ★',
+                              LucideIcons.checkCircle2,
+                              'Status',
+                              'Open Today',
                             ),
                           ),
                         ],
@@ -374,23 +376,5 @@ class ShopDetailsScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  IconData _getCategoryIcon(String category) {
-    switch (category.toUpperCase()) {
-      case 'FOOD & DRINK':
-        return LucideIcons.utensils;
-      case 'TECH & ELECTRONICS':
-        return LucideIcons.smartphone;
-      case 'RETAIL & FASHION':
-      case 'LUXURY FASHION':
-        return LucideIcons.shoppingBag;
-      case 'FINE JEWELRY':
-        return LucideIcons.watch;
-      case 'ENTERTAINMENT':
-        return LucideIcons.gamepad2;
-      default:
-        return LucideIcons.store;
-    }
   }
 }

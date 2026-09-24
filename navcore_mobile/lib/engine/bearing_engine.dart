@@ -137,3 +137,61 @@ double calculateARYOffset(
 
   return viewportCenterY + focalLength * (deltaHeight / horizontalDist);
 }
+
+/// Real-World Geometric Spatial Distance & Floor Size Metrics Model
+class RealWorldSpatialMetrics {
+  final double horizontalHaversineDistMeters; // d_2D
+  final double elevationDeltaMeters; // Δh
+  final double euclidean3DDistanceMeters; // d_3D = sqrt(d_2D² + Δh²)
+  final double distanceFromGroundMeters; // Elevation difference from Earth Ground (Floor 1 Entrance)
+  final double estimatedWalkTimeSeconds; // d_3D / 1.4 m/s walking speed
+  final double floorWidthMeters; // Floor width dimension in meters
+  final double floorLengthMeters; // Floor length dimension in meters
+  final double floorAreaSqMeters; // Floor real-world surface area in m²
+  final double ceilingHeightMeters; // Floor clearance height
+
+  const RealWorldSpatialMetrics({
+    required this.horizontalHaversineDistMeters,
+    required this.elevationDeltaMeters,
+    required this.euclidean3DDistanceMeters,
+    required this.distanceFromGroundMeters,
+    required this.estimatedWalkTimeSeconds,
+    required this.floorWidthMeters,
+    required this.floorLengthMeters,
+    required this.floorAreaSqMeters,
+    required this.ceilingHeightMeters,
+  });
+}
+
+/// Comprehensive Geometric Calculation Engine for Real-World Distance & Floor Size Data
+RealWorldSpatialMetrics calculateRealWorldSpatialMetrics({
+  required GeodeticCoords userCoords,
+  required GeodeticCoords targetCoords,
+  int userFloorNumber = 1,
+  int targetFloorNumber = 1,
+  double floorWidthMeters = 120.0,
+  double floorLengthMeters = 85.0,
+  double ceilingHeightMeters = 4.5,
+  double heightPerFloorMeters = 4.5,
+  double groundElevationMeters = 45.0,
+}) {
+  final d2D = haversineDistance(userCoords, targetCoords);
+  final floorDelta = (targetFloorNumber - userFloorNumber).toDouble();
+  final deltaH =
+      floorDelta * heightPerFloorMeters + (targetCoords.height - userCoords.height);
+  final d3D = sqrt(d2D * d2D + deltaH * deltaH);
+  final groundDist = (targetFloorNumber - 1).abs() * heightPerFloorMeters;
+  final walkTime = d3D / 1.4; // 1.4 m/s nominal walking speed
+
+  return RealWorldSpatialMetrics(
+    horizontalHaversineDistMeters: d2D,
+    elevationDeltaMeters: deltaH,
+    euclidean3DDistanceMeters: d3D,
+    distanceFromGroundMeters: groundDist,
+    estimatedWalkTimeSeconds: walkTime,
+    floorWidthMeters: floorWidthMeters,
+    floorLengthMeters: floorLengthMeters,
+    floorAreaSqMeters: floorWidthMeters * floorLengthMeters,
+    ceilingHeightMeters: ceilingHeightMeters,
+  );
+}

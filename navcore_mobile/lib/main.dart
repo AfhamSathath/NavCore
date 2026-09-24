@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -57,6 +58,7 @@ class NexNavMainNavigation extends StatefulWidget {
 class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
   int _currentIndex = 0;
   bool _isSetupComplete = false;
+  DateTime? _lastBackPressTime;
 
   final RealSensorService _sensorService = RealSensorService();
   final MallDatabaseService _mallDatabaseService = MallDatabaseService();
@@ -86,6 +88,8 @@ class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
 
   late final KalmanPositionFilter _kalmanFilter;
   Timer? _imuTimer;
+  final GlobalKey<FloorPlanScreenState> _floorPlanKey =
+      GlobalKey<FloorPlanScreenState>();
 
   @override
   void initState() {
@@ -297,7 +301,10 @@ class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
           _arTargetDestination = null;
           _currentIndex = 1;
         }),
-        onOpenFloorMap: () => setState(() => _currentIndex = 2),
+        onOpenFloorMap: () {
+          _floorPlanKey.currentState?.clearSelection();
+          setState(() => _currentIndex = 2);
+        },
         onOpenMallExplorer: () => setState(() => _currentIndex = 3),
         onSelectDestination: (poi) {
           setState(() {
@@ -320,13 +327,20 @@ class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
           _arTargetDestination = poi;
           _currentIndex = 1;
         }),
-        onBackClicked: () => setState(() {
-          _arTargetDestination = null;
-          _currentIndex = 0;
-        }),
-        onOpenMapsClicked: () => setState(() => _currentIndex = 2),
+        onBackClicked: () {
+          _floorPlanKey.currentState?.clearSelection();
+          setState(() {
+            _arTargetDestination = null;
+            _currentIndex = 0;
+          });
+        },
+        onOpenMapsClicked: () {
+          _floorPlanKey.currentState?.clearSelection();
+          setState(() => _currentIndex = 2);
+        },
       ),
       FloorPlanScreen(
+        key: _floorPlanKey,
         buildingProfile: _buildingProfile,
         currentFloor: currentFloor,
         onSelectFloor: _handleSelectFloor,
@@ -337,50 +351,179 @@ class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
           _arTargetDestination = poi;
           _currentIndex = 1;
         }),
+        onBackClicked: () {
+          _floorPlanKey.currentState?.clearSelection();
+          setState(() => _currentIndex = 0);
+        },
       ),
       MallExplorerScreen(
         mallService: _mallDatabaseService,
         userCoords: _userCoords,
         onSelectActiveMall: (mallId) async {
           await _loadActiveMallPackage(mallId);
+          _floorPlanKey.currentState?.clearSelection();
           setState(() => _currentIndex = 2);
+        },
+        onBackClicked: () {
+          _floorPlanKey.currentState?.clearSelection();
+          setState(() => _currentIndex = 0);
         },
       ),
     ];
 
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (idx) => setState(() {
-          if (idx == 1 && _currentIndex != 1) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          _floorPlanKey.currentState?.clearSelection();
+          setState(() {
             _arTargetDestination = null;
+            _currentIndex = 0;
+          });
+        } else {
+          final now = DateTime.now();
+          if (_lastBackPressTime == null ||
+              now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+            _lastBackPressTime = now;
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'Press back again to exit NexNav',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                backgroundColor: const Color(0xFF0F172A),
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+                margin: const EdgeInsets.only(bottom: 12, left: 24, right: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 8,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            SystemNavigator.pop();
           }
-          _currentIndex = idx;
-        }),
-        indicatorColor: const Color(0xFFDBEAFE),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(LucideIcons.home),
-            selectedIcon: Icon(LucideIcons.home, color: Color(0xFF2563EB)),
-            label: 'Home',
+        }
+      },
+      child: Scaffold(
+        extendBody: true,
+        body: IndexedStack(index: _currentIndex, children: screens),
+        bottomNavigationBar: _buildFloatingPillNavBar(),
+      ),
+    );
+  }
+
+  Widget _buildFloatingPillNavBar() {
+    final navItems = [
+      {'label': 'Home', 'icon': LucideIcons.compass},
+      {'label': 'Camera', 'icon': LucideIcons.camera},
+      {'label': 'Map', 'icon': LucideIcons.mapPin},
+      {'label': 'Malls', 'icon': LucideIcons.building2},
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        color: Colors.transparent,
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.96),
+            borderRadius: BorderRadius.circular(42),
+            border: Border.all(
+              color: const Color(0xFFE4E4E7),
+              width: 1.2,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x22000000),
+                blurRadius: 24,
+                spreadRadius: 2,
+                offset: Offset(0, 8),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(LucideIcons.compass),
-            selectedIcon: Icon(LucideIcons.compass, color: Color(0xFF2563EB)),
-            label: 'AR View',
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(navItems.length, (idx) {
+              final isSelected = _currentIndex == idx;
+              final item = navItems[idx];
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (idx == 1 && _currentIndex != 1) {
+                      _arTargetDestination = null;
+                    }
+                    if (_currentIndex == 2 || idx == 2) {
+                      _floorPlanKey.currentState?.clearSelection();
+                    }
+                    _currentIndex = idx;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeInOut,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSelected ? 18 : 14,
+                    vertical: isSelected ? 9 : 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF0F172A) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isSelected)
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            item['icon'] as IconData,
+                            size: 17,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        )
+                      else
+                        Icon(
+                          item['icon'] as IconData,
+                          size: 23,
+                          color: const Color(0xFF64748B),
+                        ),
+                      if (isSelected) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          item['label'] as String,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }),
           ),
-          NavigationDestination(
-            icon: Icon(LucideIcons.layers),
-            selectedIcon: Icon(LucideIcons.layers, color: Color(0xFF2563EB)),
-            label: 'Floor Map',
-          ),
-          NavigationDestination(
-            icon: Icon(LucideIcons.store),
-            selectedIcon: Icon(LucideIcons.store, color: Color(0xFF2563EB)),
-            label: 'Mall Catalog',
-          ),
-        ],
+        ),
       ),
     );
   }

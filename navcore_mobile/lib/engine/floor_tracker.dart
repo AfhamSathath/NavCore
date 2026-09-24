@@ -11,6 +11,9 @@ class FloorLevelConfig {
   final double bandMinMeters;
   final double bandMaxMeters;
   final int storesCount;
+  final double floorWidthMeters;
+  final double floorLengthMeters;
+  final double ceilingHeightMeters;
 
   const FloorLevelConfig({
     required this.floorId,
@@ -21,7 +24,16 @@ class FloorLevelConfig {
     required this.bandMinMeters,
     required this.bandMaxMeters,
     required this.storesCount,
+    this.floorWidthMeters = 120.0,
+    this.floorLengthMeters = 85.0,
+    this.ceilingHeightMeters = 4.5,
   });
+
+  /// Real-world floor surface area in square meters (m²)
+  double get floorAreaSqMeters => floorWidthMeters * floorLengthMeters;
+
+  /// Real-world floor perimeter in meters (m)
+  double get perimeterMeters => 2 * (floorWidthMeters + floorLengthMeters);
 }
 
 class BuildingElevationProfile {
@@ -57,6 +69,9 @@ final defaultBuildingProfile = BuildingElevationProfile(
       bandMinMeters: 0.0,
       bandMaxMeters: 42.5,
       storesCount: 5,
+      floorWidthMeters: 160.0,
+      floorLengthMeters: 110.0,
+      ceilingHeightMeters: 3.8,
     ),
     FloorLevelConfig(
       floorId: 'fl-1',
@@ -67,6 +82,9 @@ final defaultBuildingProfile = BuildingElevationProfile(
       bandMinMeters: 42.5,
       bandMaxMeters: 47.5,
       storesCount: 5,
+      floorWidthMeters: 150.0,
+      floorLengthMeters: 100.0,
+      ceilingHeightMeters: 5.2,
     ),
     FloorLevelConfig(
       floorId: 'fl-2',
@@ -77,6 +95,9 @@ final defaultBuildingProfile = BuildingElevationProfile(
       bandMinMeters: 47.5,
       bandMaxMeters: 52.5,
       storesCount: 5,
+      floorWidthMeters: 135.0,
+      floorLengthMeters: 90.0,
+      ceilingHeightMeters: 4.5,
     ),
     FloorLevelConfig(
       floorId: 'fl-3',
@@ -87,6 +108,9 @@ final defaultBuildingProfile = BuildingElevationProfile(
       bandMinMeters: 52.5,
       bandMaxMeters: 57.5,
       storesCount: 5,
+      floorWidthMeters: 125.0,
+      floorLengthMeters: 85.0,
+      ceilingHeightMeters: 4.5,
     ),
     FloorLevelConfig(
       floorId: 'fl-4',
@@ -97,6 +121,9 @@ final defaultBuildingProfile = BuildingElevationProfile(
       bandMinMeters: 57.5,
       bandMaxMeters: 200.0,
       storesCount: 5,
+      floorWidthMeters: 120.0,
+      floorLengthMeters: 80.0,
+      ceilingHeightMeters: 4.8,
     ),
   ],
 );

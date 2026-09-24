@@ -15,6 +15,7 @@ import '../engine/route_service.dart';
 import '../engine/off_route_service.dart';
 import '../engine/vertical_transition_service.dart';
 import '../data/building_data_service.dart';
+import 'theme/app_theme.dart';
 
 enum ARFloorFilterMode { autoTilt, currentFloorOnly, allFloors }
 
@@ -58,6 +59,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
   final ARFloorFilterMode _floorFilterMode = ARFloorFilterMode.autoTilt;
   bool _isNavigatingActive = false;
   bool _isFavorite = false;
+  bool _showGeometricTelemetryModal = false;
 
   final SensorFusionService _sensorFusion = SensorFusionService();
   final RouteService _routeService = RouteService();
@@ -423,6 +425,16 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         1.25,
       );
 
+      final spatialMetrics = calculateRealWorldSpatialMetrics(
+        userCoords: effectiveUserCoords,
+        targetCoords: poi.location,
+        userFloorNumber: widget.currentFloor.floorNumber,
+        targetFloorNumber: poi.floorNumber,
+        floorWidthMeters: widget.currentFloor.floorWidthMeters,
+        floorLengthMeters: widget.currentFloor.floorLengthMeters,
+        ceilingHeightMeters: widget.currentFloor.ceilingHeightMeters,
+      );
+
       positionedCards.add({
         'poi': poi,
         'distM': distM,
@@ -434,6 +446,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         'cardOpacity': cardOpacity,
         'isPitchFocused': isPitchFocused,
         'distanceScale': distanceScaleFactor,
+        'spatialMetrics': spatialMetrics,
       });
     }
 
@@ -572,6 +585,18 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         );
       }
     }
+
+    final activeSpatialMetrics = activePOI != null
+        ? calculateRealWorldSpatialMetrics(
+            userCoords: fusedPose.position,
+            targetCoords: activePOI.location,
+            userFloorNumber: widget.currentFloor.floorNumber,
+            targetFloorNumber: activePOI.floorNumber,
+            floorWidthMeters: widget.currentFloor.floorWidthMeters,
+            floorLengthMeters: widget.currentFloor.floorLengthMeters,
+            ceilingHeightMeters: widget.currentFloor.ceilingHeightMeters,
+          )
+        : null;
 
     int cleanDistM = activeDistM;
 
@@ -788,26 +813,55 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '$activeDistM M',
+                              '${activeSpatialMetrics?.euclidean3DDistanceMeters.toStringAsFixed(0) ?? activeDistM} M (3D)',
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 28,
+                                fontSize: 26,
                                 fontWeight: FontWeight.w900,
                                 color: Colors.white,
                                 letterSpacing: -0.5,
                                 height: 1.0,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${activePOI.floorNumber < 0 ? "B${activePOI.floorNumber.abs()}" : "FLOOR ${activePOI.floorNumber}"} • TO ${activePOI.name.toUpperCase()}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white.withValues(alpha: 0.9),
-                                letterSpacing: 0.8,
-                              ),
+                            ValueListenableBuilder<bool>(
+                              valueListenable: DeveloperModeNotifier.instance,
+                              builder: (context, isDev, child) {
+                                if (!isDev) {
+                                  return Text(
+                                    activePOI.floorNumber < 0 ? "Basement B${activePOI.floorNumber.abs()}" : "Floor ${activePOI.floorNumber}",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white.withValues(alpha: 0.95),
+                                    ),
+                                  );
+                                }
+                                return Column(
+                                  children: [
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      '2D: ${activeSpatialMetrics?.horizontalHaversineDistMeters.toStringAsFixed(0) ?? activeDistM}m • Δh: ${activeSpatialMetrics != null && activeSpatialMetrics.elevationDeltaMeters >= 0 ? "+" : ""}${activeSpatialMetrics?.elevationDeltaMeters.toStringAsFixed(1) ?? "0.0"}m',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white.withValues(alpha: 0.95),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${activePOI.floorNumber < 0 ? "B${activePOI.floorNumber.abs()}" : "FLOOR ${activePOI.floorNumber}"} (${widget.currentFloor.floorWidthMeters.toStringAsFixed(0)}×${widget.currentFloor.floorLengthMeters.toStringAsFixed(0)}m)',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                        letterSpacing: 0.8,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -853,6 +907,11 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                   final cardScale = (data['distanceScale'] as double? ?? 1.0);
 
                   final isSelected = activePOI?.id == poi.id;
+
+                  final cardMetrics =
+                      data['spatialMetrics'] as RealWorldSpatialMetrics?;
+                  final int dist3D =
+                      cardMetrics?.euclidean3DDistanceMeters.round() ?? distM;
 
                   String floorRelationStr;
                   final String floorLabel = poi.floorNumber < 0
@@ -942,7 +1001,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                               ),
                                               const SizedBox(width: 3),
                                               Text(
-                                                '${poi.rating} ★ • $distM m',
+                                                '${poi.rating} ★ • 3D: $dist3D m',
                                                 style: const TextStyle(
                                                   color: Color(0xFFCBD5E1),
                                                   fontSize: 10,
@@ -953,7 +1012,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                           ),
                                           const SizedBox(height: 3),
                                           Text(
-                                            floorRelationStr,
+                                            '$floorRelationStr • ${(widget.currentFloor.floorAreaSqMeters / 1000).toStringAsFixed(1)}k m²',
                                             style: TextStyle(
                                               color: isSelected
                                                   ? const Color(0xFF34D399)
@@ -1261,15 +1320,15 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Top Bar Actions (Back)
-                    if (widget.onBackClicked != null)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          children: [
+                    // Top Bar Actions (Back + Geometry Metrics Toggle)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          if (widget.onBackClicked != null)
                             GestureDetector(
                               onTap: widget.onBackClicked,
                               child: Container(
@@ -1289,9 +1348,79 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ValueListenableBuilder<bool>(
+                            valueListenable: DeveloperModeNotifier.instance,
+                            builder: (context, isDevMode, child) {
+                              if (!isDevMode) return const SizedBox.shrink();
+                              return Row(
+                                children: [
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _showGeometricTelemetryModal =
+                                            !_showGeometricTelemetryModal;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _showGeometricTelemetryModal
+                                            ? const Color(0xFF0284C7)
+                                            : const Color(0xEE0F172A),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: _showGeometricTelemetryModal
+                                              ? const Color(0xFF38BDF8)
+                                              : const Color(0xFF334155),
+                                        ),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                            color: Color(0x440284C7),
+                                            blurRadius: 8,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            LucideIcons.ruler,
+                                            color: Color(0xFF38BDF8),
+                                            size: 13,
+                                          ),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            'FLOOR REAL DISTANCE & GEOMETRY',
+                                            style: GoogleFonts.plusJakartaSans(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            _showGeometricTelemetryModal
+                                                ? LucideIcons.chevronUp
+                                                : LucideIcons.chevronDown,
+                                            color: Colors.white70,
+                                            size: 12,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
                       ),
+                    ),
 
                     // Top Navigation Guidance Banner (STEP 1/3 + Red EXIT Button)
                     if (activePOI != null && _isNavigatingActive)
@@ -1632,7 +1761,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                     ),
                                     const SizedBox(width: 3),
                                     Text(
-                                      '$activeDistM m',
+                                      '3D: ${activeSpatialMetrics?.euclidean3DDistanceMeters.toStringAsFixed(0) ?? activeDistM}m',
                                       style: const TextStyle(
                                         color: Color(0xFF94A3B8),
                                         fontSize: 10,
@@ -1768,8 +1897,287 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
               ),
             ),
           ),
+          // 7. Real-World Geometric Calculations & AR Floor Size Data Panel
+          if (_showGeometricTelemetryModal)
+            _buildGeometricTelemetryOverlay(
+              activeSpatialMetrics,
+              geodeticToECEF(effectiveUserCoords),
+            ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGeometricTelemetryOverlay(
+    RealWorldSpatialMetrics? activeMetrics,
+    ECEFCoords userECEF,
+  ) {
+    final floor = widget.currentFloor;
+    final metrics =
+        activeMetrics ??
+        RealWorldSpatialMetrics(
+          horizontalHaversineDistMeters: 0.0,
+          elevationDeltaMeters: 0.0,
+          euclidean3DDistanceMeters: 0.0,
+          distanceFromGroundMeters: (floor.floorNumber - 1).abs() * 4.5,
+          estimatedWalkTimeSeconds: 0.0,
+          floorWidthMeters: floor.floorWidthMeters,
+          floorLengthMeters: floor.floorLengthMeters,
+          floorAreaSqMeters: floor.floorAreaSqMeters,
+          ceilingHeightMeters: floor.ceilingHeightMeters,
+        );
+
+    return Positioned(
+      top: 90,
+      left: 14,
+      right: 14,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFA090D16),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFF0284C7), width: 1.5),
+          boxShadow: const [
+            BoxShadow(color: Color(0x660284C7), blurRadius: 18),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Title Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0284C7),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        LucideIcons.binary,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'REAL-WORLD AR GEOMETRY & FLOOR METRICS',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _showGeometricTelemetryModal = false),
+                  child: const Icon(
+                    LucideIcons.x,
+                    color: Colors.white70,
+                    size: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Divider(color: Color(0xFF1E293B), height: 1),
+            const SizedBox(height: 10),
+
+            // Section 1: Real Floor Size & Bounds
+            Text(
+              'REAL FLOOR SIZE & BOUNDS (FLOOR ${floor.floorNumber})',
+              style: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFF38BDF8),
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMetricMiniCard(
+                    'FLOOR DIMENSIONS',
+                    '${floor.floorWidthMeters.toStringAsFixed(0)}m × ${floor.floorLengthMeters.toStringAsFixed(0)}m',
+                    LucideIcons.maximize2,
+                    const Color(0xFF0EA5E9),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildMetricMiniCard(
+                    'SURFACE AREA',
+                    '${floor.floorAreaSqMeters.toStringAsFixed(0)} m²',
+                    LucideIcons.box,
+                    const Color(0xFF10B981),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMetricMiniCard(
+                    'CEILING CLEARANCE',
+                    '${floor.ceilingHeightMeters.toStringAsFixed(1)} m',
+                    LucideIcons.arrowUpFromLine,
+                    const Color(0xFFF59E0B),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildMetricMiniCard(
+                    'GROUND ELEVATION',
+                    '${floor.absoluteHeightMeters.toStringAsFixed(1)}m AMSL',
+                    LucideIcons.layers,
+                    const Color(0xFFA855F7),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+            Text(
+              'REAL-WORLD DISTANCE CALCULATIONS (ECEF & HAVERSINE 3D)',
+              style: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFF38BDF8),
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF1E293B)),
+              ),
+              child: Column(
+                children: [
+                  _buildMathRow(
+                    '2D Horizontal Planar Dist (d_2D):',
+                    '${metrics.horizontalHaversineDistMeters.toStringAsFixed(2)} m',
+                  ),
+                  const SizedBox(height: 4),
+                  _buildMathRow(
+                    'Vertical Elevation Delta (Δh):',
+                    '${metrics.elevationDeltaMeters >= 0 ? "+" : ""}${metrics.elevationDeltaMeters.toStringAsFixed(2)} m',
+                  ),
+                  const SizedBox(height: 4),
+                  _buildMathRow(
+                    '3D Euclidean Distance (d_3D):',
+                    '${metrics.euclidean3DDistanceMeters.toStringAsFixed(2)} m',
+                    isHighlight: true,
+                  ),
+                  const SizedBox(height: 4),
+                  _buildMathRow(
+                    'Ground Reference Delta:',
+                    '${metrics.distanceFromGroundMeters.toStringAsFixed(1)} m from Floor 1 Ground',
+                  ),
+                  const SizedBox(height: 4),
+                  _buildMathRow(
+                    'Est. Real Walk Pace:',
+                    '${(metrics.estimatedWalkTimeSeconds / 60).toStringAsFixed(1)} min (${metrics.estimatedWalkTimeSeconds.toStringAsFixed(0)}s @ 1.4m/s)',
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+            Text(
+              'ECEF Spatial Vector: X=${userECEF.x.toStringAsFixed(0)}m, Y=${userECEF.y.toStringAsFixed(0)}m, Z=${userECEF.z.toStringAsFixed(0)}m',
+              style: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFF64748B),
+                fontSize: 8,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricMiniCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF1E293B)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: const Color(0xFF94A3B8),
+                    fontSize: 7.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMathRow(String label, String value, {bool isHighlight = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            color: isHighlight
+                ? const Color(0xFF38BDF8)
+                : const Color(0xFFCBD5E1),
+            fontSize: 9.5,
+            fontWeight: isHighlight ? FontWeight.w900 : FontWeight.w600,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.plusJakartaSans(
+            color: isHighlight ? const Color(0xFF34D399) : Colors.white,
+            fontSize: 10.0,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
     );
   }
 

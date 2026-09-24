@@ -37,9 +37,16 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = 'ALL';
   int? _selectedFloorNumber; // null = All Floors
   String _searchQuery = '';
-  bool _onlyOpenNow = false;
-  String _sortBy = 'distance'; // 'distance', 'rating', 'name'
   final TextEditingController _searchController = TextEditingController();
+
+  final List<Map<String, dynamic>> _categories = [
+    {'label': 'ALL', 'icon': LucideIcons.layoutGrid},
+    {'label': 'FOOD & DRINK', 'icon': LucideIcons.utensils},
+    {'label': 'TECH & ELECTRONICS', 'icon': LucideIcons.smartphone},
+    {'label': 'RETAIL & FASHION', 'icon': LucideIcons.shoppingBag},
+    {'label': 'ENTERTAINMENT', 'icon': LucideIcons.gamepad2},
+    {'label': 'SERVICES', 'icon': LucideIcons.shieldCheck},
+  ];
 
   final ParkingService _parkingService = ParkingService();
 
@@ -68,105 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedFloorNumber = null;
       _searchQuery = '';
       _searchController.clear();
-      _onlyOpenNow = false;
-      _sortBy = 'distance';
     });
-  }
-
-  final List<Map<String, dynamic>> _categories = [
-    {'label': 'ALL', 'icon': LucideIcons.layoutGrid},
-    {'label': 'FOOD & DRINK', 'icon': LucideIcons.utensils},
-    {'label': 'TECH & ELECTRONICS', 'icon': LucideIcons.smartphone},
-    {'label': 'RETAIL & FASHION', 'icon': LucideIcons.shoppingBag},
-    {'label': 'ENTERTAINMENT', 'icon': LucideIcons.gamepad2},
-    {'label': 'SERVICES', 'icon': LucideIcons.shieldCheck},
-  ];
-
-  Widget _buildSortDropdown() {
-    return PopupMenuButton<String>(
-      initialValue: _sortBy,
-      onSelected: (String val) {
-        setState(() {
-          _sortBy = val;
-        });
-      },
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 4,
-      color: Colors.white,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: _sortBy != 'distance' ? const Color(0xFFEFF6FF) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: _sortBy != 'distance'
-                ? const Color(0xFFBFDBFE)
-                : const Color(0xFFE2E8F0),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              LucideIcons.arrowUpDown,
-              size: 14,
-              color: Color(0xFF2563EB),
-            ),
-            const SizedBox(width: 5),
-            Text(
-              _sortBy == 'rating'
-                  ? 'Top Rated'
-                  : _sortBy == 'name'
-                  ? 'Name A-Z'
-                  : 'Nearest',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            const SizedBox(width: 4),
-            const Icon(
-              LucideIcons.chevronDown,
-              size: 14,
-              color: Color(0xFF94A3B8),
-            ),
-          ],
-        ),
-      ),
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'distance',
-          child: Row(
-            children: [
-              Icon(LucideIcons.mapPin, size: 15, color: Color(0xFF2563EB)),
-              SizedBox(width: 8),
-              Text('Nearest Distance', style: TextStyle(fontSize: 12.5)),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'rating',
-          child: Row(
-            children: [
-              Icon(LucideIcons.star, size: 15, color: Color(0xFFF59E0B)),
-              SizedBox(width: 8),
-              Text('Highest Rating', style: TextStyle(fontSize: 12.5)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'name',
-          child: Row(
-            children: const [
-              Icon(LucideIcons.arrowUpDown, size: 15, color: Color(0xFF64748B)),
-              SizedBox(width: 8),
-              Text('Alphabetical (A-Z)', style: TextStyle(fontSize: 12.5)),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildFloorDropdown(FloorLevelConfig currentFloor) {
@@ -318,9 +227,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const PopupMenuDivider(),
         ...widget.buildingProfile.floors.map((floor) {
-          final String floorLabel = floor.floorNumber < 0
-              ? 'Floor B${floor.floorNumber.abs()}'
-              : 'Floor F${floor.floorNumber}';
+          String floorLabelSimple;
+          if (floor.floorNumber < 0) {
+            floorLabelSimple = 'Floor B${floor.floorNumber.abs()} (Basement)';
+          } else if (floor.floorNumber == 1) {
+            floorLabelSimple = 'Floor F1 (Ground Floor)';
+          } else {
+            floorLabelSimple = 'Floor F${floor.floorNumber}';
+          }
+
           final isSelected = _selectedFloorNumber == floor.floorNumber;
           return PopupMenuItem<int?>(
             value: floor.floorNumber,
@@ -335,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  '$floorLabel (${floor.storesCount} stores)',
+                  floorLabelSimple,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -470,9 +385,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool hasActiveFilters =
         _selectedCategory != 'ALL' ||
         _selectedFloorNumber != null ||
-        _searchQuery.isNotEmpty ||
-        _onlyOpenNow ||
-        _sortBy != 'distance';
+        _searchQuery.isNotEmpty;
 
     if (!hasActiveFilters) return const SizedBox.shrink();
 
@@ -508,15 +421,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? 'Floor B${_selectedFloorNumber!.abs()}'
                   : 'Floor F$_selectedFloorNumber',
               () => setState(() => _selectedFloorNumber = null),
-            ),
-          if (_onlyOpenNow)
-            _buildFilterChip('Open Now', () {
-              setState(() => _onlyOpenNow = false);
-            }),
-          if (_sortBy != 'distance')
-            _buildFilterChip(
-              _sortBy == 'rating' ? 'Top Rated' : 'Sort A-Z',
-              () => setState(() => _sortBy = 'distance'),
             ),
           GestureDetector(
             onTap: _clearAllFilters,
@@ -570,6 +474,109 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildRealWorldStoreCard(
+    DestinationPOI shop,
+    double dist,
+    FloorLevelConfig currentFloor,
+  ) {
+    final isMyFloor = shop.floorNumber == currentFloor.floorNumber;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isMyFloor
+              ? const Color(0xFF10B981).withValues(alpha: 0.4)
+              : const Color(0xFFE2E8F0),
+          width: isMyFloor ? 1.5 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isMyFloor
+                ? const Color(0xFF10B981).withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showShopDetails(shop),
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Store Photo Thumbnail
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: ShopImage(
+                    imagePathOrUrl: shop.effectiveImageUrl,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 14),
+
+                // Store Title & Distance Only
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        shop.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            LucideIcons.navigation,
+                            size: 11,
+                            color: Color(0xFF2563EB),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${dist.toStringAsFixed(0)}m away',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Icon(
+                  LucideIcons.chevronRight,
+                  size: 18,
+                  color: Color(0xFFCBD5E1),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showShopDetails(DestinationPOI shop) {
     showModalBottomSheet(
       context: context,
@@ -612,31 +619,23 @@ class _HomeScreenState extends State<HomeScreen> {
       final matchesFloor =
           _selectedFloorNumber == null ||
           poi.floorNumber == _selectedFloorNumber;
-      final matchesOpen =
-          !_onlyOpenNow || poi.openStatus.toUpperCase().contains('OPEN');
-      return matchesCategory && matchesSearch && matchesFloor && matchesOpen;
+      return matchesCategory && matchesSearch && matchesFloor;
     }).toList();
 
     filteredPOIs.sort((a, b) {
-      if (_sortBy == 'rating') {
-        return b.rating.compareTo(a.rating);
-      } else if (_sortBy == 'name') {
-        return a.name.compareTo(b.name);
-      } else {
-        final distA = calculateAccurate3DDistance(
-          effectiveCoords,
-          a.location,
-          userFloorNumber: currentFloor.floorNumber,
-          targetFloorNumber: a.floorNumber,
-        );
-        final distB = calculateAccurate3DDistance(
-          effectiveCoords,
-          b.location,
-          userFloorNumber: currentFloor.floorNumber,
-          targetFloorNumber: b.floorNumber,
-        );
-        return distA.compareTo(distB);
-      }
+      final distA = calculateAccurate3DDistance(
+        effectiveCoords,
+        a.location,
+        userFloorNumber: currentFloor.floorNumber,
+        targetFloorNumber: a.floorNumber,
+      );
+      final distB = calculateAccurate3DDistance(
+        effectiveCoords,
+        b.location,
+        userFloorNumber: currentFloor.floorNumber,
+        targetFloorNumber: b.floorNumber,
+      );
+      return distA.compareTo(distB);
     });
 
     return Scaffold(
@@ -659,6 +658,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF2563EB),
                             borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x332563EB),
+                                blurRadius: 10,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: const Icon(
                             LucideIcons.compass,
@@ -667,49 +673,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'NexNav AR',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w800,
-                                color: const Color(0xFF0F172A),
-                              ),
+                        Expanded(
+                          child: Text(
+                            'NexNav',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF0F172A),
                             ),
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF22C55E),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                const Text(
-                                  'Indoor Positioning Active',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(
-                            LucideIcons.downloadCloud,
-                            color: Color(0xFF2563EB),
                           ),
-                          onPressed: widget.onOpenMallExplorer,
-                          tooltip: 'Cloud Mall Database',
                         ),
                       ],
                     ),
@@ -730,306 +702,184 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(26),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E3A8A), Color(0xFF0F172A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      width: 1.5,
+                      color: const Color(0xFF3B82F6).withValues(alpha: 0.35),
+                      width: 1.2,
                     ),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x441E40AF),
-                        blurRadius: 24,
-                        offset: Offset(0, 10),
+                        color: Color(0x441E3A8A),
+                        blurRadius: 16,
+                        offset: Offset(0, 6),
                       ),
                     ],
                   ),
-                  child: Stack(
-                    children: [
-                      // 1. Mall Interior Background Photo
-                      Positioned.fill(
-                        child: Image.asset(
-                          'assets/images/mall_bg.jpg',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                decoration: const BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Color(0xFF1E40AF),
-                                      Color(0xFF3B82F6),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 11,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFF60A5FA).withValues(alpha: 0.4),
+                                  width: 1,
                                 ),
                               ),
-                        ),
-                      ),
-
-                      // 2. Realistic Neutral Glassmorphism Dark Overlay (Preserves True Photo Colors & Lighting)
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                const Color(
-                                  0xCC090D16,
-                                ), // 80% dark slate top vignette for header badges
-                                const Color(
-                                  0x33090D16,
-                                ), // 20% transparent mid region for REAL photo colors
-                                const Color(
-                                  0xB3090D16,
-                                ), // 70% dark slate bottom vignette for button contrast
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // 3. Card Content & Action Controls
-                      Padding(
-                        padding: const EdgeInsets.all(22),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 11,
-                                    vertical: 5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.4),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.35,
-                                      ),
-                                      width: 1,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF10B981),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Color(0xFF10B981),
+                                          blurRadius: 6,
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        LucideIcons.building2,
-                                        color: Colors.white,
-                                        size: 13,
-                                      ),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        'ACTIVE MALL MAP',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.4),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: const Color(
-                                        0xFFFDE047,
-                                      ).withValues(alpha: 0.5),
-                                      width: 1,
+                                  const SizedBox(width: 7),
+                                  const Text(
+                                    'CURRENT MALL',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.8,
                                     ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        '4.9',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12.5,
-                                        ),
-                                      ),
-                                      SizedBox(width: 4),
-                                      Icon(
-                                        LucideIcons.star,
-                                        color: Color(0xFFFDE047),
-                                        size: 13,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              widget.buildingProfile.name,
-                              style: GoogleFonts.plusJakartaSans(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.3,
-                                height: 1.25,
-                                shadows: const [
-                                  Shadow(
-                                    color: Colors.black87,
-                                    blurRadius: 8,
-                                    offset: Offset(0, 2),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Text(
-                                  '${widget.buildingProfile.floors.length} Floors Available',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    shadows: const [
-                                      Shadow(
-                                        color: Colors.black,
-                                        blurRadius: 10,
-                                        offset: Offset(0, 2),
-                                      ),
-                                      Shadow(
-                                        color: Colors.black,
-                                        blurRadius: 4,
-                                        offset: Offset(0, 1),
-                                      ),
-                                      Shadow(
-                                        color: Colors.black,
-                                        blurRadius: 2,
-                                        offset: Offset(0, 0),
-                                      ),
-                                    ],
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x33000000),
+                                    blurRadius: 6,
+                                    offset: Offset(0, 2),
                                   ),
+                                ],
+                              ),
+                              child: const Text(
+                                'AR Ready',
+                                style: TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: const Color(0xFF0F172A),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 13,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      elevation: 3,
-                                      shadowColor: Colors.black38,
-                                    ),
-                                    onPressed: widget.onOpenARView,
-                                    icon: const Icon(
-                                      LucideIcons.camera,
-                                      size: 16,
-                                    ),
-                                    label: const Text(
-                                      'Open AR Camera',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13.5,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    style: OutlinedButton.styleFrom(
-                                      backgroundColor: Colors.black.withValues(
-                                        alpha: 0.35,
-                                      ),
-                                      foregroundColor: Colors.white,
-                                      side: BorderSide(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.6,
-                                        ),
-                                        width: 1.2,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 13,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                    ),
-                                    onPressed: widget.onOpenFloorMap,
-                                    icon: const Icon(
-                                      LucideIcons.layers,
-                                      size: 16,
-                                    ),
-                                    label: const Text(
-                                      'Floor Map',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13.5,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Search Bar
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (val) => setState(() => _searchQuery = val),
-                  decoration: InputDecoration(
-                    hintText: 'Search shops, food court, brands...',
-                    prefixIcon: const Icon(LucideIcons.search, size: 18),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(LucideIcons.x, size: 18),
-                            onPressed: () {
-                              setState(() {
-                                _searchQuery = '';
-                                _searchController.clear();
-                              });
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 0,
+                        const SizedBox(height: 14),
+                        Text(
+                          widget.buildingProfile.name,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.4,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2563EB),
+                                  foregroundColor: Colors.white,
+                                  elevation: 4,
+                                  shadowColor: const Color(0x552563EB),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 11,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(13),
+                                  ),
+                                ),
+                                onPressed: widget.onOpenARView,
+                                icon: const Icon(
+                                  LucideIcons.camera,
+                                  size: 15,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  'Camera View',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2563EB).withValues(
+                                    alpha: 0.22,
+                                  ),
+                                  foregroundColor: Colors.white,
+                                  side: BorderSide(
+                                    color: const Color(0xFF60A5FA).withValues(
+                                      alpha: 0.4,
+                                    ),
+                                    width: 1.2,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 11,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(13),
+                                  ),
+                                ),
+                                onPressed: widget.onOpenFloorMap,
+                                icon: const Icon(
+                                  LucideIcons.map,
+                                  size: 15,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  'Interactive Map',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1045,7 +895,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Row(
                       children: [
-                        Flexible(
+                        Expanded(
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -1086,57 +936,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        // Open Now Toggle Pill
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _onlyOpenNow = !_onlyOpenNow;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _onlyOpenNow
-                                  ? const Color(0xFFDCFCE7)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _onlyOpenNow
-                                    ? const Color(0xFF86EFAC)
-                                    : const Color(0xFFE2E8F0),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  LucideIcons.clock,
-                                  size: 12,
-                                  color: _onlyOpenNow
-                                      ? const Color(0xFF15803D)
-                                      : const Color(0xFF64748B),
-                                ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  'Open',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: _onlyOpenNow
-                                        ? const Color(0xFF15803D)
-                                        : const Color(0xFF475569),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        _buildSortDropdown(),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -1207,7 +1006,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-            // Shops List with Rich Images & Cards
+            // Real-World Mall Store Directory Feed
             if (filteredPOIs.isNotEmpty)
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1220,263 +1019,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       userFloorNumber: currentFloor.floorNumber,
                       targetFloorNumber: shop.floorNumber,
                     );
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x0C000000),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: InkWell(
-                        onTap: () => _showShopDetails(shop),
-                        borderRadius: BorderRadius.circular(20),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              // 1. Shop Thumbnail Image with Rating Badge Overlay
-                              Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: SizedBox(
-                                      width: 90,
-                                      height: 90,
-                                      child: ShopImage(
-                                        imagePathOrUrl: shop.effectiveImageUrl,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 6,
-                                    left: 6,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.68,
-                                        ),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            '${shop.rating}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 2),
-                                          const Icon(
-                                            LucideIcons.star,
-                                            color: Color(0xFFFDE047),
-                                            size: 11,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(width: 12),
-
-                              // 2. Shop Details Column
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      shop.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14.5,
-                                        color: const Color(0xFF0F172A),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Flexible(
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 7,
-                                              vertical: 2.5,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF1F5F9),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              shop.category.toUpperCase(),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 9.5,
-                                                fontWeight: FontWeight.w700,
-                                                color: Color(0xFF475569),
-                                                letterSpacing: 0.3,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Flexible(
-                                          child: Text(
-                                            shop.openStatus,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF16A34A),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        Flexible(
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2.5,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  shop.floorNumber ==
-                                                      currentFloor.floorNumber
-                                                  ? const Color(0xFFECFDF5)
-                                                  : const Color(0xFFEFF6FF),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color:
-                                                    shop.floorNumber ==
-                                                        currentFloor.floorNumber
-                                                    ? const Color(0xFFA7F3D0)
-                                                    : const Color(0xFFDBEAFE),
-                                              ),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                if (shop.floorNumber ==
-                                                    currentFloor
-                                                        .floorNumber) ...[
-                                                  const Icon(
-                                                    LucideIcons.mapPin,
-                                                    size: 9.5,
-                                                    color: Color(0xFF059669),
-                                                  ),
-                                                  const SizedBox(width: 2.5),
-                                                ],
-                                                Flexible(
-                                                  child: Text(
-                                                    shop.floorNumber ==
-                                                            currentFloor
-                                                                .floorNumber
-                                                        ? (shop.floorNumber < 0
-                                                              ? 'THIS FLOOR • B${shop.floorNumber.abs()}'
-                                                              : 'THIS FLOOR • F${shop.floorNumber}')
-                                                        : shop.floorNumber < 0
-                                                        ? 'B${shop.floorNumber.abs()} BASEMENT'
-                                                        : 'F${shop.floorNumber}',
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                      color:
-                                                          shop.floorNumber ==
-                                                              currentFloor
-                                                                  .floorNumber
-                                                          ? const Color(
-                                                              0xFF047857,
-                                                            )
-                                                          : const Color(
-                                                              0xFF1D4ED8,
-                                                            ),
-                                                      fontSize: 9,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Flexible(
-                                          child: Text(
-                                            '${dist.toStringAsFixed(0)}m away',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              color: Color(0xFF64748B),
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-
-                              // 3. Right Action Symbol / Button (Open Details)
-                              InkWell(
-                                onTap: () => _showShopDetails(shop),
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEFF6FF),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFFDBEAFE),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: const Center(
-                                    child: Icon(
-                                      LucideIcons.chevronRight,
-                                      color: Color(0xFF2563EB),
-                                      size: 18,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
+                    return _buildRealWorldStoreCard(shop, dist, currentFloor);
                   }, childCount: filteredPOIs.length),
                 ),
               ),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
       ),
@@ -1484,255 +1031,204 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildParkedVehicleHomeCard(MyVehicleLocation vehicle) {
-    final String floorDisplay =
-        vehicle.floorName.toLowerCase().contains('parking')
-        ? vehicle.floorName
-        : '${vehicle.floorName} Parking';
-
     return Container(
       margin: const EdgeInsets.only(top: 12),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: const Color(0xFF10B981).withValues(alpha: 0.8),
-          width: 1.5,
+          color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+          width: 1.2,
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x3310B981),
-            blurRadius: 18,
+            color: Color(0x551E1B4B),
+            blurRadius: 16,
             offset: Offset(0, 6),
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          // 1. Realistic 3D Isometric Parking Lot Background Image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/parked_car_bg.jpg',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  Container(color: const Color(0xFF0F172A)),
-            ),
-          ),
-
-          // 2. Translucent Glassmorphism Gradient Overlay
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0x990A0F1D), // 60% opacity dark slate top-left
-                    const Color(0x440A0F1D), // 27% opacity center
-                    const Color(
-                      0x88042F2E,
-                    ), // 53% opacity subtle emerald glow bottom right
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // 3. Card Content Overlay
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'MY PARKED VEHICLE',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF34D399),
-                              letterSpacing: 1.1,
-                              shadows: const [
-                                Shadow(
-                                  color: Colors.black54,
-                                  blurRadius: 4,
-                                  offset: Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Stall ${vehicle.slotId}',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              shadows: const [
-                                Shadow(
-                                  color: Colors.black,
-                                  blurRadius: 10,
-                                  offset: Offset(0, 2),
-                                ),
-                                Shadow(
-                                  color: Colors.black,
-                                  blurRadius: 4,
-                                  offset: Offset(0, 1),
-                                ),
-                                Shadow(
-                                  color: Colors.black,
-                                  blurRadius: 2,
-                                  offset: Offset(0, 0),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            floorDisplay,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              shadows: const [
-                                Shadow(
-                                  color: Colors.black,
-                                  blurRadius: 10,
-                                  offset: Offset(0, 2),
-                                ),
-                                Shadow(
-                                  color: Colors.black,
-                                  blurRadius: 4,
-                                  offset: Offset(0, 1),
-                                ),
-                                Shadow(
-                                  color: Colors.black,
-                                  blurRadius: 2,
-                                  offset: Offset(0, 0),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF818CF8).withValues(alpha: 0.4),
+                      width: 1,
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x4410B981),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        'PARKED',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.car, color: Colors.white, size: 13),
+                      SizedBox(width: 6),
+                      Text(
+                        'MY PARKED VEHICLE',
+                        style: TextStyle(
                           color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        'PARKED',
+                        style: TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
                           letterSpacing: 0.6,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 6,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(
-                          LucideIcons.compass,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                        label: Text(
-                          'Find My Car (AR)',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF10B981),
-                          elevation: 2,
-                          shadowColor: const Color(0x4410B981),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: () {
-                          final int floorNum = vehicle.floorId.contains('B2')
-                              ? -2
-                              : -1;
-                          final poi = DestinationPOI(
-                            id: vehicle.slotId,
-                            name: 'My Parked Car (${vehicle.slotId})',
-                            category: 'PARKING',
-                            floorNumber: floorNum,
-                            rating: 5.0,
-                            location: vehicle.location,
-                            description: 'Your saved vehicle location',
-                            openStatus: '24/7',
-                          );
-                          widget.onSelectDestination(poi);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      flex: 4,
-                      child: OutlinedButton.icon(
-                        icon: const Icon(
-                          LucideIcons.layers,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                        label: Text(
-                          'Floor Map',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.black.withValues(alpha: 0.3),
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            width: 1.2,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: widget.onOpenFloorMap,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              'Parked at ${vehicle.slotId} • Floor ${vehicle.floorId}',
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(
+                      LucideIcons.compass,
+                      size: 15,
+                      color: Color(0xFF0F172A),
+                    ),
+                    label: Text(
+                      'Find My Car',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF0F172A),
+                      elevation: 3,
+                      shadowColor: const Color(0x33000000),
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      final int floorNum = vehicle.floorId.contains('B2')
+                          ? -2
+                          : -1;
+                      final poi = DestinationPOI(
+                        id: vehicle.slotId,
+                        name: 'My Parked Car (${vehicle.slotId})',
+                        category: 'PARKING',
+                        floorNumber: floorNum,
+                        rating: 5.0,
+                        location: vehicle.location,
+                        description: 'Your saved vehicle location',
+                        openStatus: '24/7',
+                      );
+                      widget.onSelectDestination(poi);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 1,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(
+                      LucideIcons.layers,
+                      size: 15,
+                      color: Colors.white,
+                    ),
+                    label: Text(
+                      'Floor Map',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4F46E5).withValues(
+                        alpha: 0.25,
+                      ),
+                      foregroundColor: Colors.white,
+                      side: BorderSide(
+                        color: const Color(0xFF818CF8).withValues(
+                          alpha: 0.4,
+                        ),
+                        width: 1.2,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: widget.onOpenFloorMap,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

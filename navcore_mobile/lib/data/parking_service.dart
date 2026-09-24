@@ -458,6 +458,14 @@ class ParkingService extends ChangeNotifier {
       );
     }
 
+    // Restriction: Prevent double-parking if the user already has a parked vehicle location
+    final existingParked = fetchMyVehicleLocation(vehicleRecord.userId);
+    if (existingParked != null && existingParked.slotId != vehicleRecord.slotId) {
+      throw Exception(
+        'Vehicle Already Parked: You currently have a vehicle parked at Stall ${existingParked.slotId} (${existingParked.floorName}). Please remove your existing parked location before parking in a new slot.',
+      );
+    }
+
     // Restriction: Prevent parking in a slot occupied or reserved by another vehicle
     for (final floor in _floorSlots.values) {
       for (final slot in floor) {

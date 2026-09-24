@@ -9,6 +9,7 @@ import '../data/destinations.dart';
 import '../data/parking_service.dart';
 import 'shop_details_screen.dart';
 import 'dpad_control_widget.dart';
+import 'theme/app_theme.dart';
 import 'widgets/shop_image_widget.dart';
 
 class FloorPlanScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class FloorPlanScreen extends StatefulWidget {
   final List<DestinationPOI> destinations;
   final Function(double, double) onSimulateMove;
   final Function(DestinationPOI)? onSelectDestination;
+  final VoidCallback? onBackClicked;
 
   const FloorPlanScreen({
     super.key,
@@ -29,13 +31,15 @@ class FloorPlanScreen extends StatefulWidget {
     required this.destinations,
     required this.onSimulateMove,
     this.onSelectDestination,
+    this.onBackClicked,
   });
 
   @override
-  State<FloorPlanScreen> createState() => _FloorPlanScreenState();
+  State<FloorPlanScreen> createState() => FloorPlanScreenState();
 }
 
-class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProviderStateMixin {
+class FloorPlanScreenState extends State<FloorPlanScreen>
+    with SingleTickerProviderStateMixin {
   DestinationPOI? _selectedPOI;
   FloorLevelConfig? _overrideFloor;
   String _selectedCategoryFilter = 'ALL';
@@ -47,6 +51,14 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
   late AnimationController _pulseController;
 
   FloorLevelConfig get displayFloor => _overrideFloor ?? widget.currentFloor;
+
+  void clearSelection() {
+    if (mounted) {
+      setState(() {
+        _selectedPOI = null;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -104,7 +116,19 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
-        titleSpacing: 16,
+        titleSpacing: widget.onBackClicked != null ? 0 : 16,
+        leading: widget.onBackClicked != null
+            ? IconButton(
+                icon: const Icon(
+                  LucideIcons.arrowLeft,
+                  color: Color(0xFF0F172A),
+                ),
+                onPressed: () {
+                  clearSelection();
+                  widget.onBackClicked?.call();
+                },
+              )
+            : null,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -130,13 +154,52 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
           ],
         ),
         actions: [
+          ValueListenableBuilder<bool>(
+            valueListenable: DeveloperModeNotifier.instance,
+            builder: (context, isDevMode, child) {
+              return IconButton(
+                icon: Icon(
+                  isDevMode ? LucideIcons.bug : LucideIcons.sparkles,
+                  color: isDevMode
+                      ? const Color(0xFFDC2626)
+                      : const Color(0xFF2563EB),
+                  size: 19,
+                ),
+                onPressed: () {
+                  DeveloperModeNotifier.instance.toggle();
+                  final newState =
+                      DeveloperModeNotifier.instance.isDeveloperMode;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        newState
+                            ? 'Developer & D-Pad Controls Enabled'
+                            : 'User Navigation Mode Active',
+                      ),
+                      backgroundColor: newState
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFF10B981),
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                tooltip: isDevMode
+                    ? 'Switch to User Mode'
+                    : 'Toggle Dev Telemetry & D-Pad',
+              );
+            },
+          ),
           if (!isParkingFloor)
             InkWell(
               onTap: () => _showFloorDirectoryModal(context, currentFloorPOIs),
               borderRadius: BorderRadius.circular(10),
               child: Container(
                 margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(10),
@@ -145,7 +208,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(LucideIcons.store, color: Color(0xFF2563EB), size: 14),
+                    const Icon(
+                      LucideIcons.store,
+                      color: Color(0xFF2563EB),
+                      size: 14,
+                    ),
                     const SizedBox(width: 5),
                     Text(
                       '${currentFloorPOIs.length} Shops',
@@ -181,7 +248,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Tap any parking slot to reserve or navigate!'),
+                      content: Text(
+                        'Tap any parking slot to reserve or navigate!',
+                      ),
                       backgroundColor: Color(0xFF2563EB),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -191,25 +260,38 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
               borderRadius: BorderRadius.circular(10),
               child: Container(
                 margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: myVehicle != null ? const Color(0xFF16A34A) : const Color(0xFF0F172A),
+                  color: myVehicle != null
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFF0F172A),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: myVehicle != null ? const Color(0xFF86EFAC) : const Color(0xFF334155),
+                    color: myVehicle != null
+                        ? const Color(0xFF86EFAC)
+                        : const Color(0xFF334155),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      myVehicle != null ? LucideIcons.car : LucideIcons.parkingCircle,
-                      color: myVehicle != null ? Colors.white : const Color(0xFF38BDF8),
+                      myVehicle != null
+                          ? LucideIcons.car
+                          : LucideIcons.parkingCircle,
+                      color: myVehicle != null
+                          ? Colors.white
+                          : const Color(0xFF38BDF8),
                       size: 14,
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      myVehicle != null ? 'Car: ${myVehicle.slotId}' : '$freeSlotsCount Free',
+                      myVehicle != null
+                          ? 'Car: ${myVehicle.slotId}'
+                          : '$freeSlotsCount Free',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -237,10 +319,14 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                     itemCount: widget.buildingProfile.floors.length,
                     itemBuilder: (context, idx) {
                       final floor = widget.buildingProfile.floors[idx];
-                      final isSelected = floor.floorNumber == displayFloor.floorNumber;
-                      final isParkedFloor = myVehicle != null &&
-                          ((floor.floorNumber == -1 && myVehicle.floorId.contains('B1')) ||
-                              (floor.floorNumber == -2 && myVehicle.floorId.contains('B2')));
+                      final isSelected =
+                          floor.floorNumber == displayFloor.floorNumber;
+                      final isParkedFloor =
+                          myVehicle != null &&
+                          ((floor.floorNumber == -1 &&
+                                  myVehicle.floorId.contains('B1')) ||
+                              (floor.floorNumber == -2 &&
+                                  myVehicle.floorId.contains('B2')));
 
                       return GestureDetector(
                         onTap: () {
@@ -257,25 +343,35 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                           decoration: BoxDecoration(
                             gradient: isSelected
                                 ? const LinearGradient(
-                                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                                    colors: [
+                                      Color(0xFF2563EB),
+                                      Color(0xFF1D4ED8),
+                                    ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   )
                                 : null,
                             color: isSelected
                                 ? null
-                                : (isParkedFloor ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9)),
+                                : (isParkedFloor
+                                      ? const Color(0xFFDCFCE7)
+                                      : const Color(0xFFF1F5F9)),
                             borderRadius: BorderRadius.circular(10),
                             border: isParkedFloor && !isSelected
-                                ? Border.all(color: const Color(0xFF22C55E), width: 1.5)
+                                ? Border.all(
+                                    color: const Color(0xFF22C55E),
+                                    width: 1.5,
+                                  )
                                 : null,
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                                      color: const Color(
+                                        0xFF2563EB,
+                                      ).withValues(alpha: 0.3),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
-                                    )
+                                    ),
                                   ]
                                 : null,
                           ),
@@ -284,7 +380,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (isParkedFloor && !isSelected) ...[
-                                const Icon(LucideIcons.car, size: 12, color: Color(0xFF16A34A)),
+                                const Icon(
+                                  LucideIcons.car,
+                                  size: 12,
+                                  color: Color(0xFF16A34A),
+                                ),
                                 const SizedBox(width: 4),
                               ],
                               Text(
@@ -296,7 +396,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                   fontWeight: FontWeight.w800,
                                   color: isSelected
                                       ? Colors.white
-                                      : (isParkedFloor ? const Color(0xFF15803D) : const Color(0xFF334155)),
+                                      : (isParkedFloor
+                                            ? const Color(0xFF15803D)
+                                            : const Color(0xFF334155)),
                                 ),
                               ),
                             ],
@@ -316,15 +418,22 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                     },
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: _showFilterChips ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
+                        color: _showFilterChips
+                            ? const Color(0xFF2563EB)
+                            : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         LucideIcons.filter,
                         size: 14,
-                        color: _showFilterChips ? Colors.white : const Color(0xFF64748B),
+                        color: _showFilterChips
+                            ? Colors.white
+                            : const Color(0xFF64748B),
                       ),
                     ),
                   ),
@@ -342,12 +451,36 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  _buildCategoryFilterChip('ALL', 'All Places', LucideIcons.layoutGrid),
-                  _buildCategoryFilterChip('DINING', 'Dining 🍽️', LucideIcons.utensils),
-                  _buildCategoryFilterChip('FASHION', 'Fashion 👗', LucideIcons.shoppingBag),
-                  _buildCategoryFilterChip('BEAUTY', 'Beauty 💅', LucideIcons.sparkles),
-                  _buildCategoryFilterChip('TECH', 'Tech 💻', LucideIcons.laptop),
-                  _buildCategoryFilterChip('SERVICES', 'Services ℹ️', LucideIcons.info),
+                  _buildCategoryFilterChip(
+                    'ALL',
+                    'All Places',
+                    LucideIcons.layoutGrid,
+                  ),
+                  _buildCategoryFilterChip(
+                    'DINING',
+                    'Dining 🍽️',
+                    LucideIcons.utensils,
+                  ),
+                  _buildCategoryFilterChip(
+                    'FASHION',
+                    'Fashion 👗',
+                    LucideIcons.shoppingBag,
+                  ),
+                  _buildCategoryFilterChip(
+                    'BEAUTY',
+                    'Beauty 💅',
+                    LucideIcons.sparkles,
+                  ),
+                  _buildCategoryFilterChip(
+                    'TECH',
+                    'Tech 💻',
+                    LucideIcons.laptop,
+                  ),
+                  _buildCategoryFilterChip(
+                    'SERVICES',
+                    'Services ℹ️',
+                    LucideIcons.info,
+                  ),
                 ],
               ),
             ),
@@ -360,7 +493,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
               color: const Color(0xFFDCFCE7),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.car, color: Color(0xFF16A34A), size: 14),
+                  const Icon(
+                    LucideIcons.car,
+                    color: Color(0xFF16A34A),
+                    size: 14,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -374,11 +511,14 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   ),
                   InkWell(
                     onTap: () {
-                      final targetFloorNumber = myVehicle.floorId.contains('B2') ? -2 : -1;
-                      final targetFloorConfig = widget.buildingProfile.floors.firstWhere(
-                        (f) => f.floorNumber == targetFloorNumber,
-                        orElse: () => widget.buildingProfile.floors.first,
-                      );
+                      final targetFloorNumber = myVehicle.floorId.contains('B2')
+                          ? -2
+                          : -1;
+                      final targetFloorConfig = widget.buildingProfile.floors
+                          .firstWhere(
+                            (f) => f.floorNumber == targetFloorNumber,
+                            orElse: () => widget.buildingProfile.floors.first,
+                          );
                       setState(() {
                         _selectedPOI = null;
                         _overrideFloor = targetFloorConfig;
@@ -387,14 +527,21 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                     },
                     borderRadius: BorderRadius.circular(6),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF16A34A),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         'Go to ${myVehicle.floorId}',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -405,12 +552,14 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
           // Maximized Floor Map Canvas Container
           Expanded(
             child: Container(
-              margin: const EdgeInsets.all(8),
+              margin: const EdgeInsets.fromLTRB(8, 8, 8, 96),
               decoration: BoxDecoration(
                 color: isParkingFloor ? const Color(0xFF0F172A) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isParkingFloor ? const Color(0xFF1E293B) : const Color(0xFFCBD5E1),
+                  color: isParkingFloor
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFCBD5E1),
                   width: 1.5,
                 ),
                 boxShadow: const [
@@ -443,7 +592,8 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                   floorNumber: displayFloor.floorNumber,
                                   floorName: displayFloor.name,
                                   selectedPOI: _selectedPOI,
-                                  selectedCategoryFilter: _selectedCategoryFilter,
+                                  selectedCategoryFilter:
+                                      _selectedCategoryFilter,
                                   currentFloorPOIs: currentFloorPOIs,
                                   parkingSlots: floorSlots,
                                   myVehicle: myVehicle,
@@ -457,7 +607,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
 
                         // Render Realistic Shop Photo Cards over Retail Floor Rooms
                         if (!isParkingFloor)
-                          ..._buildRetailStorePhotoCards(width, height, currentFloorPOIs),
+                          ..._buildRetailStorePhotoCards(
+                            width,
+                            height,
+                            currentFloorPOIs,
+                          ),
 
                         // Parking Slot Touch Overlays
                         if (isParkingFloor)
@@ -476,14 +630,24 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                           const double pixelsPerDegLat = 800000.0;
                           const double pixelsPerDegLon = 800000.0;
 
-                          final double deltaLat = widget.userCoords.latitude - centerLat;
-                          final double deltaLon = widget.userCoords.longitude - centerLon;
+                          final double deltaLat =
+                              widget.userCoords.latitude - centerLat;
+                          final double deltaLon =
+                              widget.userCoords.longitude - centerLon;
 
-                          final double rawUserX = (width / 2) + (deltaLon * pixelsPerDegLon);
-                          final double rawUserY = (height / 2) - (deltaLat * pixelsPerDegLat);
+                          final double rawUserX =
+                              (width / 2) + (deltaLon * pixelsPerDegLon);
+                          final double rawUserY =
+                              (height / 2) - (deltaLat * pixelsPerDegLat);
 
-                          final double userX = rawUserX.clamp(20.0, width - 20.0);
-                          final double userY = rawUserY.clamp(20.0, height - 20.0);
+                          final double userX = rawUserX.clamp(
+                            20.0,
+                            width - 20.0,
+                          );
+                          final double userY = rawUserY.clamp(
+                            20.0,
+                            height - 20.0,
+                          );
 
                           return Positioned(
                             left: userX - 18,
@@ -505,10 +669,16 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                           width: 32,
                                           height: 32,
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF2563EB).withValues(alpha: 0.3 * (1.0 - pulse)),
+                                            color: const Color(0xFF2563EB)
+                                                .withValues(
+                                                  alpha: 0.3 * (1.0 - pulse),
+                                                ),
                                             shape: BoxShape.circle,
                                             border: Border.all(
-                                              color: const Color(0xFF3B82F6).withValues(alpha: 0.6 * (1.0 - pulse)),
+                                              color: const Color(0xFF3B82F6)
+                                                  .withValues(
+                                                    alpha: 0.6 * (1.0 - pulse),
+                                                  ),
                                               width: 1.5,
                                             ),
                                           ),
@@ -521,7 +691,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                           width: 22,
                                           height: 22,
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                                            color: const Color(
+                                              0xFF2563EB,
+                                            ).withValues(alpha: 0.35),
                                             shape: BoxShape.circle,
                                           ),
                                         ),
@@ -533,9 +705,16 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF2563EB),
                                           shape: BoxShape.circle,
-                                          border: Border.all(color: Colors.white, width: 2.5),
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 2.5,
+                                          ),
                                           boxShadow: const [
-                                            BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 2)),
+                                            BoxShadow(
+                                              color: Colors.black38,
+                                              blurRadius: 6,
+                                              offset: Offset(0, 2),
+                                            ),
                                           ],
                                         ),
                                         child: Center(
@@ -557,16 +736,22 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                           );
                         }(),
 
-
-                        // Dynamic Floating D-Pad Move Controls (Bottom Right)
-                        if (_showDpad)
-                          Positioned(
-                            bottom: 10,
-                            right: 10,
-                            child: DpadControlWidget(
-                              onSimulateMove: widget.onSimulateMove,
-                            ),
-                          ),
+                        // Dynamic Floating D-Pad Move Controls (Bottom Right - Shown in Dev Mode)
+                        ValueListenableBuilder<bool>(
+                          valueListenable: DeveloperModeNotifier.instance,
+                          builder: (context, isDevMode, child) {
+                            if (!isDevMode && !_showDpad) {
+                              return const SizedBox.shrink();
+                            }
+                            return Positioned(
+                              bottom: 10,
+                              right: 10,
+                              child: DpadControlWidget(
+                                onSimulateMove: widget.onSimulateMove,
+                              ),
+                            );
+                          },
+                        ),
 
                         // Elevated Selected Store Preview Sheet (Bottom Floating)
                         if (_selectedPOI != null && !isParkingFloor)
@@ -580,7 +765,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(18),
-                                border: Border.all(color: const Color(0xFF2563EB), width: 1.5),
+                                border: Border.all(
+                                  color: const Color(0xFF2563EB),
+                                  width: 1.5,
+                                ),
                                 boxShadow: const [
                                   BoxShadow(
                                     color: Color(0x332563EB),
@@ -598,7 +786,8 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                       ClipRRect(
                                         borderRadius: BorderRadius.circular(10),
                                         child: ShopImage(
-                                          imagePathOrUrl: _selectedPOI!.effectiveImageUrl,
+                                          imagePathOrUrl:
+                                              _selectedPOI!.effectiveImageUrl,
                                           width: 50,
                                           height: 50,
                                           fit: BoxFit.cover,
@@ -607,44 +796,65 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               _selectedPOI!.name,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.plusJakartaSans(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w800,
-                                                color: const Color(0xFF0F172A),
-                                              ),
+                                              style:
+                                                  GoogleFonts.plusJakartaSans(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: const Color(
+                                                      0xFF0F172A,
+                                                    ),
+                                                  ),
                                             ),
                                             const SizedBox(height: 2),
                                             Row(
                                               children: [
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
                                                   decoration: BoxDecoration(
-                                                    color: const Color(0xFFDCFCE7),
-                                                    borderRadius: BorderRadius.circular(6),
+                                                    color: const Color(
+                                                      0xFFDCFCE7,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
                                                   ),
                                                   child: Text(
                                                     'OPEN NOW',
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 8,
-                                                      fontWeight: FontWeight.w800,
-                                                      color: const Color(0xFF15803D),
-                                                    ),
+                                                    style:
+                                                        GoogleFonts.plusJakartaSans(
+                                                          fontSize: 8,
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                          color: const Color(
+                                                            0xFF15803D,
+                                                          ),
+                                                        ),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   '★ ${_selectedPOI!.rating}',
-                                                  style: GoogleFonts.plusJakartaSans(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: const Color(0xFFD97706),
-                                                  ),
+                                                  style:
+                                                      GoogleFonts.plusJakartaSans(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: const Color(
+                                                          0xFFD97706,
+                                                        ),
+                                                      ),
                                                 ),
                                               ],
                                             ),
@@ -652,10 +862,15 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                         ),
                                       ),
                                       InkWell(
-                                        onTap: () => setState(() => _selectedPOI = null),
+                                        onTap: () =>
+                                            setState(() => _selectedPOI = null),
                                         child: const Padding(
                                           padding: EdgeInsets.all(4),
-                                          child: Icon(LucideIcons.x, size: 16, color: Color(0xFF64748B)),
+                                          child: Icon(
+                                            LucideIcons.x,
+                                            size: 16,
+                                            color: Color(0xFF64748B),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -665,20 +880,38 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                     children: [
                                       Expanded(
                                         child: ElevatedButton.icon(
-                                          icon: const Icon(LucideIcons.compass, size: 14, color: Colors.white),
+                                          icon: const Icon(
+                                            LucideIcons.compass,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
                                           label: Text(
                                             'NAVIGATE HERE (AR)',
-                                            style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w800,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF2563EB),
-                                            padding: const EdgeInsets.symmetric(vertical: 8),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            backgroundColor: const Color(
+                                              0xFF2563EB,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
                                             elevation: 0,
                                           ),
                                           onPressed: () {
-                                            if (widget.onSelectDestination != null) {
-                                              widget.onSelectDestination!(_selectedPOI!);
+                                            if (widget.onSelectDestination !=
+                                                null) {
+                                              widget.onSelectDestination!(
+                                                _selectedPOI!,
+                                              );
                                             }
                                           },
                                         ),
@@ -686,14 +919,31 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                       const SizedBox(width: 8),
                                       OutlinedButton(
                                         style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                          side: const BorderSide(color: Color(0xFF2563EB), width: 1.2),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                          side: const BorderSide(
+                                            color: Color(0xFF2563EB),
+                                            width: 1.2,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
                                         ),
-                                        onPressed: () => _showStoreDetailsModal(context, _selectedPOI!),
+                                        onPressed: () => _showStoreDetailsModal(
+                                          context,
+                                          _selectedPOI!,
+                                        ),
                                         child: Text(
                                           'Details',
-                                          style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF2563EB)),
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF2563EB),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -733,8 +983,18 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
       Rect.fromLTWH(rightX, roomTopPadding + gapY, roomW, roomH),
       Rect.fromLTWH(leftX, roomTopPadding + (gapY * 2) + roomH, roomW, roomH),
       Rect.fromLTWH(rightX, roomTopPadding + (gapY * 2) + roomH, roomW, roomH),
-      Rect.fromLTWH(leftX, roomTopPadding + (gapY * 3) + (roomH * 2), roomW, roomH),
-      Rect.fromLTWH(rightX, roomTopPadding + (gapY * 3) + (roomH * 2), roomW, roomH),
+      Rect.fromLTWH(
+        leftX,
+        roomTopPadding + (gapY * 3) + (roomH * 2),
+        roomW,
+        roomH,
+      ),
+      Rect.fromLTWH(
+        rightX,
+        roomTopPadding + (gapY * 3) + (roomH * 2),
+        roomW,
+        roomH,
+      ),
     ];
 
     final List<Widget> widgets = [];
@@ -743,8 +1003,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
       final poi = i < pois.length ? pois[i] : null;
       final isSelected = poi != null && _selectedPOI?.id == poi.id;
 
-      final bool matchesCategory = _selectedCategoryFilter == 'ALL' ||
-          (poi != null && poi.category.toUpperCase().contains(_selectedCategoryFilter));
+      final bool matchesCategory =
+          _selectedCategoryFilter == 'ALL' ||
+          (poi != null &&
+              poi.category.toUpperCase().contains(_selectedCategoryFilter));
 
       final roomCode = '#${displayFloor.floorNumber}0${i + 1}';
       final storeName = poi != null ? poi.name : 'Store Space';
@@ -768,20 +1030,23 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                     setState(() {
                       _selectedPOI = poi;
                     });
-                    _showStoreDetailsModal(context, poi);
                   }
                 },
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFCBD5E1),
+                      color: isSelected
+                          ? const Color(0xFF2563EB)
+                          : const Color(0xFFCBD5E1),
                       width: isSelected ? 2.5 : 1.2,
                     ),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                              color: const Color(
+                                0xFF2563EB,
+                              ).withValues(alpha: 0.35),
                               blurRadius: 10,
                               spreadRadius: 1,
                             ),
@@ -797,7 +1062,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                         // Realistic Store Photography Background Image
                         Positioned.fill(
                           child: ShopImage(
-                            imagePathOrUrl: poi != null ? poi.effectiveImageUrl : imageUrl,
+                            imagePathOrUrl: poi != null
+                                ? poi.effectiveImageUrl
+                                : imageUrl,
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -827,9 +1094,14 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFF2563EB) : Colors.black54,
+                                  color: isSelected
+                                      ? const Color(0xFF2563EB)
+                                      : Colors.black54,
                                   borderRadius: BorderRadius.circular(5),
                                 ),
                                 child: Text(
@@ -843,9 +1115,14 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                               ),
                               if (poi != null)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 5,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF2563EB).withValues(alpha: 0.85),
+                                    color: const Color(
+                                      0xFF2563EB,
+                                    ).withValues(alpha: 0.85),
                                     borderRadius: BorderRadius.circular(5),
                                   ),
                                   child: Text(
@@ -940,7 +1217,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(10),
-          border: isSelected ? Border.all(color: const Color(0xFF2563EB), width: 1.2) : null,
+          border: isSelected
+              ? Border.all(color: const Color(0xFF2563EB), width: 1.2)
+              : null,
         ),
         alignment: Alignment.center,
         child: Row(
@@ -965,7 +1244,6 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
       ),
     );
   }
-
 
   List<Widget> _buildClickableParkingSlotOverlays(
     double width,
@@ -1008,7 +1286,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
           ),
         );
 
-        final bool isMyCar = myVehicle != null && myVehicle.slotId == code && myVehicle.status == 'parked';
+        final bool isMyCar =
+            myVehicle != null &&
+            myVehicle.slotId == code &&
+            myVehicle.status == 'parked';
 
         widgets.add(
           Positioned(
@@ -1053,7 +1334,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
           ),
         );
 
-        final bool isMyCar = myVehicle != null && myVehicle.slotId == code && myVehicle.status == 'parked';
+        final bool isMyCar =
+            myVehicle != null &&
+            myVehicle.slotId == code &&
+            myVehicle.status == 'parked';
 
         widgets.add(
           Positioned(
@@ -1077,7 +1361,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
     return widgets;
   }
 
-  void _showParkingSlotModal(BuildContext context, ParkingSlot slot, bool isMyCar) {
+  void _showParkingSlotModal(
+    BuildContext context,
+    ParkingSlot slot,
+    bool isMyCar,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1109,12 +1397,16 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isMyCar ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
+                    color: isMyCar
+                        ? const Color(0xFFDCFCE7)
+                        : const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(
                     isMyCar ? LucideIcons.car : LucideIcons.parkingCircle,
-                    color: isMyCar ? const Color(0xFF16A34A) : const Color(0xFF2563EB),
+                    color: isMyCar
+                        ? const Color(0xFF16A34A)
+                        : const Color(0xFF2563EB),
                     size: 22,
                   ),
                 ),
@@ -1149,44 +1441,47 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isMyCar
                         ? const Color(0xFFDCFCE7)
                         : (slot.status == ParkingSlotStatus.free
-                            ? const Color(0xFFF0FDF4)
-                            : (slot.status == ParkingSlotStatus.occupied
-                                ? const Color(0xFFFEF2F2)
-                                : const Color(0xFFFFFBEB))),
+                              ? const Color(0xFFF0FDF4)
+                              : (slot.status == ParkingSlotStatus.occupied
+                                    ? const Color(0xFFFEF2F2)
+                                    : const Color(0xFFFFFBEB))),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isMyCar
                           ? const Color(0xFF86EFAC)
                           : (slot.status == ParkingSlotStatus.free
-                              ? const Color(0xFFBBF7D0)
-                              : (slot.status == ParkingSlotStatus.occupied
-                                  ? const Color(0xFFFCA5A5)
-                                  : const Color(0xFFFDE68A))),
+                                ? const Color(0xFFBBF7D0)
+                                : (slot.status == ParkingSlotStatus.occupied
+                                      ? const Color(0xFFFCA5A5)
+                                      : const Color(0xFFFDE68A))),
                     ),
                   ),
                   child: Text(
                     isMyCar
                         ? 'PARKED'
                         : (slot.status == ParkingSlotStatus.free
-                            ? 'AVAILABLE'
-                            : (slot.status == ParkingSlotStatus.occupied
-                                ? 'OCCUPIED'
-                                : 'RESERVED')),
+                              ? 'AVAILABLE'
+                              : (slot.status == ParkingSlotStatus.occupied
+                                    ? 'OCCUPIED'
+                                    : 'RESERVED')),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       color: isMyCar
                           ? const Color(0xFF15803D)
                           : (slot.status == ParkingSlotStatus.free
-                              ? const Color(0xFF16A34A)
-                              : (slot.status == ParkingSlotStatus.occupied
-                                  ? const Color(0xFFDC2626)
-                                  : const Color(0xFFD97706))),
+                                ? const Color(0xFF16A34A)
+                                : (slot.status == ParkingSlotStatus.occupied
+                                      ? const Color(0xFFDC2626)
+                                      : const Color(0xFFD97706))),
                     ),
                   ),
                 ),
@@ -1198,10 +1493,22 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
               runSpacing: 8,
               children: [
                 if (slot.isEVCharging)
-                  _buildFeatureChip(LucideIcons.zap, '⚡ 120kW EV Charger', const Color(0xFF16A34A)),
+                  _buildFeatureChip(
+                    LucideIcons.zap,
+                    '⚡ 120kW EV Charger',
+                    const Color(0xFF16A34A),
+                  ),
                 if (slot.isHandicapAccessible)
-                  _buildFeatureChip(LucideIcons.accessibility, '♿ Handicap Bay', const Color(0xFF2563EB)),
-                _buildFeatureChip(LucideIcons.radio, '🛰️ Live IoT Sensor Active', const Color(0xFF64748B)),
+                  _buildFeatureChip(
+                    LucideIcons.accessibility,
+                    '♿ Handicap Bay',
+                    const Color(0xFF2563EB),
+                  ),
+                _buildFeatureChip(
+                  LucideIcons.radio,
+                  '🛰️ Live IoT Sensor Active',
+                  const Color(0xFF64748B),
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -1216,7 +1523,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                 ),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.shieldAlert, color: Color(0xFFDC2626), size: 22),
+                    const Icon(
+                      LucideIcons.shieldAlert,
+                      color: Color(0xFFDC2626),
+                      size: 22,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -1233,7 +1544,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                           const SizedBox(height: 2),
                           Text(
                             'Stall ${slot.id} is currently occupied by another vehicle.',
-                            style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF991B1B)),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              color: const Color(0xFF991B1B),
+                            ),
                           ),
                         ],
                       ),
@@ -1246,14 +1560,27 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                 width: double.infinity,
                 height: 48,
                 child: OutlinedButton.icon(
-                  icon: const Icon(LucideIcons.navigation, color: Color(0xFF2563EB), size: 18),
+                  icon: const Icon(
+                    LucideIcons.navigation,
+                    color: Color(0xFF2563EB),
+                    size: 18,
+                  ),
                   label: Text(
                     'NAVIGATE TO THIS SLOT',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF2563EB)),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF2563EB),
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    side: const BorderSide(
+                      color: Color(0xFF2563EB),
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   onPressed: () {
                     Navigator.pop(context);
@@ -1264,22 +1591,185 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                 ),
               ),
             ] else if (!isMyCar) ...[
+              if (_parkingService.hasParkedVehicle) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        LucideIcons.alertTriangle,
+                        color: Color(0xFFD97706),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'You already have a vehicle parked at Stall ${_parkingService.currentVehicleLocation?.slotId}. Unpark it first or confirm replacement to park here.',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton.icon(
-                  icon: const Icon(LucideIcons.car, color: Colors.white, size: 18),
+                  icon: const Icon(
+                    LucideIcons.car,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                   label: Text(
                     'PARK MY VEHICLE HERE',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF16A34A),
                     elevation: 1,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   onPressed: () async {
                     try {
+                      final currentVehicle =
+                          _parkingService.currentVehicleLocation;
+                      if (currentVehicle != null &&
+                          currentVehicle.slotId != slot.id) {
+                        final bool?
+                        confirmUnparkAndPark = await showDialog<bool>(
+                          context: context,
+                          builder: (dialogCtx) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            title: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF2F2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    LucideIcons.alertTriangle,
+                                    color: Color(0xFFDC2626),
+                                    size: 22,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Vehicle Already Parked',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                RichText(
+                                  text: TextSpan(
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 13.5,
+                                      color: const Color(0xFF334155),
+                                      height: 1.4,
+                                    ),
+                                    children: [
+                                      const TextSpan(
+                                        text:
+                                            'You already have a vehicle parked at ',
+                                      ),
+                                      TextSpan(
+                                        text:
+                                            'Stall ${currentVehicle.slotId} (${currentVehicle.floorName})',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                      const TextSpan(
+                                        text:
+                                            '.\n\nParking in a new slot is not allowed until you remove your current parked place notification. Would you like to remove your existing parking location and park here?',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            actionsPadding: const EdgeInsets.fromLTRB(
+                              16,
+                              0,
+                              16,
+                              16,
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(dialogCtx, false),
+                                child: Text(
+                                  'Keep Existing',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              ElevatedButton.icon(
+                                icon: const Icon(
+                                  LucideIcons.trash2,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                                label: Text(
+                                  'Remove & Park Here',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFDC2626),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: () => Navigator.pop(dialogCtx, true),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirmUnparkAndPark != true) {
+                          return;
+                        }
+                        await _parkingService.clearVehicleLocation();
+                      }
+
                       await _parkingService.saveVehicleLocation(
                         MyVehicleLocation(
                           userId: _parkingService.currentUserId,
@@ -1294,7 +1784,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Vehicle parked at Stall ${slot.id}!'),
+                            content: Text(
+                              'Vehicle parked at Stall ${slot.id}!',
+                            ),
                             backgroundColor: const Color(0xFF16A34A),
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -1305,7 +1797,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(e.toString().replaceAll('Exception: ', '')),
+                            content: Text(
+                              e.toString().replaceAll('Exception: ', ''),
+                            ),
                             backgroundColor: const Color(0xFFDC2626),
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -1320,14 +1814,27 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                 width: double.infinity,
                 height: 48,
                 child: OutlinedButton.icon(
-                  icon: const Icon(LucideIcons.navigation, color: Color(0xFF2563EB), size: 18),
+                  icon: const Icon(
+                    LucideIcons.navigation,
+                    color: Color(0xFF2563EB),
+                    size: 18,
+                  ),
                   label: Text(
                     'NAVIGATE TO THIS SLOT',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF2563EB)),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF2563EB),
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    side: const BorderSide(
+                      color: Color(0xFF2563EB),
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   onPressed: () {
                     Navigator.pop(context);
@@ -1342,15 +1849,25 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton.icon(
-                  icon: const Icon(LucideIcons.compass, color: Colors.white, size: 18),
+                  icon: const Icon(
+                    LucideIcons.compass,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                   label: Text(
                     'NAVIGATE TO MY CAR',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0284C7),
                     elevation: 1,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   onPressed: () {
                     Navigator.pop(context);
@@ -1365,15 +1882,25 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton.icon(
-                  icon: const Icon(LucideIcons.logOut, color: Colors.white, size: 18),
+                  icon: const Icon(
+                    LucideIcons.logOut,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                   label: Text(
                     'UNPARK VEHICLE',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFDC2626),
                     elevation: 1,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   onPressed: () async {
                     await _parkingService.clearVehicleLocation();
@@ -1381,7 +1908,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Vehicle unparked from Stall ${slot.id}.'),
+                          content: Text(
+                            'Vehicle unparked from Stall ${slot.id}.',
+                          ),
                           backgroundColor: const Color(0xFFDC2626),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -1409,12 +1938,19 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
       ),
       child: Text(
         label,
-        style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }
 
-  void _showFloorDirectoryModal(BuildContext context, List<DestinationPOI> pois) {
+  void _showFloorDirectoryModal(
+    BuildContext context,
+    List<DestinationPOI> pois,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1445,7 +1981,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
               children: [
                 Row(
                   children: [
-                    const Icon(LucideIcons.store, color: Color(0xFF2563EB), size: 20),
+                    const Icon(
+                      LucideIcons.store,
+                      color: Color(0xFF2563EB),
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Floor Directory (${displayFloor.name})',
@@ -1458,7 +1998,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(10),
@@ -1480,12 +2023,15 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                   ? Center(
                       child: Text(
                         'No shops listed on this floor.',
-                        style: GoogleFonts.plusJakartaSans(color: const Color(0xFF64748B)),
+                        style: GoogleFonts.plusJakartaSans(
+                          color: const Color(0xFF64748B),
+                        ),
                       ),
                     )
                   : ListView.separated(
                       itemCount: pois.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 8),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 8),
                       itemBuilder: (context, idx) {
                         final poi = pois[idx];
                         return Container(
@@ -1533,7 +2079,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF2563EB),
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -1542,9 +2091,17 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
                                 onPressed: () {
                                   Navigator.pop(context);
                                   setState(() => _selectedPOI = poi);
-                                  _showStoreDetailsModal(context, poi);
+                                  if (widget.onSelectDestination != null) {
+                                    widget.onSelectDestination!(poi);
+                                  }
                                 },
-                                child: const Text('View', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                child: const Text(
+                                  'View',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -1591,11 +2148,21 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> with SingleTickerProv
   }
 
   IconData _getCategoryIcon(String cat) {
-    if (cat.contains('FOOD')) return LucideIcons.utensils;
-    if (cat.contains('TECH')) return LucideIcons.laptop;
-    if (cat.contains('FASHION') || cat.contains('RETAIL')) return LucideIcons.shoppingBag;
-    if (cat.contains('LUXURY') || cat.contains('BEAUTY')) return LucideIcons.sparkles;
-    if (cat.contains('ENTERTAINMENT')) return LucideIcons.film;
+    if (cat.contains('FOOD')) {
+      return LucideIcons.utensils;
+    }
+    if (cat.contains('TECH')) {
+      return LucideIcons.laptop;
+    }
+    if (cat.contains('FASHION') || cat.contains('RETAIL')) {
+      return LucideIcons.shoppingBag;
+    }
+    if (cat.contains('LUXURY') || cat.contains('BEAUTY')) {
+      return LucideIcons.sparkles;
+    }
+    if (cat.contains('ENTERTAINMENT')) {
+      return LucideIcons.film;
+    }
     return LucideIcons.mapPin;
   }
 }
@@ -1644,12 +2211,17 @@ class ArchitecturalFloorPainter extends CustomPainter {
     final bool isParkingFloor = floorNumber < 0;
 
     // 1. Canvas Background
-    final bgPaint = Paint()..color = isParkingFloor ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+    final bgPaint = Paint()
+      ..color = isParkingFloor
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF8FAFC);
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
     // Concourse Architectural Tile Grid Lines
     final gridPaint = Paint()
-      ..color = isParkingFloor ? const Color(0xFF1E293B).withValues(alpha: 0.4) : const Color(0xFFE2E8F0).withValues(alpha: 0.6)
+      ..color = isParkingFloor
+          ? const Color(0xFF1E293B).withValues(alpha: 0.4)
+          : const Color(0xFFE2E8F0).withValues(alpha: 0.6)
       ..strokeWidth = 0.8;
 
     const double step = 22.0;
@@ -1661,13 +2233,24 @@ class ArchitecturalFloorPainter extends CustomPainter {
     }
 
     // 2. Outer Building Perimeter Wall & Glass Curtain Accents
-    final wallFillPaint = Paint()..color = isParkingFloor ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+    final wallFillPaint = Paint()
+      ..color = isParkingFloor
+          ? const Color(0xFF1E293B)
+          : const Color(0xFFF1F5F9);
     final outerBorderPaint = Paint()
-      ..color = isParkingFloor ? const Color(0xFF0284C7) : const Color(0xFF64748B)
+      ..color = isParkingFloor
+          ? const Color(0xFF0284C7)
+          : const Color(0xFF64748B)
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke;
 
-    final outerRect = RRect.fromLTRBR(12, 12, size.width - 12, size.height - 12, const Radius.circular(20));
+    final outerRect = RRect.fromLTRBR(
+      12,
+      12,
+      size.width - 12,
+      size.height - 12,
+      const Radius.circular(20),
+    );
     canvas.drawRRect(outerRect, wallFillPaint);
     canvas.drawRRect(outerRect, outerBorderPaint);
 
@@ -1681,11 +2264,14 @@ class ArchitecturalFloorPainter extends CustomPainter {
       const Radius.circular(14),
     );
 
-    final corridorPaint = Paint()..color = isParkingFloor ? const Color(0xFF1E293B) : Colors.white;
+    final corridorPaint = Paint()
+      ..color = isParkingFloor ? const Color(0xFF1E293B) : Colors.white;
     canvas.drawRRect(corridorRect, corridorPaint);
 
     final corridorBorderPaint = Paint()
-      ..color = isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFFCBD5E1)
+      ..color = isParkingFloor
+          ? const Color(0xFF38BDF8)
+          : const Color(0xFFCBD5E1)
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
     canvas.drawRRect(corridorRect, corridorBorderPaint);
@@ -1693,7 +2279,9 @@ class ArchitecturalFloorPainter extends CustomPainter {
     // Central Concourse Compass Watermark
     final compassCenter = Offset(size.width * 0.50, size.height * 0.50);
     final compassCirclePaint = Paint()
-      ..color = (isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFF2563EB)).withValues(alpha: 0.08)
+      ..color =
+          (isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFF2563EB))
+              .withValues(alpha: 0.08)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(compassCenter, 28, compassCirclePaint);
 
@@ -1707,19 +2295,37 @@ class ArchitecturalFloorPainter extends CustomPainter {
     }
 
     // 5. Entrance Lobby & Elevator Hub Header
-    final facilityRect = Rect.fromLTWH(size.width * 0.35, 16, size.width * 0.30, 24);
-    final facilityPaint = Paint()..color = isParkingFloor ? const Color(0xFF0284C7) : const Color(0xFFE0F2FE);
+    final facilityRect = Rect.fromLTWH(
+      size.width * 0.35,
+      16,
+      size.width * 0.30,
+      24,
+    );
+    final facilityPaint = Paint()
+      ..color = isParkingFloor
+          ? const Color(0xFF0284C7)
+          : const Color(0xFFE0F2FE);
     final facilityBorder = Paint()
-      ..color = isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFF0284C7)
+      ..color = isParkingFloor
+          ? const Color(0xFF38BDF8)
+          : const Color(0xFF0284C7)
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
-    canvas.drawRRect(RRect.fromRectAndRadius(facilityRect, const Radius.circular(8)), facilityPaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(facilityRect, const Radius.circular(8)), facilityBorder);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(facilityRect, const Radius.circular(8)),
+      facilityPaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(facilityRect, const Radius.circular(8)),
+      facilityBorder,
+    );
 
     final String hubText = floorNumber == 1
         ? 'MAIN LOBBY & ESCALATOR'
-        : (isParkingFloor ? 'ELEVATOR & STAIR CORE' : 'ELEVATOR HUB & ESCALATOR');
+        : (isParkingFloor
+              ? 'ELEVATOR & STAIR CORE'
+              : 'ELEVATOR HUB & ESCALATOR');
 
     _drawText(
       canvas,
@@ -1733,17 +2339,35 @@ class ArchitecturalFloorPainter extends CustomPainter {
     );
 
     // Bottom Parking Ramp Banner
-    final rampRect = Rect.fromLTWH(size.width * 0.35, size.height - 40, size.width * 0.30, 22);
-    final rampPaint = Paint()..color = isParkingFloor ? const Color(0xFF0F172A) : const Color(0xFFDBEAFE);
+    final rampRect = Rect.fromLTWH(
+      size.width * 0.35,
+      size.height - 40,
+      size.width * 0.30,
+      22,
+    );
+    final rampPaint = Paint()
+      ..color = isParkingFloor
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFDBEAFE);
     final rampBorder = Paint()
-      ..color = isParkingFloor ? const Color(0xFF38BDF8) : const Color(0xFF2563EB)
+      ..color = isParkingFloor
+          ? const Color(0xFF38BDF8)
+          : const Color(0xFF2563EB)
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
-    canvas.drawRRect(RRect.fromRectAndRadius(rampRect, const Radius.circular(7)), rampPaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(rampRect, const Radius.circular(7)), rampBorder);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rampRect, const Radius.circular(7)),
+      rampPaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rampRect, const Radius.circular(7)),
+      rampBorder,
+    );
 
-    final String rampLabel = isParkingFloor ? '▼ EXIT / ENTRY RAMP' : '▼ PARKING RAMP (B1/B2)';
+    final String rampLabel = isParkingFloor
+        ? '▼ EXIT / ENTRY RAMP'
+        : '▼ PARKING RAMP (B1/B2)';
     _drawText(
       canvas,
       rampLabel,
@@ -1757,7 +2381,12 @@ class ArchitecturalFloorPainter extends CustomPainter {
 
     // 6. Draw Vector Pathfinding Line when POI is selected!
     if (selectedTargetDoorOffset != null) {
-      _drawVectorWalkingRoutePath(canvas, size, selectedTargetDoorOffset, isParkingFloor);
+      _drawVectorWalkingRoutePath(
+        canvas,
+        size,
+        selectedTargetDoorOffset,
+        isParkingFloor,
+      );
     }
   }
 
@@ -1774,15 +2403,27 @@ class ArchitecturalFloorPainter extends CustomPainter {
       Rect.fromLTWH(rightX, roomTopPadding + gapY, roomW, roomH),
       Rect.fromLTWH(leftX, roomTopPadding + (gapY * 2) + roomH, roomW, roomH),
       Rect.fromLTWH(rightX, roomTopPadding + (gapY * 2) + roomH, roomW, roomH),
-      Rect.fromLTWH(leftX, roomTopPadding + (gapY * 3) + (roomH * 2), roomW, roomH),
-      Rect.fromLTWH(rightX, roomTopPadding + (gapY * 3) + (roomH * 2), roomW, roomH),
+      Rect.fromLTWH(
+        leftX,
+        roomTopPadding + (gapY * 3) + (roomH * 2),
+        roomW,
+        roomH,
+      ),
+      Rect.fromLTWH(
+        rightX,
+        roomTopPadding + (gapY * 3) + (roomH * 2),
+        roomW,
+        roomH,
+      ),
     ];
 
     Offset? selectedDoorOffset;
 
     for (int i = 0; i < roomBoxes.length; i++) {
       final rect = roomBoxes[i];
-      final DestinationPOI? poi = i < currentFloorPOIs.length ? currentFloorPOIs[i] : null;
+      final DestinationPOI? poi = i < currentFloorPOIs.length
+          ? currentFloorPOIs[i]
+          : null;
       final bool isSelected = poi != null && selectedPOI?.id == poi.id;
 
       final profile = _getProfileForCategory(poi?.category ?? '');
@@ -1802,7 +2443,10 @@ class ArchitecturalFloorPainter extends CustomPainter {
         ..strokeWidth = 1.0
         ..style = PaintingStyle.stroke;
 
-      final doorArcRect = Rect.fromCircle(center: Offset(doorX, doorY), radius: 10);
+      final doorArcRect = Rect.fromCircle(
+        center: Offset(doorX, doorY),
+        radius: 10,
+      );
       final double startAngle = isLeftWing ? -math.pi / 2 : math.pi / 2;
       canvas.drawArc(doorArcRect, startAngle, math.pi / 2, false, doorArcPaint);
 
@@ -1813,14 +2457,24 @@ class ArchitecturalFloorPainter extends CustomPainter {
           ..color = const Color(0xFF2563EB).withValues(alpha: 0.25)
           ..strokeWidth = 5.0
           ..style = PaintingStyle.stroke;
-        canvas.drawRRect(RRect.fromRectAndRadius(rect.inflate(2 * glowHaloRadius), const Radius.circular(16)), glowPaint);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            rect.inflate(2 * glowHaloRadius),
+            const Radius.circular(16),
+          ),
+          glowPaint,
+        );
       }
     }
 
     return selectedDoorOffset;
   }
 
-  void _paintBasementParkingPlan(Canvas canvas, Size size, double roomTopPadding) {
+  void _paintBasementParkingPlan(
+    Canvas canvas,
+    Size size,
+    double roomTopPadding,
+  ) {
     final double availableHeight = size.height - roomTopPadding - 46.0;
     final double slotH = availableHeight * 0.135;
     final double gapY = (availableHeight - (slotH * 6)) / 5;
@@ -1847,7 +2501,9 @@ class ArchitecturalFloorPainter extends CustomPainter {
     );
 
     final double slotW = (size.width * 0.34 - 18) / 2;
-    final String prefix = floorNumber == -1 ? 'B1' : (floorNumber == -2 ? 'B2' : 'B');
+    final String prefix = floorNumber == -1
+        ? 'B1'
+        : (floorNumber == -2 ? 'B2' : 'B');
 
     // Left Wing: Zone A
     for (int row = 0; row < 6; row++) {
@@ -1870,14 +2526,21 @@ class ArchitecturalFloorPainter extends CustomPainter {
             section: 'A',
             slotNumber: num,
             status: ParkingSlotStatus.free,
-            location: const GeodeticCoords(latitude: 0, longitude: 0, height: 0),
+            location: const GeodeticCoords(
+              latitude: 0,
+              longitude: 0,
+              height: 0,
+            ),
             gridRow: row,
             gridCol: col,
             sensorId: 'IOT-$code',
           ),
         );
 
-        final bool isMyCar = myVehicle != null && myVehicle!.slotId == code && myVehicle!.status == 'parked';
+        final bool isMyCar =
+            myVehicle != null &&
+            myVehicle!.slotId == code &&
+            myVehicle!.status == 'parked';
 
         _drawSingleParkingStall(
           canvas,
@@ -1909,14 +2572,21 @@ class ArchitecturalFloorPainter extends CustomPainter {
             section: 'B',
             slotNumber: num,
             status: ParkingSlotStatus.free,
-            location: const GeodeticCoords(latitude: 0, longitude: 0, height: 0),
+            location: const GeodeticCoords(
+              latitude: 0,
+              longitude: 0,
+              height: 0,
+            ),
             gridRow: row,
             gridCol: col,
             sensorId: 'IOT-$code',
           ),
         );
 
-        final bool isMyCar = myVehicle != null && myVehicle!.slotId == code && myVehicle!.status == 'parked';
+        final bool isMyCar =
+            myVehicle != null &&
+            myVehicle!.slotId == code &&
+            myVehicle!.status == 'parked';
 
         _drawSingleParkingStall(
           canvas,
@@ -1939,7 +2609,9 @@ class ArchitecturalFloorPainter extends CustomPainter {
     bool isMyCar = false,
   }) {
     Color fillPaintColor = const Color(0xFF1E293B);
-    Color borderPaintColor = isEV ? const Color(0xFF22C55E) : (isHandicap ? const Color(0xFF3B82F6) : const Color(0xFF475569));
+    Color borderPaintColor = isEV
+        ? const Color(0xFF22C55E)
+        : (isHandicap ? const Color(0xFF3B82F6) : const Color(0xFF475569));
 
     if (isMyCar) {
       fillPaintColor = const Color(0xFF047857);
@@ -1950,7 +2622,10 @@ class ArchitecturalFloorPainter extends CustomPainter {
         ..color = const Color(0xFF22C55E).withValues(alpha: 0.5)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.5;
-      canvas.drawRRect(RRect.fromRectAndRadius(glowRect, const Radius.circular(7)), glowPaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(glowRect, const Radius.circular(7)),
+        glowPaint,
+      );
     } else if (status == ParkingSlotStatus.occupied) {
       fillPaintColor = const Color(0xFF334155);
       borderPaintColor = const Color(0xFF64748B);
@@ -1967,8 +2642,22 @@ class ArchitecturalFloorPainter extends CustomPainter {
     canvas.drawRRect(rrect, borderPaint);
 
     if (isMyCar) {
-      _drawText(canvas, slotCode, Offset(slotRect.left + 2, slotRect.top + 3), Colors.white, fontSize: 6.5, fontWeight: FontWeight.bold);
-      _drawText(canvas, 'PARKED', Offset(slotRect.left + 2, slotRect.top + 14), const Color(0xFF4ADE80), fontSize: 6.0, fontWeight: FontWeight.bold);
+      _drawText(
+        canvas,
+        slotCode,
+        Offset(slotRect.left + 2, slotRect.top + 3),
+        Colors.white,
+        fontSize: 6.5,
+        fontWeight: FontWeight.bold,
+      );
+      _drawText(
+        canvas,
+        'PARKED',
+        Offset(slotRect.left + 2, slotRect.top + 14),
+        const Color(0xFF4ADE80),
+        fontSize: 6.0,
+        fontWeight: FontWeight.bold,
+      );
       return;
     }
 
@@ -1982,14 +2671,39 @@ class ArchitecturalFloorPainter extends CustomPainter {
       tagColor = const Color(0xFF60A5FA);
     }
 
-    _drawText(canvas, '$slotCode $tag', Offset(slotRect.left + 2, slotRect.top + 3), tagColor, fontSize: 6.5, fontWeight: FontWeight.bold);
+    _drawText(
+      canvas,
+      '$slotCode $tag',
+      Offset(slotRect.left + 2, slotRect.top + 3),
+      tagColor,
+      fontSize: 6.5,
+      fontWeight: FontWeight.bold,
+    );
 
-    final String statusLabel = status == ParkingSlotStatus.free ? 'FREE' : (status == ParkingSlotStatus.occupied ? 'OCCUPIED' : 'RESERVED');
-    final Color statusColor = status == ParkingSlotStatus.free ? const Color(0xFF22C55E) : (status == ParkingSlotStatus.occupied ? const Color(0xFFEF4444) : const Color(0xFFF59E0B));
-    _drawText(canvas, statusLabel, Offset(slotRect.left + 2, slotRect.top + 14), statusColor, fontSize: 6.0, fontWeight: FontWeight.bold);
+    final String statusLabel = status == ParkingSlotStatus.free
+        ? 'FREE'
+        : (status == ParkingSlotStatus.occupied ? 'OCCUPIED' : 'RESERVED');
+    final Color statusColor = status == ParkingSlotStatus.free
+        ? const Color(0xFF22C55E)
+        : (status == ParkingSlotStatus.occupied
+              ? const Color(0xFFEF4444)
+              : const Color(0xFFF59E0B));
+    _drawText(
+      canvas,
+      statusLabel,
+      Offset(slotRect.left + 2, slotRect.top + 14),
+      statusColor,
+      fontSize: 6.0,
+      fontWeight: FontWeight.bold,
+    );
   }
 
-  void _drawVectorWalkingRoutePath(Canvas canvas, Size size, Offset targetDoor, bool isDark) {
+  void _drawVectorWalkingRoutePath(
+    Canvas canvas,
+    Size size,
+    Offset targetDoor,
+    bool isDark,
+  ) {
     const double centerLat = 6.927079;
     const double centerLon = 79.845612;
     const double pixelsPerDegLat = 800000.0;
@@ -2013,7 +2727,8 @@ class ArchitecturalFloorPainter extends CustomPainter {
 
     // Glowing Underlayer Path
     final pathGlowPaint = Paint()
-      ..color = (isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB)).withValues(alpha: 0.25)
+      ..color = (isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB))
+          .withValues(alpha: 0.25)
       ..strokeWidth = 7.0
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -2032,17 +2747,22 @@ class ArchitecturalFloorPainter extends CustomPainter {
     for (final metric in pathMetrics) {
       double distance = dashOffset % 12.0;
       while (distance < metric.length) {
-        final extract = metric.extractPath(distance, math.min(distance + 6.0, metric.length));
+        final extract = metric.extractPath(
+          distance,
+          math.min(distance + 6.0, metric.length),
+        );
         canvas.drawPath(extract, pathPaint);
         distance += 12.0;
       }
 
       // Traveling Motion Light Energy Bead
-      final pulseDistance = (pulseAnimationValue * metric.length) % metric.length;
+      final pulseDistance =
+          (pulseAnimationValue * metric.length) % metric.length;
       final tangent = metric.getTangentForOffset(pulseDistance);
       if (tangent != null) {
         final beadGlow = Paint()
-          ..color = (isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB)).withValues(alpha: 0.7)
+          ..color = (isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB))
+              .withValues(alpha: 0.7)
           ..style = PaintingStyle.fill;
         canvas.drawCircle(tangent.position, 7.0, beadGlow);
 
@@ -2054,12 +2774,14 @@ class ArchitecturalFloorPainter extends CustomPainter {
     }
 
     // Target Doorway Radar Beacon with Animated Expanding Waves
-    final beaconDotPaint = Paint()..color = isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB);
+    final beaconDotPaint = Paint()
+      ..color = isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB);
     canvas.drawCircle(targetDoor, 5.5, beaconDotPaint);
 
     final beaconRingRadius = 6.0 + (pulseAnimationValue * 9.0);
     final beaconRingPaint = Paint()
-      ..color = (isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB)).withValues(alpha: (1.0 - pulseAnimationValue).clamp(0.0, 1.0))
+      ..color = (isDark ? const Color(0xFF00E5FF) : const Color(0xFF2563EB))
+          .withValues(alpha: (1.0 - pulseAnimationValue).clamp(0.0, 1.0))
       ..strokeWidth = 1.8
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(targetDoor, beaconRingRadius, beaconRingPaint);

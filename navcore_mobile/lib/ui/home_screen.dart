@@ -712,188 +712,254 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF1E3A8A), Color(0xFF0F172A)],
+                      colors: [Color(0xFF0B132B), Color(0xFF1C2541), Color(0xFF0F172A)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: const Color(0xFF3B82F6).withValues(alpha: 0.35),
-                      width: 1.2,
+                      color: const Color(0xFF3B82F6).withValues(alpha: 0.45),
+                      width: 1.5,
                     ),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x441E3A8A),
-                        blurRadius: 16,
-                        offset: Offset(0, 6),
+                        color: Color(0x661C2541),
+                        blurRadius: 20,
+                        offset: Offset(0, 8),
+                      ),
+                      BoxShadow(
+                        color: Color(0x223B82F6),
+                        blurRadius: 10,
+                        spreadRadius: 1,
                       ),
                     ],
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 11,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF2563EB).withValues(
-                                  alpha: 0.25,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFF60A5FA).withValues(
-                                    alpha: 0.4,
-                                  ),
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _LiveStatusPulseDot(
-                                    color: Color(0xFF10B981),
-                                    size: 6.5,
-                                  ),
-                                  SizedBox(width: 7),
-                                  Text(
-                                    'CURRENT MALL',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x33000000),
-                                    blurRadius: 6,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _LiveStatusPulseDot(
-                                    color: Color(0xFF3B82F6),
-                                    size: 5.5,
-                                  ),
-                                  SizedBox(width: 5),
-                                  Text(
-                                    'AR Ready',
-                                    style: TextStyle(
-                                      color: Color(0xFF0F172A),
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          widget.buildingProfile.name,
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                            fontSize: 21,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.4,
-                            height: 1.2,
+                  child: Stack(
+                    children: [
+                      // Background AI Grid Accent
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _AICyberGridPainter(
+                            lineColor: const Color(0xFF3B82F6).withValues(alpha: 0.08),
+                            accentColor: const Color(0xFF10B981).withValues(alpha: 0.12),
                           ),
                         ),
-                        const SizedBox(height: 18),
-                        Row(
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF2563EB),
-                                  foregroundColor: Colors.white,
-                                  elevation: 4,
-                                  shadowColor: const Color(0x552563EB),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
                                   padding: const EdgeInsets.symmetric(
-                                    vertical: 11,
+                                    horizontal: 11,
+                                    vertical: 5.5,
                                   ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(13),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF1E40AF), Color(0xFF1E3A8A)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFF60A5FA).withValues(alpha: 0.5),
+                                      width: 1,
+                                    ),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x331E40AF),
+                                        blurRadius: 8,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _LiveStatusPulseDot(
+                                        color: Color(0xFF10B981),
+                                        size: 6.5,
+                                      ),
+                                      SizedBox(width: 7),
+                                      Text(
+                                        'CURRENT MALL',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                onPressed: widget.onOpenARView,
-                                icon: const Icon(
-                                  LucideIcons.camera,
-                                  size: 15,
-                                  color: Colors.white,
-                                ),
-                                label: const Text(
-                                  'Camera View',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12.5,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 11,
+                                    vertical: 5.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0F172A).withValues(alpha: 0.7),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                                      width: 1,
+                                    ),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x333B82F6),
+                                        blurRadius: 8,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _LiveStatusPulseDot(
+                                        color: Color(0xFF3B82F6),
+                                        size: 6.0,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'AI AR READY',
+                                        style: TextStyle(
+                                          color: Color(0xFF60A5FA),
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.6,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              widget.buildingProfile.name,
+                              style: GoogleFonts.plusJakartaSans(
+                                color: Colors.white,
+                                fontSize: 21,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                                height: 1.2,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF2563EB).withValues(
-                                    alpha: 0.22,
-                                  ),
-                                  foregroundColor: Colors.white,
-                                  side: BorderSide(
-                                    color: const Color(0xFF60A5FA).withValues(
-                                      alpha: 0.4,
+                            const SizedBox(height: 10),
+                            // AI Telemetry Status Badges
+                            Row(
+                              children: [
+                                _buildAITelemetryChip(
+                                  icon: LucideIcons.building,
+                                  label: '${widget.buildingProfile.floors.length} Floors',
+                                  color: const Color(0xFF60A5FA),
+                                ),
+                                const SizedBox(width: 8),
+                                _buildAITelemetryChip(
+                                  icon: LucideIcons.store,
+                                  label: '${widget.allPOIs.length} Stores',
+                                  color: const Color(0xFF34D399),
+                                ),
+                                const SizedBox(width: 8),
+                                _buildAITelemetryChip(
+                                  icon: LucideIcons.eye,
+                                  label: '3D Spatial',
+                                  color: const Color(0xFFF472B6),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(13),
+                                      gradient: const LinearGradient(
+                                        colors: [Color(0xFF2563EB), Color(0xFF0284C7)],
+                                      ),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Color(0x552563EB),
+                                          blurRadius: 10,
+                                          offset: Offset(0, 4),
+                                        ),
+                                      ],
                                     ),
-                                    width: 1.2,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 11,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(13),
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(13),
+                                        ),
+                                      ),
+                                      onPressed: widget.onOpenARView,
+                                      icon: const Icon(
+                                        LucideIcons.camera,
+                                        size: 15,
+                                        color: Colors.white,
+                                      ),
+                                      label: const Text(
+                                        'Camera View',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                onPressed: widget.onOpenFloorMap,
-                                icon: const Icon(
-                                  LucideIcons.map,
-                                  size: 15,
-                                  color: Colors.white,
-                                ),
-                                label: const Text(
-                                  'Interactive Map',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12.5,
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1E293B).withValues(
+                                        alpha: 0.6,
+                                      ),
+                                      foregroundColor: Colors.white,
+                                      side: BorderSide(
+                                        color: const Color(0xFF60A5FA).withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        width: 1.2,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(13),
+                                      ),
+                                    ),
+                                    onPressed: widget.onOpenFloorMap,
+                                    icon: const Icon(
+                                      LucideIcons.map,
+                                      size: 15,
+                                      color: Colors.white,
+                                    ),
+                                    label: const Text(
+                                      'Interactive Map',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1050,212 +1116,313 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+          colors: [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF0F1D36)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: const Color(0xFF6366F1).withValues(alpha: 0.35),
-          width: 1.2,
+          color: const Color(0xFF6366F1).withValues(alpha: 0.45),
+          width: 1.5,
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x551E1B4B),
-            blurRadius: 16,
-            offset: Offset(0, 6),
+            color: Color(0x661E1B4B),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Color(0x226366F1),
+            blurRadius: 10,
+            spreadRadius: 1,
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 11,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF818CF8).withValues(alpha: 0.4),
-                      width: 1,
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(LucideIcons.car, color: Colors.white, size: 13),
-                      SizedBox(width: 6),
-                      Text(
-                        'MY PARKED CAR',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x33000000),
-                        blurRadius: 6,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _LiveStatusPulseDot(
-                        color: Color(0xFF10B981),
-                        size: 6.5,
-                      ),
-                      SizedBox(width: 7),
-                      Text(
-                        'PARKED',
-                        style: TextStyle(
-                          color: Color(0xFF0F172A),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Parked at ${vehicle.slotId} • Floor ${vehicle.floorId}',
-              style: GoogleFonts.plusJakartaSans(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
+      child: Stack(
+        children: [
+          // Background AI Grid Accent
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _AICyberGridPainter(
+                lineColor: const Color(0xFF6366F1).withValues(alpha: 0.08),
+                accentColor: const Color(0xFF38BDF8).withValues(alpha: 0.12),
               ),
             ),
-            const SizedBox(height: 14),
-            // Custom Content-Suited Parking Sonar Radar Graphic Animation
-            SizedBox(
-              height: 38,
-              width: double.infinity,
-              child: AnimatedBuilder(
-                animation: _parkedCardAnimController,
-                builder: (context, child) {
-                  return CustomPaint(
-                    painter: _ParkedVehicleSonarPainter(
-                      animationValue: _parkedCardAnimController.value,
-                      slotId: vehicle.slotId,
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 1,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(
-                      LucideIcons.compass,
-                      size: 15,
-                      color: Color(0xFF0F172A),
-                    ),
-                    label: Text(
-                      'Find My Car',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0F172A),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 5.5,
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF0F172A),
-                      elevation: 3,
-                      shadowColor: const Color(0x33000000),
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      shape: RoundedRectangleBorder(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF4F46E5), Color(0xFF312E81)],
+                        ),
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF818CF8).withValues(alpha: 0.5),
+                          width: 1,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x334F46E5),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LucideIcons.sparkles, color: Color(0xFFA5B4FC), size: 13),
+                          SizedBox(width: 6),
+                          Text(
+                            'MY PARKED CAR',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    onPressed: () {
-                      final int floorNum = vehicle.floorId.contains('B2')
-                          ? -2
-                          : -1;
-                      final poi = DestinationPOI(
-                        id: vehicle.slotId,
-                        name: 'My Parked Car (${vehicle.slotId})',
-                        category: 'PARKING',
-                        floorNumber: floorNum,
-                        rating: 5.0,
-                        location: vehicle.location,
-                        description: 'Your saved vehicle location',
-                        openStatus: '24/7',
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 5.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                          width: 1,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x3310B981),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _LiveStatusPulseDot(
+                            color: Color(0xFF10B981),
+                            size: 6.5,
+                          ),
+                          SizedBox(width: 7),
+                          Text(
+                            'PARKED',
+                            style: TextStyle(
+                              color: Color(0xFF34D399),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Parked at ${vehicle.slotId} • Floor ${vehicle.floorId}',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // AI Telemetry Status Badges
+                Row(
+                  children: [
+                    _buildAITelemetryChip(
+                      icon: LucideIcons.mapPin,
+                      label: 'Slot ${vehicle.slotId}',
+                      color: const Color(0xFF38BDF8),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildAITelemetryChip(
+                      icon: LucideIcons.layers,
+                      label: 'Floor ${vehicle.floorId}',
+                      color: const Color(0xFFA855F7),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildAITelemetryChip(
+                      icon: LucideIcons.wifi,
+                      label: 'GPS 99.8%',
+                      color: const Color(0xFF34D399),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                // Custom Content-Suited Parking Sonar Radar Graphic Animation
+                SizedBox(
+                  height: 38,
+                  width: double.infinity,
+                  child: AnimatedBuilder(
+                    animation: _parkedCardAnimController,
+                    builder: (context, child) {
+                      return CustomPaint(
+                        painter: _ParkedVehicleSonarPainter(
+                          animationValue: _parkedCardAnimController.value,
+                          slotId: vehicle.slotId,
+                        ),
                       );
-                      widget.onSelectDestination(poi);
                     },
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 1,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(
-                      LucideIcons.layers,
-                      size: 15,
-                      color: Colors.white,
-                    ),
-                    label: Text(
-                      'Floor Map',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4F46E5).withValues(
-                        alpha: 0.25,
-                      ),
-                      foregroundColor: Colors.white,
-                      side: BorderSide(
-                        color: const Color(0xFF818CF8).withValues(
-                          alpha: 0.4,
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(13),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x554F46E5),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        width: 1.2,
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        child: ElevatedButton.icon(
+                          icon: const Icon(
+                            LucideIcons.navigation,
+                            size: 15,
+                            color: Colors.white,
+                          ),
+                          label: Text(
+                            'Find My Car',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                          ),
+                          onPressed: () {
+                            final int floorNum = vehicle.floorId.contains('B2')
+                                ? -2
+                                : -1;
+                            final poi = DestinationPOI(
+                              id: vehicle.slotId,
+                              name: 'My Parked Car (${vehicle.slotId})',
+                              category: 'PARKING',
+                              floorNumber: floorNum,
+                              rating: 5.0,
+                              location: vehicle.location,
+                              description: 'Your saved vehicle location',
+                              openStatus: '24/7',
+                            );
+                            widget.onSelectDestination(poi);
+                          },
+                        ),
                       ),
                     ),
-                    onPressed: widget.onOpenFloorMap,
-                  ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 1,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(
+                          LucideIcons.layers,
+                          size: 15,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          'Floor Map',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E293B).withValues(
+                            alpha: 0.6,
+                          ),
+                          foregroundColor: Colors.white,
+                          side: BorderSide(
+                            color: const Color(0xFF818CF8).withValues(
+                              alpha: 0.5,
+                            ),
+                            width: 1.2,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                        ),
+                        onPressed: widget.onOpenFloorMap,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAITelemetryChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 0.8,
         ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1421,5 +1588,53 @@ class _ParkedVehicleSonarPainter extends CustomPainter {
         oldDelegate.slotId != slotId;
   }
 }
+
+class _AICyberGridPainter extends CustomPainter {
+  final Color lineColor;
+  final Color accentColor;
+
+  _AICyberGridPainter({
+    required this.lineColor,
+    required this.accentColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    final accentPaint = Paint()
+      ..color = accentColor
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    // Grid Lines
+    final double step = 32.0;
+    for (double x = 0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+
+    // Top Right Tech Brackets Accent
+    canvas.drawLine(
+      Offset(size.width - 24, 12),
+      Offset(size.width - 12, 12),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 12, 12),
+      Offset(size.width - 12, 24),
+      accentPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _AICyberGridPainter oldDelegate) => false;
+}
+
 
 

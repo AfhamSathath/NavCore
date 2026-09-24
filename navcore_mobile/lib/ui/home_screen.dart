@@ -712,7 +712,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF0B132B), Color(0xFF1C2541), Color(0xFF0F172A)],
+                      colors: [
+                        Color(0xFF0F172A),
+                        Color(0xFF1E3A8A),
+                        Color(0xFF1E293B),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -736,12 +740,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   child: Stack(
                     children: [
-                      // Background AI Grid Accent
+                      // Background Ambient Glow Accent
                       Positioned.fill(
                         child: CustomPaint(
-                          painter: _AICyberGridPainter(
-                            lineColor: const Color(0xFF3B82F6).withValues(alpha: 0.08),
-                            accentColor: const Color(0xFF10B981).withValues(alpha: 0.12),
+                          painter: _AmbientGlowPainter(
+                            glowColor: const Color(
+                              0xFF3B82F6,
+                            ).withValues(alpha: 0.15),
+                            accentColor: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.12),
                           ),
                         ),
                       ),
@@ -760,11 +768,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   ),
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(
-                                      colors: [Color(0xFF1E40AF), Color(0xFF1E3A8A)],
+                                      colors: [
+                                        Color(0xFF1E40AF),
+                                        Color(0xFF1E3A8A),
+                                      ],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: const Color(0xFF60A5FA).withValues(alpha: 0.5),
+                                      color: const Color(
+                                        0xFF60A5FA,
+                                      ).withValues(alpha: 0.5),
                                       width: 1,
                                     ),
                                     boxShadow: const [
@@ -801,10 +814,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     vertical: 5.5,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF0F172A).withValues(alpha: 0.7),
+                                    color: const Color(
+                                      0xFF0F172A,
+                                    ).withValues(alpha: 0.7),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                                      color: const Color(
+                                        0xFF3B82F6,
+                                      ).withValues(alpha: 0.4),
                                       width: 1,
                                     ),
                                     boxShadow: const [
@@ -824,7 +841,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       ),
                                       SizedBox(width: 6),
                                       Text(
-                                        'AI AR READY',
+                                        ' AR READY',
                                         style: TextStyle(
                                           color: Color(0xFF60A5FA),
                                           fontSize: 10.5,
@@ -848,29 +865,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 height: 1.2,
                               ),
                             ),
-                            const SizedBox(height: 10),
-                            // AI Telemetry Status Badges
-                            Row(
-                              children: [
-                                _buildAITelemetryChip(
-                                  icon: LucideIcons.building,
-                                  label: '${widget.buildingProfile.floors.length} Floors',
-                                  color: const Color(0xFF60A5FA),
-                                ),
-                                const SizedBox(width: 8),
-                                _buildAITelemetryChip(
-                                  icon: LucideIcons.store,
-                                  label: '${widget.allPOIs.length} Stores',
-                                  color: const Color(0xFF34D399),
-                                ),
-                                const SizedBox(width: 8),
-                                _buildAITelemetryChip(
-                                  icon: LucideIcons.eye,
-                                  label: '3D Spatial',
-                                  color: const Color(0xFFF472B6),
-                                ),
-                              ],
-                            ),
                             const SizedBox(height: 16),
                             Row(
                               children: [
@@ -879,7 +873,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(13),
                                       gradient: const LinearGradient(
-                                        colors: [Color(0xFF2563EB), Color(0xFF0284C7)],
+                                        colors: [
+                                          Color(0xFF2563EB),
+                                          Color(0xFF0284C7),
+                                        ],
                                       ),
                                       boxShadow: const [
                                         BoxShadow(
@@ -897,7 +894,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           vertical: 12,
                                         ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(13),
+                                          borderRadius: BorderRadius.circular(
+                                            13,
+                                          ),
                                         ),
                                       ),
                                       onPressed: widget.onOpenARView,
@@ -921,14 +920,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 Expanded(
                                   child: OutlinedButton.icon(
                                     style: OutlinedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF1E293B).withValues(
-                                        alpha: 0.6,
-                                      ),
+                                      backgroundColor: const Color(
+                                        0xFF1E293B,
+                                      ).withValues(alpha: 0.6),
                                       foregroundColor: Colors.white,
                                       side: BorderSide(
-                                        color: const Color(0xFF60A5FA).withValues(
-                                          alpha: 0.5,
-                                        ),
+                                        color: const Color(
+                                          0xFF60A5FA,
+                                        ).withValues(alpha: 0.5),
                                         width: 1.2,
                                       ),
                                       padding: const EdgeInsets.symmetric(
@@ -964,7 +963,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-
 
             // Destinations & Stores Section Header with Selection Dropdowns & Filter Controls
             SliverToBoxAdapter(
@@ -1131,20 +1129,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             blurRadius: 20,
             offset: Offset(0, 8),
           ),
-          BoxShadow(
-            color: Color(0x226366F1),
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
+          BoxShadow(color: Color(0x226366F1), blurRadius: 10, spreadRadius: 1),
         ],
       ),
       child: Stack(
         children: [
-          // Background AI Grid Accent
+          // Background Ambient Glow Accent
           Positioned.fill(
             child: CustomPaint(
-              painter: _AICyberGridPainter(
-                lineColor: const Color(0xFF6366F1).withValues(alpha: 0.08),
+              painter: _AmbientGlowPainter(
+                glowColor: const Color(0xFF6366F1).withValues(alpha: 0.15),
                 accentColor: const Color(0xFF38BDF8).withValues(alpha: 0.12),
               ),
             ),
@@ -1163,17 +1157,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         vertical: 5.5,
                       ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF4F46E5), Color(0xFF312E81)],
-                        ),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFF818CF8).withValues(alpha: 0.5),
-                          width: 1,
-                        ),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x334F46E5),
+                            color: Color(0x22000000),
                             blurRadius: 8,
                             offset: Offset(0, 2),
                           ),
@@ -1182,12 +1170,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(LucideIcons.sparkles, color: Color(0xFFA5B4FC), size: 13),
+                          Icon(
+                            LucideIcons.car,
+                            color: Colors.black,
+                            size: 13,
+                          ),
                           SizedBox(width: 6),
                           Text(
                             'MY PARKED CAR',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.black,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.8,
@@ -1202,15 +1194,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         vertical: 5.5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A).withValues(alpha: 0.7),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                          width: 1,
-                        ),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x3310B981),
+                            color: Color(0x22000000),
                             blurRadius: 8,
                             offset: Offset(0, 2),
                           ),
@@ -1227,7 +1215,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Text(
                             'PARKED',
                             style: TextStyle(
-                              color: Color(0xFF34D399),
+                              color: Colors.black,
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.6,
@@ -1247,29 +1235,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
                   ),
-                ),
-                const SizedBox(height: 10),
-                // AI Telemetry Status Badges
-                Row(
-                  children: [
-                    _buildAITelemetryChip(
-                      icon: LucideIcons.mapPin,
-                      label: 'Slot ${vehicle.slotId}',
-                      color: const Color(0xFF38BDF8),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildAITelemetryChip(
-                      icon: LucideIcons.layers,
-                      label: 'Floor ${vehicle.floorId}',
-                      color: const Color(0xFFA855F7),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildAITelemetryChip(
-                      icon: LucideIcons.wifi,
-                      label: 'GPS 99.8%',
-                      color: const Color(0xFF34D399),
-                    ),
-                  ],
                 ),
                 const SizedBox(height: 14),
                 // Custom Content-Suited Parking Sonar Radar Graphic Animation
@@ -1295,13 +1260,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       flex: 1,
                       child: Container(
                         decoration: BoxDecoration(
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(13),
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
-                          ),
                           boxShadow: const [
                             BoxShadow(
-                              color: Color(0x554F46E5),
+                              color: Color(0x33000000),
                               blurRadius: 10,
                               offset: Offset(0, 4),
                             ),
@@ -1311,14 +1274,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           icon: const Icon(
                             LucideIcons.navigation,
                             size: 15,
-                            color: Colors.white,
+                            color: Colors.black,
                           ),
                           label: Text(
                             'Find My Car',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: Colors.black,
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -1366,14 +1329,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E293B).withValues(
-                            alpha: 0.6,
-                          ),
+                          backgroundColor: const Color(
+                            0xFF1E293B,
+                          ).withValues(alpha: 0.6),
                           foregroundColor: Colors.white,
                           side: BorderSide(
-                            color: const Color(0xFF818CF8).withValues(
-                              alpha: 0.5,
-                            ),
+                            color: const Color(
+                              0xFF818CF8,
+                            ).withValues(alpha: 0.5),
                             width: 1.2,
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1394,38 +1357,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildAITelemetryChip({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 0.8,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 11, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
 }
 
@@ -1433,10 +1364,7 @@ class _LiveStatusPulseDot extends StatefulWidget {
   final Color color;
   final double size;
 
-  const _LiveStatusPulseDot({
-    required this.color,
-    this.size = 6.0,
-  });
+  const _LiveStatusPulseDot({required this.color, this.size = 6.0});
 
   @override
   State<_LiveStatusPulseDot> createState() => _LiveStatusPulseDotState();
@@ -1589,52 +1517,38 @@ class _ParkedVehicleSonarPainter extends CustomPainter {
   }
 }
 
-class _AICyberGridPainter extends CustomPainter {
-  final Color lineColor;
+class _AmbientGlowPainter extends CustomPainter {
+  final Color glowColor;
   final Color accentColor;
 
-  _AICyberGridPainter({
-    required this.lineColor,
-    required this.accentColor,
-  });
+  _AmbientGlowPainter({required this.glowColor, required this.accentColor});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = lineColor
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
+    final glowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [glowColor, glowColor.withValues(alpha: 0)],
+      ).createShader(
+        Rect.fromCircle(
+          center: Offset(size.width * 0.85, size.height * 0.2),
+          radius: size.width * 0.5,
+        ),
+      );
 
-    final accentPaint = Paint()
-      ..color = accentColor
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
+    final accentGlowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [accentColor, accentColor.withValues(alpha: 0)],
+      ).createShader(
+        Rect.fromCircle(
+          center: Offset(size.width * 0.15, size.height * 0.8),
+          radius: size.width * 0.45,
+        ),
+      );
 
-    // Grid Lines
-    final double step = 32.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-
-    // Top Right Tech Brackets Accent
-    canvas.drawLine(
-      Offset(size.width - 24, 12),
-      Offset(size.width - 12, 12),
-      accentPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width - 12, 12),
-      Offset(size.width - 12, 24),
-      accentPaint,
-    );
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), glowPaint);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), accentGlowPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _AICyberGridPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _AmbientGlowPainter oldDelegate) => false;
 }
-
-
-

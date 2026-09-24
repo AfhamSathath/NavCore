@@ -1145,7 +1145,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 12),
             Text(
-              'Floor ${vehicle.floorId}',
+              'Parked at ${vehicle.slotId} • Floor ${vehicle.floorId}',
               style: GoogleFonts.plusJakartaSans(
                 color: Colors.white,
                 fontSize: 16,

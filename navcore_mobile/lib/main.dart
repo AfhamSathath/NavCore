@@ -384,7 +384,8 @@ class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
         } else {
           final now = DateTime.now();
           if (_lastBackPressTime == null ||
-              now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+              now.difference(_lastBackPressTime!) >
+                  const Duration(seconds: 2)) {
             _lastBackPressTime = now;
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
@@ -402,7 +403,10 @@ class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
                 behavior: SnackBarBehavior.floating,
                 duration: const Duration(seconds: 2),
                 margin: const EdgeInsets.only(bottom: 12, left: 24, right: 24),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -441,10 +445,7 @@ class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.96),
             borderRadius: BorderRadius.circular(42),
-            border: Border.all(
-              color: const Color(0xFFE4E4E7),
-              width: 1.2,
-            ),
+            border: Border.all(color: const Color(0xFFE4E4E7), width: 1.2),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x22000000),
@@ -479,7 +480,9 @@ class _NexNavMainNavigationState extends State<NexNavMainNavigation> {
                     vertical: isSelected ? 9 : 10,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF0F172A) : Colors.transparent,
+                    color: isSelected
+                        ? const Color(0xFF0F172A)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(32),
                   ),
                   child: Row(

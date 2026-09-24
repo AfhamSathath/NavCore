@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,7 +34,9 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  late final AnimationController _parkedCardAnimController;
+
   String _selectedCategory = 'ALL';
   int? _selectedFloorNumber; // null = All Floors
   String _searchQuery = '';
@@ -54,12 +57,18 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _parkingService.addListener(_onParkingChanged);
+
+    _parkedCardAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    )..repeat();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _parkingService.removeListener(_onParkingChanged);
+    _parkedCardAnimController.dispose();
     super.dispose();
   }
 
@@ -734,32 +743,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                 vertical: 5,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                                color: const Color(0xFF2563EB).withValues(
+                                  alpha: 0.25,
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: const Color(0xFF60A5FA).withValues(alpha: 0.4),
+                                  color: const Color(0xFF60A5FA).withValues(
+                                    alpha: 0.4,
+                                  ),
                                   width: 1,
                                 ),
                               ),
-                              child: Row(
+                              child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Container(
-                                    width: 7,
-                                    height: 7,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF10B981),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Color(0xFF10B981),
-                                          blurRadius: 6,
-                                        ),
-                                      ],
-                                    ),
+                                  _LiveStatusPulseDot(
+                                    color: Color(0xFF10B981),
+                                    size: 6.5,
                                   ),
-                                  const SizedBox(width: 7),
-                                  const Text(
+                                  SizedBox(width: 7),
+                                  Text(
                                     'CURRENT MALL',
                                     style: TextStyle(
                                       color: Colors.white,
@@ -787,13 +790,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ],
                               ),
-                              child: const Text(
-                                'AR Ready',
-                                style: TextStyle(
-                                  color: Color(0xFF0F172A),
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
-                                ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _LiveStatusPulseDot(
+                                    color: Color(0xFF3B82F6),
+                                    size: 5.5,
+                                  ),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'AR Ready',
+                                    style: TextStyle(
+                                      color: Color(0xFF0F172A),
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -885,6 +898,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+
 
             // Destinations & Stores Section Header with Selection Dropdowns & Filter Controls
             SliverToBoxAdapter(
@@ -1080,7 +1094,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icon(LucideIcons.car, color: Colors.white, size: 13),
                       SizedBox(width: 6),
                       Text(
-                        'MY PARKED VEHICLE',
+                        'MY PARKED CAR',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 11,
@@ -1107,19 +1121,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF10B981),
-                          shape: BoxShape.circle,
-                        ),
+                      _LiveStatusPulseDot(
+                        color: Color(0xFF10B981),
+                        size: 6.5,
                       ),
-                      const SizedBox(width: 5),
-                      const Text(
+                      SizedBox(width: 7),
+                      Text(
                         'PARKED',
                         style: TextStyle(
                           color: Color(0xFF0F172A),
@@ -1135,14 +1145,31 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Parked at ${vehicle.slotId} • Floor ${vehicle.floorId}',
+              'Floor ${vehicle.floorId}',
               style: GoogleFonts.plusJakartaSans(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
+            // Custom Content-Suited Parking Sonar Radar Graphic Animation
+            SizedBox(
+              height: 38,
+              width: double.infinity,
+              child: AnimatedBuilder(
+                animation: _parkedCardAnimController,
+                builder: (context, child) {
+                  return CustomPaint(
+                    painter: _ParkedVehicleSonarPainter(
+                      animationValue: _parkedCardAnimController.value,
+                      slotId: vehicle.slotId,
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
@@ -1232,4 +1259,167 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
 }
+
+class _LiveStatusPulseDot extends StatefulWidget {
+  final Color color;
+  final double size;
+
+  const _LiveStatusPulseDot({
+    required this.color,
+    this.size = 6.0,
+  });
+
+  @override
+  State<_LiveStatusPulseDot> createState() => _LiveStatusPulseDotState();
+}
+
+class _LiveStatusPulseDotState extends State<_LiveStatusPulseDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final progress = _controller.value;
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            Transform.scale(
+              scale: 1.0 + (progress * 1.8),
+              child: Opacity(
+                opacity: (1.0 - progress).clamp(0.0, 1.0),
+                child: Container(
+                  width: widget.size,
+                  height: widget.size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: widget.color.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              width: widget.size,
+              height: widget.size,
+              decoration: BoxDecoration(
+                color: widget.color,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.color.withValues(alpha: 0.8),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ParkedVehicleSonarPainter extends CustomPainter {
+  final double animationValue;
+  final String slotId;
+
+  _ParkedVehicleSonarPainter({
+    required this.animationValue,
+    required this.slotId,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final startX = 24.0;
+    final endX = size.width - 24.0;
+    final centerY = size.height / 2;
+
+    final linePaint = Paint()
+      ..color = const Color(0xFF818CF8).withValues(alpha: 0.3)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final double dashWidth = 5.0;
+    final double dashSpace = 4.0;
+    double currentX = startX + 16;
+    final targetX = endX - 16;
+
+    while (currentX < targetX) {
+      canvas.drawLine(
+        Offset(currentX, centerY),
+        Offset(math.min(currentX + dashWidth, targetX), centerY),
+        linePaint,
+      );
+      currentX += dashWidth + dashSpace;
+    }
+
+    // Concentric Sonar Radar Pulse Arcs emitting from car icon
+    for (int i = 0; i < 3; i++) {
+      final pulseProgress = (animationValue + (i * 0.33)) % 1.0;
+      final radius = 6.0 + (pulseProgress * 18.0);
+      final opacity = (1.0 - pulseProgress).clamp(0.0, 1.0) * 0.6;
+
+      final sonarPaint = Paint()
+        ..color = const Color(0xFF818CF8).withValues(alpha: opacity)
+        ..strokeWidth = 1.3
+        ..style = PaintingStyle.stroke;
+
+      canvas.drawCircle(Offset(startX, centerY), radius, sonarPaint);
+    }
+
+    // Signal Dots traveling along the radar path from car to stall
+    final pathLength = targetX - (startX + 16);
+    for (int i = 0; i < 2; i++) {
+      final signalProgress = (animationValue + (i * 0.5)) % 1.0;
+      final signalX = (startX + 16) + (pathLength * signalProgress);
+
+      final signalPaint = Paint()
+        ..color = const Color(0xFF38BDF8)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(signalX, centerY), 2.8, signalPaint);
+
+      final signalHaloPaint = Paint()
+        ..color = const Color(0xFF38BDF8).withValues(alpha: 0.35)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(signalX, centerY), 6.0, signalHaloPaint);
+    }
+
+    // Pulse ring around target stall pin
+    final targetPulse = (animationValue * 1.5) % 1.0;
+    final targetRadius = 6.0 + (targetPulse * 10.0);
+    final targetOpacity = (1.0 - targetPulse).clamp(0.0, 1.0) * 0.5;
+    final targetPaint = Paint()
+      ..color = const Color(0xFF10B981).withValues(alpha: targetOpacity)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawCircle(Offset(endX, centerY), targetRadius, targetPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ParkedVehicleSonarPainter oldDelegate) {
+    return oldDelegate.animationValue != animationValue ||
+        oldDelegate.slotId != slotId;
+  }
+}
+
+

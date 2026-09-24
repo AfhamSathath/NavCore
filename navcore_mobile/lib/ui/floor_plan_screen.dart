@@ -1417,7 +1417,7 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Parking Stall ${slot.id}',
+                        'Parking Spot ${slot.id}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.plusJakartaSans(
@@ -1543,7 +1543,7 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Stall ${slot.id} is currently occupied by another vehicle.',
+                            'Spot ${slot.id} is currently taken by another car.',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 11,
                               color: const Color(0xFF991B1B),
@@ -1566,7 +1566,7 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                     size: 18,
                   ),
                   label: Text(
-                    'NAVIGATE TO THIS SLOT',
+                    'NAVIGATE TO THIS SPOT',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
@@ -1611,7 +1611,7 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'You already have a vehicle parked at Stall ${_parkingService.currentVehicleLocation?.slotId}. Unpark it first or confirm replacement to park here.',
+                          'You already have a car parked at Spot ${_parkingService.currentVehicleLocation?.slotId}. Select replace to park here instead.',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
@@ -1633,7 +1633,7 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                     size: 18,
                   ),
                   label: Text(
-                    'PARK MY VEHICLE HERE',
+                    'PARK MY CAR HERE',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
@@ -1677,7 +1677,7 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'Vehicle Already Parked',
+                                    'Car Already Parked',
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w700,
@@ -1701,11 +1701,11 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                                     children: [
                                       const TextSpan(
                                         text:
-                                            'You already have a vehicle parked at ',
+                                            'You already have a car parked at ',
                                       ),
                                       TextSpan(
                                         text:
-                                            'Stall ${currentVehicle.slotId} (${currentVehicle.floorName})',
+                                            'Spot ${currentVehicle.slotId} (${currentVehicle.floorName})',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Color(0xFF0F172A),
@@ -1713,7 +1713,7 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                                       ),
                                       const TextSpan(
                                         text:
-                                            '.\n\nParking in a new slot is not allowed until you remove your current parked place notification. Would you like to remove your existing parking location and park here?',
+                                            '.\n\nWould you like to replace your saved spot and park here?',
                                       ),
                                     ],
                                   ),
@@ -2322,10 +2322,10 @@ class ArchitecturalFloorPainter extends CustomPainter {
     );
 
     final String hubText = floorNumber == 1
-        ? 'MAIN LOBBY & ESCALATOR'
+        ? 'MAIN ENTRANCE & ESCALATORS'
         : (isParkingFloor
-              ? 'ELEVATOR & STAIR CORE'
-              : 'ELEVATOR HUB & ESCALATOR');
+              ? 'ELEVATORS & STAIRS'
+              : 'ELEVATORS & ESCALATORS');
 
     _drawText(
       canvas,
@@ -2366,8 +2366,8 @@ class ArchitecturalFloorPainter extends CustomPainter {
     );
 
     final String rampLabel = isParkingFloor
-        ? '▼ EXIT / ENTRY RAMP'
-        : '▼ PARKING RAMP (B1/B2)';
+        ? '▼ ENTRANCE & EXIT'
+        : '▼ PARKING ENTRANCE';
     _drawText(
       canvas,
       rampLabel,
@@ -2491,7 +2491,7 @@ class ArchitecturalFloorPainter extends CustomPainter {
 
     _drawText(
       canvas,
-      '▲ DRIVING LANE ▲',
+      '▲ CAR LANE ▲',
       Offset(midX - 40, roomTopPadding + 6),
       const Color(0xFFFBBF24),
       fontSize: 7.0,

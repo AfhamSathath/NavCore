@@ -63,7 +63,7 @@ final defaultBuildingProfile = BuildingElevationProfile(
     FloorLevelConfig(
       floorId: 'fl-b1',
       floorNumber: -1,
-      name: 'B1 (Basement 1 Parking)',
+      name: 'B1 (Basement Parking)',
       relativeVectorMeters: -5.0,
       absoluteHeightMeters: 40.0,
       bandMinMeters: 0.0,
@@ -76,7 +76,7 @@ final defaultBuildingProfile = BuildingElevationProfile(
     FloorLevelConfig(
       floorId: 'fl-1',
       floorNumber: 1,
-      name: '1st (Ground / Main Entrance)',
+      name: '1st Floor (Main Entrance)',
       relativeVectorMeters: 0.0,
       absoluteHeightMeters: 45.0,
       bandMinMeters: 42.5,
@@ -89,7 +89,7 @@ final defaultBuildingProfile = BuildingElevationProfile(
     FloorLevelConfig(
       floorId: 'fl-2',
       floorNumber: 2,
-      name: '2nd (Fashion & Retail Hall)',
+      name: '2nd Floor (Fashion & Shops)',
       relativeVectorMeters: 5.0,
       absoluteHeightMeters: 50.0,
       bandMinMeters: 47.5,
@@ -102,7 +102,7 @@ final defaultBuildingProfile = BuildingElevationProfile(
     FloorLevelConfig(
       floorId: 'fl-3',
       floorNumber: 3,
-      name: '3rd (Electronics & Innovation)',
+      name: '3rd Floor (Electronics)',
       relativeVectorMeters: 10.0,
       absoluteHeightMeters: 55.0,
       bandMinMeters: 52.5,
@@ -115,7 +115,7 @@ final defaultBuildingProfile = BuildingElevationProfile(
     FloorLevelConfig(
       floorId: 'fl-4',
       floorNumber: 4,
-      name: '4th (Food Court & Dining)',
+      name: '4th Floor (Food & Dining)',
       relativeVectorMeters: 15.0,
       absoluteHeightMeters: 60.0,
       bandMinMeters: 57.5,

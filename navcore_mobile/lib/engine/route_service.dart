@@ -96,14 +96,17 @@ class RouteService {
           ? 'Take Escalator UP to Floor ${destination.floorNumber}'
           : 'Take Elevator to Floor ${destination.floorNumber}';
 
-      // Intermediate corridor waypoint
+      // Intermediate corridor waypoint toward floor transition zone
+      final latDelta = destination.location.latitude - userCoords.latitude;
+      final lonDelta = destination.location.longitude - userCoords.longitude;
+
       nodes.add(WaypointNode(
         id: 'wp-1',
         buildingId: buildingId,
         floorNumber: currentFloor,
         coords: GeodeticCoords(
-          latitude: userCoords.latitude + 0.0001,
-          longitude: userCoords.longitude + 0.0001,
+          latitude: userCoords.latitude + latDelta * 0.35,
+          longitude: userCoords.longitude + lonDelta * 0.35,
           height: userCoords.height,
         ),
         localX: 15.0,
@@ -119,8 +122,8 @@ class RouteService {
         buildingId: buildingId,
         floorNumber: currentFloor,
         coords: GeodeticCoords(
-          latitude: userCoords.latitude + 0.00015,
-          longitude: userCoords.longitude + 0.00015,
+          latitude: userCoords.latitude + latDelta * 0.50,
+          longitude: userCoords.longitude + lonDelta * 0.50,
           height: userCoords.height,
         ),
         localX: 20.0,

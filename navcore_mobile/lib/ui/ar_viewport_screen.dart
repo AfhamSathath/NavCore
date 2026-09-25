@@ -14,6 +14,7 @@ import '../engine/sensor_fusion_service.dart';
 import '../engine/route_service.dart';
 import '../engine/off_route_service.dart';
 import '../engine/vertical_transition_service.dart';
+import '../engine/ar_pose_engine.dart';
 import '../data/building_data_service.dart';
 import 'theme/app_theme.dart';
 
@@ -68,6 +69,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       VerticalTransitionService();
   final BuildingDataService _buildingDataService = BuildingDataService();
 
+  late final TiltFloorMapper _tiltFloorMapper;
+  late final ARFloorPointCalculator _floorPointCalculator;
+  late final ARShopMarkerManager _shopMarkerManager;
+
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
 
@@ -90,6 +95,19 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
     super.initState();
     _initCamera();
     _buildingDataService.loadBuildingConfig();
+
+    final initialFloorIdx = widget.currentFloor.floorNumber < 0
+        ? 0
+        : widget.currentFloor.floorNumber;
+    _tiltFloorMapper = TiltFloorMapper(
+      initialFloorIndex: initialFloorIdx,
+      thetaStepPerFloor: 10.0,
+      thetaDeadzone: 4.0,
+      hysteresisMargin: 2.5,
+    );
+    _floorPointCalculator = ARFloorPointCalculator(floorToFloorHeight: 15.0);
+    _shopMarkerManager = ARShopMarkerManager();
+    _shopMarkerManager.loadShops(widget.destinations);
     final activeAnchor = widget.destinations.isNotEmpty
         ? widget.destinations.first.location
         : entranceAnchor;
@@ -243,60 +261,107 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       gpsCoords: effectiveUserCoords,
     );
 
-    // Resolves target floor dynamically based on continuous mobile camera pitch tilt across Floors 1-10
-    int activeTargetFloorNumber = widget.currentFloor.floorNumber;
-    if (_floorFilterMode == ARFloorFilterMode.autoTilt) {
-      final pitch = widget.phonePitchDegrees;
-      if (pitch > 40.0) {
-        activeTargetFloorNumber = 10;
-      } else if (pitch > 33.0) {
-        activeTargetFloorNumber = 9;
-      } else if (pitch > 26.0) {
-        activeTargetFloorNumber = 8;
-      } else if (pitch > 20.0) {
-        activeTargetFloorNumber = 7;
-      } else if (pitch > 14.0) {
-        activeTargetFloorNumber = 6;
-      } else if (pitch > 9.0) {
-        activeTargetFloorNumber = 5;
-      } else if (pitch > 4.0) {
-        activeTargetFloorNumber = 4;
-      } else if (pitch > -2.0) {
-        activeTargetFloorNumber = 3;
-      } else if (pitch > -8.0) {
-        activeTargetFloorNumber = 2;
-      } else {
-        activeTargetFloorNumber = 1;
-      }
+    // 1. Device pose extraction (4x4 transform matrix decomposed to camera pos, orientation quaternion, and pitch θ)
+    final cameraPose = ARCameraPose.fromSensors(
+      pitchDegrees: fusedPose.pitchDegrees,
+      headingDegrees: fusedPose.headingDegrees,
+      rollDegrees: fusedPose.rollDegrees,
+      cameraY: 1.65,
+    );
+
+    // 2. Pitch-to-floor index mapping with deadzone and hysteresis band
+    final int baseFloorIdx = widget.currentFloor.floorNumber < 0
+        ? 0
+        : widget.currentFloor.floorNumber;
+    const int maxFloorIdx = 4;
+    final int resolvedFloorIndex = _tiltFloorMapper.updateFloorIndex(
+      pitchDegrees: cameraPose.pitchDegrees,
+      baseFloorIndex: baseFloorIdx,
+      maxFloorIndex: maxFloorIdx,
+    );
+
+    // 3. Floor point calculation via ray-plane intersection
+    final rayWorldPoint = _floorPointCalculator.calculateRayFloorIntersection(
+      cameraPose: cameraPose,
+      floorIndex: resolvedFloorIndex,
+    );
+    final double rayDistanceMeters = rayWorldPoint != null
+        ? rayWorldPoint.length
+        : 15.0;
+
+    // Resolves camera view distance dynamically based on camera pitch tilt angle:
+    final double pitch = cameraPose.pitchDegrees;
+    final double absPitch = pitch.abs();
+    int maxVisibleFloorOffset = 1;
+    double maxViewDistanceMeters = 100.0;
+
+    if (absPitch > 22.0) {
+      maxVisibleFloorOffset = 10;
+      maxViewDistanceMeters = math.max(350.0, rayDistanceMeters * 4.0);
+    } else if (absPitch > 12.0) {
+      maxVisibleFloorOffset = 3;
+      maxViewDistanceMeters = math.max(220.0, rayDistanceMeters * 3.0);
+    } else if (absPitch > 5.0) {
+      maxVisibleFloorOffset = 2;
+      maxViewDistanceMeters = math.max(150.0, rayDistanceMeters * 2.0);
+    } else {
+      maxVisibleFloorOffset = 1;
+      maxViewDistanceMeters = math.max(100.0, rayDistanceMeters);
     }
 
-    final filteredPOIs = widget.destinations.where((poi) {
+    // 4. Shop marker filtering (Fixes overlap bug)
+    // On floorIndex change, previous-floor markers are removed from scene graph entirely & mount ONLY shopsByFloor[resolvedFloorIndex]
+    _shopMarkerManager.loadShops(widget.destinations);
+
+    List<DestinationPOI> candidatePOIs;
+    if (_floorFilterMode == ARFloorFilterMode.currentFloorOnly) {
+      candidatePOIs = widget.destinations
+          .where((poi) => poi.floorNumber == widget.currentFloor.floorNumber)
+          .toList();
+    } else if (_floorFilterMode == ARFloorFilterMode.autoTilt) {
+      // Resolve single active target floor number from camera pitch tilt position
+      final int targetFloorNumber = (resolvedFloorIndex == 0)
+          ? (cameraPose.pitchDegrees < -6.0 || widget.currentFloor.floorNumber < 0
+              ? -1
+              : 1)
+          : resolvedFloorIndex;
+
+      // Mount ONLY shops belonging to the camera-targeted floor
+      candidatePOIs = widget.destinations
+          .where((poi) => poi.floorNumber == targetFloorNumber)
+          .toList();
+
+      if (_selectedPOI != null &&
+          !candidatePOIs.any((p) => p.id == _selectedPOI!.id)) {
+        candidatePOIs.add(_selectedPOI!);
+      }
+    } else {
+      candidatePOIs = widget.destinations;
+    }
+
+    final filteredPOIs = candidatePOIs.where((poi) {
       final matchesSearch =
           poi.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           poi.category.toLowerCase().contains(_searchQuery.toLowerCase());
 
-      bool matchesFloor = true;
-      if (_floorFilterMode == ARFloorFilterMode.currentFloorOnly) {
-        matchesFloor = (poi.floorNumber == widget.currentFloor.floorNumber);
-      }
-
-      // Hide basement parking from shop discovery unless Parking category is explicitly chosen, user is on basement floor, or POI is user's target destination
       final isSelectedTarget =
           _selectedPOI != null && poi.id == _selectedPOI!.id;
+
+      // Hide basement parking from shop discovery only when level pitch, user is on upper floor, and non-parking category is selected
       final isParkingCategory =
           _selectedCategory == 'Parking' || _selectedCategory == 'PARKING';
       if (!isSelectedTarget &&
           !isParkingCategory &&
-          widget.currentFloor.floorNumber > 0) {
+          widget.currentFloor.floorNumber > 0 &&
+          pitch >= -5.0 &&
+          _floorFilterMode != ARFloorFilterMode.allFloors) {
         if (poi.floorNumber < 0 ||
             poi.category.toUpperCase().contains('PARK')) {
           return false;
         }
       }
 
-      return matchesSearch &&
-          matchesFloor &&
-          _matchesCategory(poi, _selectedCategory);
+      return matchesSearch && _matchesCategory(poi, _selectedCategory);
     }).toList();
 
     final activePOI = _isNavigatingActive ? _selectedPOI : null;
@@ -307,15 +372,30 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
     int activeDistM = 0;
 
     if (activePOI != null) {
+      GeodeticCoords targetNavCoords = activePOI.location;
+      if (_activeRoute != null &&
+          _activeRoute!.waypoints.length > 1 &&
+          activePOI.floorNumber != widget.currentFloor.floorNumber) {
+        final transitionWp = _activeRoute!.waypoints.firstWhere(
+          (wp) =>
+              wp.type == WaypointType.escalator ||
+              wp.type == WaypointType.elevator ||
+              wp.type == WaypointType.stairs,
+          orElse: () => _activeRoute!.waypoints[1],
+        );
+        targetNavCoords = transitionWp.coords;
+      }
+
       activeDistM = calculateAccurate3DDistance(
         effectiveUserCoords,
         activePOI.location,
         userFloorNumber: widget.currentFloor.floorNumber,
         targetFloorNumber: activePOI.floorNumber,
       ).round();
+
       activeBearing = calculateBearingAngle(
         effectiveUserCoords,
-        activePOI.location,
+        targetNavCoords,
       );
       activeRelAngle = activeBearing - fusedPose.headingDegrees;
       while (activeRelAngle > 180) {
@@ -334,15 +414,35 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         .clamp(-250.0, 250.0);
 
     // Multi-Floor Spatial Collision Avoidance Layout Pass for Ambient Floating Cards
-    const double topSafeLimit = 185.0;
+    const double topSafeLimit = 160.0;
     final double bottomSafeLimit = math.max(
-      screenHeight - 230.0,
+      screenHeight - 220.0,
       topSafeLimit + 80.0,
     );
-    final List<Map<String, dynamic>> positionedCards = [];
 
-    for (int i = 0; i < filteredPOIs.length; i++) {
-      final poi = filteredPOIs[i];
+    // 1. Sort POIs deterministically by floorNumber descending (Floor 10 down to B1), then by relAngle
+    final List<DestinationPOI>
+    sortedPOIs = List<DestinationPOI>.from(filteredPOIs)
+      ..sort((a, b) {
+        if (a.floorNumber != b.floorNumber) {
+          return b.floorNumber.compareTo(a.floorNumber);
+        }
+        final bearingA = calculateBearingAngle(effectiveUserCoords, a.location);
+        final bearingB = calculateBearingAngle(effectiveUserCoords, b.location);
+        return bearingA.compareTo(bearingB);
+      });
+
+    final List<Map<String, dynamic>> rawPositioned = [];
+
+    for (int i = 0; i < sortedPOIs.length; i++) {
+      final poi = sortedPOIs[i];
+      final shopENU = _floorPointCalculator.calculateShopENUVector(
+        userCoords: effectiveUserCoords,
+        shopCoords: poi.location,
+        userFloorNumber: widget.currentFloor.floorNumber,
+        shopFloorNumber: poi.floorNumber,
+      );
+
       int distM = calculateAccurate3DDistance(
         effectiveUserCoords,
         poi.location,
@@ -360,69 +460,67 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         relAngle += 360;
       }
 
-      // Accurate Optical Perspective Camera Projection (65° Horizontal FOV)
+      // Accurate Optical Perspective Camera Pinhole Projection (65° Horizontal FOV)
       final double hFovRad = (65.0 * math.pi) / 180.0;
       final double focalPx = (screenWidth / 2.0) / math.tan(hFovRad / 2.0);
       final double relAngleRad = (relAngle * math.pi) / 180.0;
-      final double normX =
-          math.tan(relAngleRad.clamp(-1.2, 1.2)) *
-          (focalPx / (screenWidth * 0.5));
-      double posX = (screenWidth / 2 - 92.5) + (normX * (screenWidth * 0.46));
 
-      // Physically Realistic 3D AR Perspective & Pitch Mapping:
-      // Distance Depth Offset: Farther places (higher distM) sit higher up towards the horizon.
-      final double distHorizonOffset = (distM.clamp(5, 300) - 15.0) * 1.8;
+      // True optical pinhole X projection: X = (ScreenWidth / 2 - CardWidth / 2) + tan(relAngle) * focalPx
+      const double cardWidth = 195.0;
+      double posX =
+          (screenWidth / 2.0 - cardWidth / 2.0) +
+          (math.tan(relAngleRad.clamp(-1.25, 1.25)) * focalPx);
 
-      // Dynamic Camera Pitch Offset: Tilting UP (+ pitch) shifts horizon down, bringing far/upper places into view.
-      final double pitchShiftPx = widget.phonePitchDegrees * 5.5;
+      // Real 3D Geometric Vertical Projection incorporating floor elevation delta Δh & distance d_2D:
+      final double floorDelta =
+          (poi.floorNumber - widget.currentFloor.floorNumber).toDouble();
+      final double elevationDeltaMeters =
+          floorDelta *
+          15.0; // 15.0m height per floor level (increased vertical separation)
+      final double horizontalDistMeters = math.max(distM.toDouble(), 4.0);
+
+      // Elevation pitch angle: theta = atan(Δh / d_2D)
+      final double elevationAngleRad = math.atan2(
+        elevationDeltaMeters,
+        horizontalDistMeters,
+      );
+      final double pitchOffsetPx =
+          (widget.phonePitchDegrees * (math.pi / 180.0)) * focalPx * 0.45;
 
       double posY;
-      if (_floorFilterMode == ARFloorFilterMode.allFloors) {
-        // Multi-floor spatial projection combining floor level + distance horizon + camera pitch tilt
-        final double floorLevel = poi.floorNumber.toDouble().clamp(-2.0, 10.0);
+      if (_floorFilterMode == ARFloorFilterMode.allFloors ||
+          _floorFilterMode == ARFloorFilterMode.autoTilt) {
+        // Multi-floor/auto-tilt mode: Pinhole elevation projection + pitch shift
         posY =
-            (screenHeight * 0.50) -
-            ((floorLevel - 1.0) * 28.0) -
-            distHorizonOffset +
-            pitchShiftPx;
+            (screenHeight * 0.46) -
+            (math.tan(elevationAngleRad) * focalPx * 0.85) +
+            pitchOffsetPx;
       } else {
-        // Single floor / Auto-tilt mode
-        final double floorDelta = (poi.floorNumber - activeTargetFloorNumber)
-            .toDouble();
-        posY =
-            (screenHeight * 0.50) -
-            (floorDelta * 40.0) -
-            distHorizonOffset +
-            pitchShiftPx;
+        // Current floor only mode: Level horizon projection + pitch shift
+        posY = (screenHeight * 0.46) + pitchOffsetPx;
       }
 
-      // Distance & Pitch Distance Sensitivity Opacity:
       double cardOpacity = 1.0;
       bool isPitchFocused = true;
       if (_floorFilterMode == ARFloorFilterMode.autoTilt) {
-        isPitchFocused = (poi.floorNumber == activeTargetFloorNumber);
-        final floorDelta = (poi.floorNumber - activeTargetFloorNumber).abs();
-        if (floorDelta == 0) {
-          cardOpacity = 1.0;
-        } else if (floorDelta == 1) {
-          cardOpacity = 0.75;
-        } else {
-          cardOpacity = 0.35;
-        }
+        final int targetFloorNum = resolvedFloorIndex == 0
+            ? (widget.currentFloor.floorNumber < 0 ? -1 : 0)
+            : resolvedFloorIndex;
+        final fDelta = (poi.floorNumber - targetFloorNum).abs();
+        cardOpacity = fDelta == 0 ? 1.0 : (fDelta == 1 ? 0.82 : 0.50);
+        isPitchFocused = fDelta <= maxVisibleFloorOffset;
       } else if (_floorFilterMode == ARFloorFilterMode.allFloors) {
-        // Distance-based fade for extreme far places unless camera is tilted up to view horizon
-        if (distM > 100 && widget.phonePitchDegrees < 10.0) {
-          cardOpacity = 0.60;
+        if (distM > 120 && widget.phonePitchDegrees < 10.0) {
+          cardOpacity = 0.65;
         } else {
           cardOpacity = 1.0;
         }
         isPitchFocused = true;
       }
 
-      // Dynamic 3D Distance Scale Factor (Close = Larger 1.25x, Far = Smaller 0.65x):
-      final double distanceScaleFactor = (1.20 - ((distM - 5.0) * 0.007)).clamp(
-        0.65,
-        1.25,
+      final double distanceScaleFactor = (1.18 - ((distM - 5.0) * 0.006)).clamp(
+        0.70,
+        1.20,
       );
 
       final spatialMetrics = calculateRealWorldSpatialMetrics(
@@ -435,81 +533,106 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
         ceilingHeightMeters: widget.currentFloor.ceilingHeightMeters,
       );
 
-      positionedCards.add({
+      rawPositioned.add({
         'poi': poi,
         'distM': distM,
         'bearing': bearing,
         'directionStr': directionStr,
         'relAngle': relAngle,
+        'rawPosX': posX,
         'posX': posX.clamp(12.0, screenWidth - 190.0),
         'posY': posY.clamp(topSafeLimit, bottomSafeLimit),
         'cardOpacity': cardOpacity,
         'isPitchFocused': isPitchFocused,
         'distanceScale': distanceScaleFactor,
         'spatialMetrics': spatialMetrics,
+        'shopENU': shopENU,
       });
     }
 
-    // Multi-pass 2D Spatial Anti-Overlap Engine: Stacks & staggers cards cleanly without ANY overlap
-    const double cardW = 185.0;
-    const double cardH = 56.0;
+    // 2. Guaranteed 2D Spatial Collision Avoidance & Multi-Lane Layout Engine
+    // Uses real physical card bounding box height (125px) + width (195px) and multi-pass relaxation
+    const double baseCardW = 195.0;
+    const double baseCardH =
+        125.0; // Real physical height including card, dotted stem, & ground dot
+    const double minGapX = 14.0;
+    const double minGapY = 16.0;
+    final List<Map<String, dynamic>> positionedCards = [];
 
-    for (int pass = 0; pass < 4; pass++) {
-      for (int i = 0; i < positionedCards.length; i++) {
-        for (int j = 0; j < i; j++) {
-          final p1 = positionedCards[i];
-          final p2 = positionedCards[j];
+    for (final item in rawPositioned) {
+      final poi = item['poi'] as DestinationPOI;
+      double curX = item['posX'] as double;
+      double curY = item['posY'] as double;
+      final double cardScale = (item['distanceScale'] as double? ?? 1.0);
+      final double effectiveW = baseCardW * cardScale;
+      final double effectiveH = baseCardH * cardScale;
 
-          double x1 = p1['posX'] as double;
-          double y1 = p1['posY'] as double;
-          final double x2 = p2['posX'] as double;
-          final double y2 = p2['posY'] as double;
+      // Vertical Floor Banding: Apply explicit vertical lane offset based on floor level difference
+      // Higher floors place HIGHER on screen (-Y), lower floors place LOWER on screen (+Y)
+      final int floorDiff = poi.floorNumber - widget.currentFloor.floorNumber;
+      curY = (curY - (floorDiff * 45.0)).clamp(topSafeLimit, bottomSafeLimit);
 
-          final double dx = (x1 - x2).abs();
-          final double dy = (y1 - y2).abs();
+      bool hasCollision = true;
+      int iterations = 0;
 
-          if (dx < cardW && dy < cardH) {
-            final poi1 = p1['poi'] as DestinationPOI;
-            final poi2 = p2['poi'] as DestinationPOI;
+      while (hasCollision && iterations < 25) {
+        iterations++;
+        hasCollision = false;
 
-            if (poi1.floorNumber < poi2.floorNumber) {
-              y1 = (y1 + (cardH - dy + 6.0)).clamp(
-                topSafeLimit,
-                bottomSafeLimit,
-              );
-            } else if (poi1.floorNumber > poi2.floorNumber) {
-              y1 = (y1 - (cardH - dy + 6.0)).clamp(
-                topSafeLimit,
-                bottomSafeLimit,
-              );
+        for (final existing in positionedCards) {
+          final double exX = existing['posX'] as double;
+          final double exY = existing['posY'] as double;
+          final double exScale = (existing['distanceScale'] as double? ?? 1.0);
+          final double exW = baseCardW * exScale;
+          final double exH = baseCardH * exScale;
+
+          // Check 2D bounding box intersection with real physical height
+          final bool overlapX =
+              (curX < exX + exW + minGapX) &&
+              (curX + effectiveW + minGapX > exX);
+          final bool overlapY =
+              (curY < exY + exH + minGapY) &&
+              (curY + effectiveH + minGapY > exY);
+
+          if (overlapX && overlapY) {
+            hasCollision = true;
+
+            final double shiftXRight = exX + exW + minGapX;
+            final double shiftXLeft = exX - effectiveW - minGapX;
+            final double shiftYDown = exY + exH + minGapY;
+            final double shiftYUp = exY - effectiveH - minGapY;
+
+            // Prefer vertical lane shift to preserve horizontal compass bearing accuracy
+            if (shiftYDown + effectiveH <= bottomSafeLimit) {
+              curY = shiftYDown;
+            } else if (shiftXRight + effectiveW <= screenWidth - 12.0) {
+              curX = shiftXRight;
+            } else if (shiftYUp >= topSafeLimit) {
+              curY = shiftYUp;
+            } else if (shiftXLeft >= 12.0) {
+              curX = shiftXLeft;
             } else {
-              // Same floor: Stagger horizontally & vertically
-              if (y1 <= y2) {
-                y1 = (y2 - cardH - 6.0).clamp(topSafeLimit, bottomSafeLimit);
-                if (y1 <= topSafeLimit + 2.0) {
-                  x1 = (x2 + (i % 2 == 0 ? 110.0 : -110.0)).clamp(
-                    12.0,
-                    screenWidth - 190.0,
-                  );
-                  y1 = (y2 + cardH + 6.0).clamp(topSafeLimit, bottomSafeLimit);
-                }
-              } else {
-                y1 = (y2 + cardH + 6.0).clamp(topSafeLimit, bottomSafeLimit);
-              }
+              curY = (curY + 40.0).clamp(topSafeLimit, bottomSafeLimit);
+              curX = (curX + 30.0).clamp(12.0, screenWidth - effectiveW - 12.0);
             }
-            p1['posX'] = x1;
-            p1['posY'] = y1;
+
+            curX = curX.clamp(12.0, screenWidth - effectiveW - 12.0);
+            curY = curY.clamp(topSafeLimit, bottomSafeLimit);
           }
         }
       }
+
+      item['posX'] = curX;
+      item['posY'] = curY;
+      positionedCards.add(item);
     }
 
     // Dynamic 3D AR Target Badge Screen Offset based on activeRelAngle & Pitch
-    final normTargetX = (activeRelAngle / 30.0).clamp(-1.2, 1.2);
+    final normTargetX = (activeRelAngle / 30.0).clamp(-1.0, 1.0);
     final targetBadgePosX =
-        (screenWidth / 2) + (normTargetX * (screenWidth * 0.35));
-    final targetBadgePosY = ((screenHeight * 0.22) + (pitchOffsetPx * 0.5))
-        .clamp(100.0, 240.0);
+        (screenWidth / 2) + (normTargetX * (screenWidth * 0.40));
+    final targetBadgePosY = ((screenHeight * 0.20) + (pitchOffsetPx * 0.5))
+        .clamp(90.0, 250.0);
 
     // Sort positioned cards by distance and floor (farther dist first -> renders behind closer places)
     positionedCards.sort((a, b) {
@@ -527,45 +650,28 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       return (b['distM'] as int).compareTo(a['distM'] as int);
     });
 
-    // Filter cards to visible camera FOV (relAngle.abs() <= 85°), and allow up to 35 places so all places display
-    final double fovLimit = _floorFilterMode == ARFloorFilterMode.allFloors
-        ? 90.0
-        : 75.0;
+    // Strict Camera Optical FOV Directional Visibility Filtering (~35° angle cone)
+    // A shop is visible ONLY when the camera is pointing directly towards its location.
+    const double fovLimit = 35.0;
+
     List<Map<String, dynamic>> visibleCardsInFOV = positionedCards
         .where((data) {
           final relAngle = (data['relAngle'] as double);
-          return relAngle.abs() <= fovLimit;
+          final distM = (data['distM'] as int);
+          final poi = (data['poi'] as DestinationPOI);
+          final isTarget = activePOI?.id == poi.id;
+
+          if (isTarget) return true;
+
+          final double rawPosX = data['rawPosX'] as double? ?? 0.0;
+          final bool isInCameraFOV = relAngle.abs() <= fovLimit;
+          final bool isOnScreenHorizontally =
+              rawPosX >= -40.0 && rawPosX <= (screenWidth - 140.0);
+
+          return isInCameraFOV && isOnScreenHorizontally && distM <= maxViewDistanceMeters;
         })
-        .take(35)
+        .take(12)
         .toList();
-
-    if (visibleCardsInFOV.isEmpty &&
-        !_isNavigatingActive &&
-        positionedCards.isNotEmpty) {
-      visibleCardsInFOV = positionedCards.take(12).toList();
-    }
-
-    // Determine nearest store orientation for out-of-view spatial alert guidance
-    double nearestRelAngle = 0.0;
-    DestinationPOI? nearestPOI;
-    if (positionedCards.isNotEmpty) {
-      final sortedByDist = List<Map<String, dynamic>>.from(positionedCards)
-        ..sort((a, b) {
-          final pA = a['poi'] as DestinationPOI;
-          final pB = b['poi'] as DestinationPOI;
-          final groundA = pA.floorNumber > 0 ? 0 : 1;
-          final groundB = pB.floorNumber > 0 ? 0 : 1;
-          if (groundA != groundB) return groundA.compareTo(groundB);
-          return (a['distM'] as int).compareTo(b['distM'] as int);
-        });
-      nearestRelAngle = sortedByDist.first['relAngle'] as double;
-      nearestPOI = sortedByDist.first['poi'] as DestinationPOI;
-    }
-
-    final bool isPitchExtreme =
-        widget.phonePitchDegrees < -25.0 || widget.phonePitchDegrees > 55.0;
-    final bool isNoKnownPlacesInView =
-        !_isNavigatingActive && visibleCardsInFOV.isEmpty;
 
     // Evaluate off-route compliance if active route is available
     if (_activeRoute != null && activePOI != null) {
@@ -723,6 +829,8 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                         activePOI.category.toUpperCase().contains('PARK') ||
                         activePOI.name.toUpperCase().contains('CAR') ||
                         activePOI.name.toUpperCase().contains('PARKED'),
+                    userFloorNumber: widget.currentFloor.floorNumber,
+                    targetFloorNumber: activePOI.floorNumber,
                   ),
                 ),
               ),
@@ -736,18 +844,23 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                     activePOI.category.toUpperCase().contains('PARK') ||
                     activePOI.name.toUpperCase().contains('CAR') ||
                     activePOI.name.toUpperCase().contains('PARKED');
-                return Positioned(
-                  left: (targetBadgePosX - 120).clamp(
-                    16.0,
-                    screenWidth - 256.0,
-                  ),
+                const double badgeWidth = 210.0;
+                final double badgeLeft = (targetBadgePosX - (badgeWidth / 2))
+                    .clamp(
+                      12.0,
+                      math.max(12.0, screenWidth - badgeWidth - 12.0),
+                    );
+                return AnimatedPositioned(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  left: badgeLeft,
                   top: targetBadgePosY,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Glowing 3D AR Distance Box
                       Container(
-                        width: 240,
+                        width: badgeWidth,
                         padding: const EdgeInsets.symmetric(
                           vertical: 14,
                           horizontal: 16,
@@ -827,11 +940,15 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                               builder: (context, isDev, child) {
                                 if (!isDev) {
                                   return Text(
-                                    activePOI.floorNumber < 0 ? "Basement B${activePOI.floorNumber.abs()}" : "Floor ${activePOI.floorNumber}",
+                                    activePOI.floorNumber < 0
+                                        ? "Basement B${activePOI.floorNumber.abs()}"
+                                        : "Floor ${activePOI.floorNumber}",
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w700,
-                                      color: Colors.white.withValues(alpha: 0.95),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.95,
+                                      ),
                                     ),
                                   );
                                 }
@@ -843,7 +960,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 9,
                                         fontWeight: FontWeight.w800,
-                                        color: Colors.white.withValues(alpha: 0.95),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.95,
+                                        ),
                                         letterSpacing: 0.5,
                                       ),
                                     ),
@@ -855,7 +974,9 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 8.5,
                                         fontWeight: FontWeight.w800,
-                                        color: Colors.white.withValues(alpha: 0.9),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
                                         letterSpacing: 0.8,
                                       ),
                                     ),
@@ -926,7 +1047,10 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                     floorRelationStr = '$floorLabel • ▼ DOWN';
                   }
 
-                  return Positioned(
+                  return AnimatedPositioned(
+                    key: ValueKey('poi-card-${poi.id}'),
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
                     left: posX,
                     top: posY,
                     child: AnimatedOpacity(
@@ -940,9 +1064,24 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                           children: [
                             GestureDetector(
                               onTap: () {
+                                final activeMallAnchor =
+                                    widget.destinations.isNotEmpty
+                                    ? widget.destinations.first.location
+                                    : entranceAnchor;
+                                final effectiveUser = getEffectiveUserCoords(
+                                  widget.userCoords,
+                                  activeMallAnchor,
+                                );
                                 setState(() {
                                   _selectedPOI = poi;
                                   _isNavigatingActive = true;
+                                  _activeRoute = _routeService.calculateRoute(
+                                    buildingId: 'mall-01',
+                                    userCoords: effectiveUser,
+                                    currentFloor:
+                                        widget.currentFloor.floorNumber,
+                                    destination: poi,
+                                  );
                                 });
                                 widget.onSelectDestination(poi);
                               },
@@ -1118,186 +1257,7 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
               ),
             ),
 
-          // 4b. Real-World AR Spatial Alert Banners & Off-Screen Edge Direction Pointers
-          // Case A: Camera Tilted Too Low or High (Pitch Alert)
-          if (isPitchExtreme)
-            Positioned(
-              top: screenHeight * 0.38,
-              left: 20,
-              right: 20,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xEE1E1B4B),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: const Color(0xFF6366F1),
-                    width: 1.5,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x666366F1), blurRadius: 18),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF6366F1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        widget.phonePitchDegrees < -25.0
-                            ? LucideIcons.arrowUp
-                            : LucideIcons.arrowDown,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'CAMERA TILTED ${widget.phonePitchDegrees < -25.0 ? "DOWNWARDS" : "UPWARDS"}',
-                            style: GoogleFonts.plusJakartaSans(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Level phone upright to view real-world indoor floor AR overlays.',
-                            style: GoogleFonts.plusJakartaSans(
-                              color: const Color(0xFFA5B4FC),
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
 
-          // Case B: Ambient Discovery Mode - Known Places Not Visible in Camera FOV
-          if (isNoKnownPlacesInView && !isPitchExtreme)
-            Positioned(
-              top: screenHeight * 0.36,
-              left: 20,
-              right: 20,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFA0F172A),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: const Color(0xFFF59E0B),
-                    width: 1.5,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x55F59E0B), blurRadius: 20),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFF59E0B),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            LucideIcons.compass,
-                            color: Colors.black,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'NO KNOWN PLACES IN CAMERA VIEW',
-                                style: GoogleFonts.plusJakartaSans(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                positionedCards.isNotEmpty
-                                    ? 'Turn phone ${nearestRelAngle < 0 ? "LEFT ◀" : "RIGHT ▶"} (${nearestRelAngle.abs().toStringAsFixed(0)}°) to view ${nearestPOI?.name ?? "store"} (${nearestPOI?.category ?? ""} • ${nearestPOI != null && nearestPOI.floorNumber < 0 ? "B${nearestPOI.floorNumber.abs()}" : "Floor ${nearestPOI?.floorNumber ?? 1}"} • ${nearestPOI?.rating ?? 4.8}★)'
-                                    : 'No stores on Floor ${activeTargetFloorNumber < 0 ? "B${activeTargetFloorNumber.abs()}" : activeTargetFloorNumber} matching filter.',
-                                style: GoogleFonts.plusJakartaSans(
-                                  color: const Color(0xFFFCD34D),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (positionedCards.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF334155)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              nearestRelAngle < 0
-                                  ? LucideIcons.arrowLeft
-                                  : LucideIcons.arrowRight,
-                              color: const Color(0xFF38BDF8),
-                              size: 14,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                '${positionedCards.length} STORES ON FLOORS 1-10 LOCATED ${nearestRelAngle < 0 ? "TO YOUR LEFT ◀" : "TO YOUR RIGHT ▶"} (${nearestPOI?.name.toUpperCase() ?? ""})',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.plusJakartaSans(
-                                  color: const Color(0xFF38BDF8),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
 
           // 5. Top Controls & Navigation Guidance HUD Banner
           Positioned(
@@ -1463,15 +1423,6 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
                                             CrossAxisAlignment.start,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          /* const Text(
-                                            '',
-                                            style: TextStyle(
-                                              color: Color(0xFF00E5FF),
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.w900,
-                                              letterSpacing: 0.5,
-                                            // ), */
-                                          // ),
                                           Text(
                                             guidanceText,
                                             maxLines: 1,
@@ -2188,13 +2139,23 @@ class _ARViewportScreenState extends State<ARViewportScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D9488) : const Color(0xDD0D1B2A),
+          color: isSelected ? const Color(0xFF2563EB) : const Color(0xDD0D1B2A),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF14B8A6)
+                ? const Color(0xFF60A5FA)
                 : const Color(0xFF1E293B),
+            width: isSelected ? 1.5 : 1.0,
           ),
+          boxShadow: isSelected
+              ? const [
+                  BoxShadow(
+                    color: Color(0x442563EB),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
@@ -2231,23 +2192,40 @@ class ARGroundPathwayPainter extends CustomPainter {
   final int distanceMeters;
   final double phonePitchDegrees;
   final bool isParkedVehicle;
+  final int userFloorNumber;
+  final int targetFloorNumber;
 
   ARGroundPathwayPainter({
     required this.relativeAngleDegrees,
     required this.distanceMeters,
     this.phonePitchDegrees = 0.0,
     this.isParkedVehicle = false,
+    this.userFloorNumber = 1,
+    this.targetFloorNumber = 1,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final pitchShift = (phonePitchDegrees * 3.0).clamp(-120.0, 120.0);
+    final pitchShift = (phonePitchDegrees * 3.5).clamp(-140.0, 140.0);
     final centerBottom = Offset(size.width / 2, size.height - 110);
 
-    final normX = (relativeAngleDegrees / 45.0).clamp(-1.0, 1.0);
+    final normX = (relativeAngleDegrees / 30.0).clamp(-1.0, 1.0);
+    final targetX = (size.width / 2) + (normX * (size.width * 0.40));
+
+    // Dynamic depth positioning for laser landing point and chevrons
+    final double distRatio = ((distanceMeters.clamp(3, 150) - 3.0) / 147.0)
+        .clamp(0.0, 1.0);
+    final double floorDelta = (targetFloorNumber - userFloorNumber).toDouble();
+    final double floorElevShift = (floorDelta * 24.0).clamp(-75.0, 75.0);
+
+    final targetY =
+        (size.height * 0.62) -
+        (distRatio * (size.height * 0.18)) -
+        floorElevShift +
+        pitchShift;
     final targetTop = Offset(
-      (size.width / 2) + (normX * (size.width * 0.35)),
-      (size.height * 0.52) + pitchShift,
+      targetX.clamp(16.0, size.width - 16.0),
+      targetY.clamp(size.height * 0.25, size.height * 0.78),
     );
 
     final primaryColor = isParkedVehicle
@@ -2281,22 +2259,22 @@ class ARGroundPathwayPainter extends CustomPainter {
 
     // 2. Destination Ground Target Landing Ring
     final targetRingPaint = Paint()
-      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.70)
+      ..color = primaryColor.withValues(alpha: 0.75)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8;
+      ..strokeWidth = 2.0;
 
     final targetRingGlow = Paint()
-      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.35)
+      ..color = primaryColor.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 5.0
+      ..strokeWidth = 6.0
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
     canvas.drawOval(
-      Rect.fromCenter(center: targetTop, width: 32, height: 14),
+      Rect.fromCenter(center: targetTop, width: 34, height: 15),
       targetRingGlow,
     );
     canvas.drawOval(
-      Rect.fromCenter(center: targetTop, width: 32, height: 14),
+      Rect.fromCenter(center: targetTop, width: 34, height: 15),
       targetRingPaint,
     );
 
@@ -2331,15 +2309,15 @@ class ARGroundPathwayPainter extends CustomPainter {
         ..lineTo(-7 * scale, 6 * scale)
         ..close();
 
-      // Outer cyan neon glow
+      // Outer neon glow
       final glowPaint = Paint()
-        ..color = const Color(0xFF00E5FF).withValues(alpha: alpha * 0.5)
+        ..color = primaryColor.withValues(alpha: alpha * 0.5)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
       // Primary gradient filled sleek chevron
       final fillPaint = Paint()
         ..color = Color.lerp(
-          const Color(0xFF00E5FF),
+          primaryColor,
           const Color(0xFF10B981),
           t,
         )!.withValues(alpha: alpha)
@@ -2356,7 +2334,9 @@ class ARGroundPathwayPainter extends CustomPainter {
     return oldDelegate.relativeAngleDegrees != relativeAngleDegrees ||
         oldDelegate.distanceMeters != distanceMeters ||
         oldDelegate.phonePitchDegrees != phonePitchDegrees ||
-        oldDelegate.isParkedVehicle != isParkedVehicle;
+        oldDelegate.isParkedVehicle != isParkedVehicle ||
+        oldDelegate.userFloorNumber != userFloorNumber ||
+        oldDelegate.targetFloorNumber != targetFloorNumber;
   }
 }
 

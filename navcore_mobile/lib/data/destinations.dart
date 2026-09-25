@@ -118,7 +118,7 @@ const entranceAnchor = GeodeticCoords(
 );
 
 final mockDestinations = [
-  // FLOOR -1 - Basement 1 Parking & Express Services (5 Items)
+  // FLOOR -1 - Basement 1 Parking & Express Services (5 Items) - Height: 30.0m
   const DestinationPOI(
     id: 'poi-b1-01',
     name: 'B1 Executive Valet & Concierge',
@@ -126,9 +126,9 @@ final mockDestinations = [
     floorNumber: -1,
     rating: 4.9,
     location: GeodeticCoords(
-      latitude: 6.926600,
-      longitude: 79.845100,
-      height: 40.0,
+      latitude: 6.927380,
+      longitude: 79.845312,
+      height: 30.0,
     ),
     description:
         'VIP valet drop-off, luggage storage, and premium parking concierge desk.',
@@ -142,9 +142,9 @@ final mockDestinations = [
     floorNumber: -1,
     rating: 4.8,
     location: GeodeticCoords(
-      latitude: 6.927600,
-      longitude: 79.846100,
-      height: 40.0,
+      latitude: 6.927380,
+      longitude: 79.845912,
+      height: 30.0,
     ),
     description:
         'Express groceries, fresh takeaway snacks, cold beverages, and essentials.',
@@ -158,9 +158,9 @@ final mockDestinations = [
     floorNumber: -1,
     rating: 4.9,
     location: GeodeticCoords(
-      latitude: 6.926300,
-      longitude: 79.844900,
-      height: 40.0,
+      latitude: 6.926780,
+      longitude: 79.845312,
+      height: 30.0,
     ),
     description:
         'High-speed 120kW DC EV chargers for Tesla, Hyundai, Nissan & BYD vehicles.',
@@ -174,9 +174,9 @@ final mockDestinations = [
     floorNumber: -1,
     rating: 4.7,
     location: GeodeticCoords(
-      latitude: 6.927900,
-      longitude: 79.846300,
-      height: 40.0,
+      latitude: 6.926780,
+      longitude: 79.845912,
+      height: 30.0,
     ),
     description:
         'Eco-friendly waterless car wash, interior vacuuming & ceramic coating.',
@@ -190,9 +190,9 @@ final mockDestinations = [
     floorNumber: -1,
     rating: 4.8,
     location: GeodeticCoords(
-      latitude: 6.926800,
-      longitude: 79.845500,
-      height: 40.0,
+      latitude: 6.927480,
+      longitude: 79.845612,
+      height: 30.0,
     ),
     description:
         'Automated smart luggage lockers, parcel pickup, and courier services.',
@@ -200,7 +200,7 @@ final mockDestinations = [
     imageUrl: 'assets/images/shops/b1_luggage_lockers.jpg',
   ),
 
-  // FLOOR 1 - Ground Floor & Ceylon Atrium (5 Items)
+  // FLOOR 1 - Ground Floor & Ceylon Atrium (5 Items) - Height: 45.0m
   const DestinationPOI(
     id: 'poi-101',
     name: 'Odel Flagship Department Store',
@@ -208,8 +208,8 @@ final mockDestinations = [
     floorNumber: 1,
     rating: 4.9,
     location: GeodeticCoords(
-      latitude: 6.927550,
-      longitude: 79.846250,
+      latitude: 6.927430,
+      longitude: 79.845612,
       height: 45.0,
     ),
     description: 'Premier Sri Lankan lifestyle, fashion & department store.',
@@ -223,8 +223,8 @@ final mockDestinations = [
     floorNumber: 1,
     rating: 5.0,
     location: GeodeticCoords(
-      latitude: 6.927220,
-      longitude: 79.845800,
+      latitude: 6.927330,
+      longitude: 79.845862,
       height: 45.0,
     ),
     description:
@@ -239,8 +239,8 @@ final mockDestinations = [
     floorNumber: 1,
     rating: 4.9,
     location: GeodeticCoords(
-      latitude: 6.926680,
-      longitude: 79.845250,
+      latitude: 6.927079,
+      longitude: 79.845962,
       height: 45.0,
     ),
     description:
@@ -255,8 +255,8 @@ final mockDestinations = [
     floorNumber: 1,
     rating: 4.8,
     location: GeodeticCoords(
-      latitude: 6.927700,
-      longitude: 79.845180,
+      latitude: 6.926830,
+      longitude: 79.845862,
       height: 45.0,
     ),
     description:
@@ -271,8 +271,8 @@ final mockDestinations = [
     floorNumber: 1,
     rating: 4.7,
     location: GeodeticCoords(
-      latitude: 6.926450,
-      longitude: 79.846100,
+      latitude: 6.926730,
+      longitude: 79.845612,
       height: 45.0,
     ),
     description:
@@ -281,7 +281,7 @@ final mockDestinations = [
     imageUrl: 'assets/images/shops/keells_super_hypermarket.jpg',
   ),
 
-  // FLOOR 2 - Fashion & Apparel (5 Items)
+  // FLOOR 2 - Fashion & Apparel (5 Items) - Height: 60.0m
   const DestinationPOI(
     id: 'poi-201',
     name: 'Cotton Collection',
@@ -289,9 +289,9 @@ final mockDestinations = [
     floorNumber: 2,
     rating: 4.6,
     location: GeodeticCoords(
-      latitude: 6.927850,
-      longitude: 79.845150,
-      height: 50.0,
+      latitude: 6.926830,
+      longitude: 79.845362,
+      height: 60.0,
     ),
     description:
         'Casual island wear, linen garments, tropical resort fashion & accessories.',
@@ -305,9 +305,9 @@ final mockDestinations = [
     floorNumber: 2,
     rating: 4.8,
     location: GeodeticCoords(
-      latitude: 6.926350,
-      longitude: 79.846400,
-      height: 50.0,
+      latitude: 6.927079,
+      longitude: 79.845262,
+      height: 60.0,
     ),
     description:
         'Chic Sri Lankan womenswear, evening attire, and designer handbags.',
@@ -321,9 +321,9 @@ final mockDestinations = [
     floorNumber: 2,
     rating: 4.7,
     location: GeodeticCoords(
-      latitude: 6.928100,
-      longitude: 79.846600,
-      height: 50.0,
+      latitude: 6.927330,
+      longitude: 79.845362,
+      height: 60.0,
     ),
     description:
         'Extensive selection of international trends and local Sri Lankan apparel.',
@@ -337,9 +337,9 @@ final mockDestinations = [
     floorNumber: 2,
     rating: 4.9,
     location: GeodeticCoords(
-      latitude: 6.926150,
-      longitude: 79.844850,
-      height: 50.0,
+      latitude: 6.927480,
+      longitude: 79.845612,
+      height: 60.0,
     ),
     description:
         'Vibrant handwoven Sri Lankan textiles, books, toys, and artisanal crafts.',
@@ -353,9 +353,9 @@ final mockDestinations = [
     floorNumber: 2,
     rating: 4.8,
     location: GeodeticCoords(
-      latitude: 6.927200,
-      longitude: 79.845900,
-      height: 50.0,
+      latitude: 6.927079,
+      longitude: 79.846012,
+      height: 60.0,
     ),
     description:
         'Premium luxury suits, formal wear, leather shoes & accessories.',
@@ -363,7 +363,7 @@ final mockDestinations = [
     imageUrl: 'assets/images/shops/hugo_boss_luxury_apparel.jpg',
   ),
 
-  // FLOOR 3 - Tech & Electronics Hub (5 Items)
+  // FLOOR 3 - Tech & Electronics Hub (5 Items) - Height: 75.0m
   const DestinationPOI(
     id: 'poi-301',
     name: 'Singer Mega Experience Center',
@@ -371,9 +371,9 @@ final mockDestinations = [
     floorNumber: 3,
     rating: 4.8,
     location: GeodeticCoords(
-      latitude: 6.927950,
-      longitude: 79.846750,
-      height: 55.0,
+      latitude: 6.927380,
+      longitude: 79.845912,
+      height: 75.0,
     ),
     description:
         'Smart TVs, home electronics, laptops, and consumer technology.',
@@ -387,9 +387,9 @@ final mockDestinations = [
     floorNumber: 3,
     rating: 4.9,
     location: GeodeticCoords(
-      latitude: 6.928300,
-      longitude: 79.845300,
-      height: 55.0,
+      latitude: 6.926780,
+      longitude: 79.845912,
+      height: 75.0,
     ),
     description:
         'Authorized Apple products, iPhones, MacBooks, and LG smart devices.',
@@ -403,9 +403,9 @@ final mockDestinations = [
     floorNumber: 3,
     rating: 4.8,
     location: GeodeticCoords(
-      latitude: 6.925950,
-      longitude: 79.846500,
-      height: 55.0,
+      latitude: 6.926680,
+      longitude: 79.845612,
+      height: 75.0,
     ),
     description:
         '5G SIM connections, eSIM activation, fiber broadband & IoT gadgets.',
@@ -419,9 +419,9 @@ final mockDestinations = [
     floorNumber: 3,
     rating: 4.7,
     location: GeodeticCoords(
-      latitude: 6.927650,
-      longitude: 79.844500,
-      height: 55.0,
+      latitude: 6.926780,
+      longitude: 79.845312,
+      height: 75.0,
     ),
     description:
         'National telecom service desk, fiber routers, and mobile accessories.',
@@ -435,9 +435,9 @@ final mockDestinations = [
     floorNumber: 3,
     rating: 4.9,
     location: GeodeticCoords(
-      latitude: 6.926800,
-      longitude: 79.845600,
-      height: 55.0,
+      latitude: 6.927079,
+      longitude: 79.845212,
+      height: 75.0,
     ),
     description:
         'Galaxy smartphones, tablets, smartwatches & home appliance displays.',
@@ -445,7 +445,7 @@ final mockDestinations = [
     imageUrl: 'assets/images/shops/samsung_smart_experience_zone.jpg',
   ),
 
-  // FLOOR 4 - Food Court & Dining Layer (5 Items)
+  // FLOOR 4 - Food Court & Dining Layer (5 Items) - Height: 90.0m
   const DestinationPOI(
     id: 'poi-401',
     name: 'Food Studio Ceylon Court',
@@ -453,9 +453,9 @@ final mockDestinations = [
     floorNumber: 4,
     rating: 4.9,
     location: GeodeticCoords(
-      latitude: 6.928450,
-      longitude: 79.847150,
-      height: 60.0,
+      latitude: 6.927380,
+      longitude: 79.845312,
+      height: 90.0,
     ),
     description:
         'Fresh Kottu Roti, Jaffna Crab Curry, Egg Hoppers & Ceylon street food.',
@@ -469,9 +469,9 @@ final mockDestinations = [
     floorNumber: 4,
     rating: 5.0,
     location: GeodeticCoords(
-      latitude: 6.928800,
-      longitude: 79.844600,
-      height: 60.0,
+      latitude: 6.927530,
+      longitude: 79.845612,
+      height: 90.0,
     ),
     description:
         'World-renowned Sri Lankan giant lagoon crab & Garlic Chili Prawns.',
@@ -485,9 +485,9 @@ final mockDestinations = [
     floorNumber: 4,
     rating: 4.7,
     location: GeodeticCoords(
-      latitude: 6.925500,
-      longitude: 79.847350,
-      height: 60.0,
+      latitude: 6.927380,
+      longitude: 79.845962,
+      height: 90.0,
     ),
     description:
         'Artisanal local coffees, iced lattes, fresh pastries, and savories.',
@@ -501,9 +501,9 @@ final mockDestinations = [
     floorNumber: 4,
     rating: 4.6,
     location: GeodeticCoords(
-      latitude: 6.927500,
-      longitude: 79.844100,
-      height: 60.0,
+      latitude: 6.927079,
+      longitude: 79.846062,
+      height: 90.0,
     ),
     description:
         'Mexican inspired burritos, crunchy tacos, and spicy Sri Lankan sauces.',
@@ -517,9 +517,9 @@ final mockDestinations = [
     floorNumber: 4,
     rating: 5.0,
     location: GeodeticCoords(
-      latitude: 6.928750,
-      longitude: 79.847400,
-      height: 60.0,
+      latitude: 6.926680,
+      longitude: 79.845962,
+      height: 90.0,
     ),
     description:
         'Premium 3D IMAX screen, Dolby Atmos surround sound & luxury recliners.',

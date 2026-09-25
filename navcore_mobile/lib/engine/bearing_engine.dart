@@ -85,7 +85,7 @@ double calculateAccurate3DDistance(
   GeodeticCoords targetLocation, {
   int userFloorNumber = 1,
   int targetFloorNumber = 1,
-  double heightPerFloorMeters = 4.5,
+  double heightPerFloorMeters = 15.0,
 }) {
   final userEffectiveHeight =
       userCoords.height + (userFloorNumber - 1) * heightPerFloorMeters;
@@ -117,7 +117,7 @@ double calculateDistanceFromEarthGround(
   int targetFloorNumber = 1,
   double groundElevationMeters = 45.0,
   GeodeticCoords? groundAnchorCoords,
-  double heightPerFloorMeters = 4.5,
+  double heightPerFloorMeters = 6.5,
 }) {
   final dist = (targetFloorNumber - 1).abs() * heightPerFloorMeters;
   return dist;
@@ -169,10 +169,10 @@ RealWorldSpatialMetrics calculateRealWorldSpatialMetrics({
   required GeodeticCoords targetCoords,
   int userFloorNumber = 1,
   int targetFloorNumber = 1,
-  double floorWidthMeters = 120.0,
-  double floorLengthMeters = 85.0,
-  double ceilingHeightMeters = 4.5,
-  double heightPerFloorMeters = 4.5,
+  double floorWidthMeters = 220.0,
+  double floorLengthMeters = 150.0,
+  double ceilingHeightMeters = 5.5,
+  double heightPerFloorMeters = 6.5,
   double groundElevationMeters = 45.0,
 }) {
   final d2D = haversineDistance(userCoords, targetCoords);

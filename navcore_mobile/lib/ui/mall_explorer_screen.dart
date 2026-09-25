@@ -66,7 +66,9 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
           content: Text('GPS Auto-Detecting... Found ${nearest.name}'),
           backgroundColor: const Color(0xFF2563EB),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       );
     }
@@ -92,7 +94,9 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
           content: Text('Auto-downloaded & Activated map for ${nearest.name}!'),
           backgroundColor: const Color(0xFF16A34A),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       );
     }
@@ -125,7 +129,9 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
           content: Text('${mall.name} map downloaded successfully!'),
           backgroundColor: const Color(0xFF16A34A),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       );
     }
@@ -142,7 +148,9 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
           content: Text('Activated ${mall.name} map for real navigation.'),
           backgroundColor: const Color(0xFF2563EB),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       );
     }
@@ -152,10 +160,12 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
   Widget build(BuildContext context) {
     final filtered = _malls.where((m) {
       final q = _searchQuery.toLowerCase();
-      final matchesQuery = m.name.toLowerCase().contains(q) ||
+      final matchesQuery =
+          m.name.toLowerCase().contains(q) ||
           m.city.toLowerCase().contains(q) ||
           m.category.toLowerCase().contains(q);
-      final matchesCity = _selectedCityFilter == 'ALL' ||
+      final matchesCity =
+          _selectedCityFilter == 'ALL' ||
           m.city.toUpperCase().contains(_selectedCityFilter);
       return matchesQuery && matchesCity;
     }).toList();
@@ -204,7 +214,9 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: IconButton(
                               icon: const Icon(
@@ -215,30 +227,7 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                               onPressed: widget.onBackClicked,
                             ),
                           ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x332563EB),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            LucideIcons.store,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
+
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,11 +341,15 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
@@ -383,7 +376,9 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                             child: Row(
                               children: cities.map((city) {
                                 final isSelected = _selectedCityFilter == city;
-                                final label = city == 'ALL' ? 'All Cities' : city;
+                                final label = city == 'ALL'
+                                    ? 'All Cities'
+                                    : city;
                                 return Padding(
                                   padding: const EdgeInsets.only(right: 8),
                                   child: GestureDetector(
@@ -393,7 +388,9 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                                       });
                                     },
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 6,
@@ -414,7 +411,7 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                                                   color: Color(0x332563EB),
                                                   blurRadius: 8,
                                                   offset: Offset(0, 3),
-                                                )
+                                                ),
                                               ]
                                             : null,
                                       ),
@@ -457,9 +454,7 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
             if (_isLoading)
               const SliverFillRemaining(
                 child: Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xFF2563EB),
-                  ),
+                  child: CircularProgressIndicator(color: Color(0xFF2563EB)),
                 ),
               )
             // Empty state
@@ -516,273 +511,265 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                   ),
                 ),
               )
-            // Mall Cards List
+            // Mall Cards 2-Column Grid
             else
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final mall = filtered[index];
-                      final isDownloading =
-                          _downloadProgress.containsKey(mall.id);
-                      final progress = _downloadProgress[mall.id] ?? 0.0;
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: 0.68,
+                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final mall = filtered[index];
+                    final isDownloading = _downloadProgress.containsKey(
+                      mall.id,
+                    );
+                    final progress = _downloadProgress[mall.id] ?? 0.0;
 
-                      double? distKm;
-                      if (widget.userCoords != null) {
-                        final meters = haversineDistance(
-                          widget.userCoords!,
-                          GeodeticCoords(
-                            latitude: mall.latitude,
-                            longitude: mall.longitude,
-                            height: widget.userCoords!.height,
-                          ),
-                        );
-                        distKm = meters / 1000.0;
-                      }
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: mall.isActive
-                                ? const Color(0xFF2563EB)
-                                : const Color(0xFFE2E8F0),
-                            width: mall.isActive ? 2 : 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: mall.isActive
-                                  ? const Color(0x1F2563EB)
-                                  : const Color(0x0A000000),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
+                    double? distKm;
+                    if (widget.userCoords != null) {
+                      final meters = haversineDistance(
+                        widget.userCoords!,
+                        GeodeticCoords(
+                          latitude: mall.latitude,
+                          longitude: mall.longitude,
+                          height: widget.userCoords!.height,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 1. Hero Image / Visual Header
-                            SizedBox(
-                              height: 125,
-                              child: Stack(
-                                children: [
-                                  Positioned.fill(
-                                    child: Image.asset(
-                                      'assets/images/mall_bg.jpg',
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Container(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: mall.isActive
-                                                ? [
-                                                    const Color(0xFF1E40AF),
-                                                    const Color(0xFF3B82F6),
-                                                  ]
-                                                : [
-                                                    const Color(0xFF334155),
-                                                    const Color(0xFF64748B),
-                                                  ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
+                      );
+                      distKm = meters / 1000.0;
+                    }
+
+                    return Container(
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: mall.isActive
+                              ? const Color(0xFF2563EB)
+                              : const Color(0xFFE2E8F0),
+                          width: mall.isActive ? 2 : 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: mall.isActive
+                                ? const Color(0x1F2563EB)
+                                : const Color(0x0A000000),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 1. Hero Image / Visual Header
+                          Expanded(
+                            flex: 5,
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: Image.asset(
+                                    'assets/images/mall_bg.jpg',
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) => Container(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: mall.isActive
+                                                  ? [
+                                                      const Color(0xFF1E40AF),
+                                                      const Color(0xFF3B82F6),
+                                                    ]
+                                                  : [
+                                                      const Color(0xFF334155),
+                                                      const Color(0xFF64748B),
+                                                    ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
                                           ),
                                         ),
+                                  ),
+                                ),
+                                // Dark Gradient Overlay
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.black.withValues(alpha: 0.25),
+                                          Colors.black.withValues(alpha: 0.70),
+                                        ],
                                       ),
                                     ),
                                   ),
-                                  // Dark Gradient Overlay for readability
-                                  Positioned.fill(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Colors.black.withValues(alpha: 0.35),
-                                            Colors.black.withValues(alpha: 0.75),
-                                          ],
+                                ),
+                                // Top Left: Rating Badge
+                                Positioned(
+                                  top: 8,
+                                  left: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.65,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.25,
                                         ),
                                       ),
                                     ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          mall.rating,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 2),
+                                        const Icon(
+                                          LucideIcons.star,
+                                          color: Color(0xFFFDE047),
+                                          size: 10,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  // Top Left: Rating Badge
+                                ),
+                                // Top Right: Active Badge
+                                if (mall.isActive)
                                   Positioned(
-                                    top: 12,
-                                    left: 12,
+                                    top: 8,
+                                    right: 8,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
+                                        horizontal: 6,
                                         vertical: 3,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.65,
-                                        ),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.25,
+                                        color: const Color(0xFF16A34A),
+                                        borderRadius: BorderRadius.circular(8),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                            color: Color(0x4416A34A),
+                                            blurRadius: 6,
+                                            offset: Offset(0, 2),
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                      child: Row(
+                                      child: const Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Text(
-                                            mall.rating,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 11.5,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                          Icon(
+                                            LucideIcons.checkCircle2,
+                                            color: Colors.white,
+                                            size: 10,
                                           ),
-                                          const SizedBox(width: 3),
-                                          const Icon(
-                                            LucideIcons.star,
-                                            color: Color(0xFFFDE047),
-                                            size: 12,
+                                          SizedBox(width: 3),
+                                          Text(
+                                            'ACTIVE',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 0.4,
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
                                   ),
-                                  // Top Right: Active Map Badge
-                                  if (mall.isActive)
-                                    Positioned(
-                                      top: 12,
-                                      right: 12,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 9,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF16A34A),
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Color(0x4416A34A),
-                                              blurRadius: 8,
-                                              offset: Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              LucideIcons.checkCircle2,
-                                              color: Colors.white,
-                                              size: 12,
-                                            ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'ACTIVE MAP',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.w800,
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
-                                          ],
+                                // Distance Tag Overlay at bottom left of image
+                                if (distKm != null)
+                                  Positioned(
+                                    bottom: 8,
+                                    left: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF2563EB,
+                                        ).withValues(alpha: 0.85),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        distKm < 1.0
+                                            ? '${(distKm * 1000).toInt()}m away'
+                                            : '${distKm.toStringAsFixed(1)}km away',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                    ),
-                                  // Bottom Overlay: Mall Name & Location
-                                  Positioned(
-                                    left: 14,
-                                    right: 14,
-                                    bottom: 10,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          mall.name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 16.5,
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.white,
-                                            shadows: const [
-                                              Shadow(
-                                                color: Colors.black,
-                                                blurRadius: 6,
-                                                offset: Offset(0, 1),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '${mall.city}, ${mall.country} • ${mall.category}',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.white.withValues(
-                                              alpha: 0.9,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
+                              ],
                             ),
+                          ),
 
-                            // 2. Metadata Badges & Action Buttons Section
-                            Padding(
-                              padding: const EdgeInsets.all(14),
+                          // 2. Info & Action Section
+                          Expanded(
+                            flex: 6,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  // Badges Row
-                                  Wrap(
-                                    spacing: 6,
-                                    runSpacing: 6,
+                                  Column(
                                     crossAxisAlignment:
-                                        WrapCrossAlignment.center,
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      if (distKm != null)
-                                        _buildMetaChip(
-                                          LucideIcons.navigation,
-                                          distKm < 1.0
-                                              ? '${(distKm * 1000).toInt()}m away'
-                                              : '${distKm.toStringAsFixed(1)}km away',
-                                          const Color(0xFFEFF6FF),
-                                          const Color(0xFF1D4ED8),
+                                      Text(
+                                        mall.name,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFF0F172A),
+                                          height: 1.15,
                                         ),
-                                      _buildMetaChip(
-                                        LucideIcons.layers,
-                                        '${mall.floorCount} Floors',
-                                        const Color(0xFFF1F5F9),
-                                        const Color(0xFF475569),
                                       ),
-                                      _buildMetaChip(
-                                        LucideIcons.hardDrive,
-                                        '${mall.packageSizeBytesMB} MB',
-                                        const Color(0xFFF1F5F9),
-                                        const Color(0xFF475569),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${mall.city} • ${mall.floorCount} Floors',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF64748B),
+                                        ),
                                       ),
                                     ],
                                   ),
 
-                                  const SizedBox(height: 12),
-
-                                  // Action Button / Progress Bar
+                                  // Action Button / Download Progress
                                   if (isDownloading) ...[
                                     Column(
                                       crossAxisAlignment:
@@ -790,26 +777,26 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                                       children: [
                                         ClipRRect(
                                           borderRadius: BorderRadius.circular(
-                                            6,
+                                            4,
                                           ),
                                           child: LinearProgressIndicator(
                                             value: progress,
-                                            minHeight: 6,
+                                            minHeight: 5,
                                             backgroundColor: const Color(
                                               0xFFE2E8F0,
                                             ),
                                             color: const Color(0xFF2563EB),
                                           ),
                                         ),
-                                        const SizedBox(height: 6),
+                                        const SizedBox(height: 4),
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             const Text(
-                                              'Downloading Map Package...',
+                                              'Downloading...',
                                               style: TextStyle(
-                                                fontSize: 11.5,
+                                                fontSize: 9.5,
                                                 color: Color(0xFF64748B),
                                                 fontWeight: FontWeight.w500,
                                               ),
@@ -817,7 +804,7 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                                             Text(
                                               '${(progress * 100).toInt()}%',
                                               style: const TextStyle(
-                                                fontSize: 11.5,
+                                                fontSize: 9.5,
                                                 fontWeight: FontWeight.bold,
                                                 color: Color(0xFF2563EB),
                                               ),
@@ -830,24 +817,23 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                                     if (mall.isDownloaded) ...[
                                       SizedBox(
                                         width: double.infinity,
-                                        child: ElevatedButton.icon(
+                                        height: 32,
+                                        child: ElevatedButton(
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: mall.isActive
-                                                ? const Color(0xFFECFDF5)
+                                                ? const Color(0xFFDCFCE7)
                                                 : const Color(0xFF2563EB),
                                             foregroundColor: mall.isActive
-                                                ? const Color(0xFF047857)
+                                                ? const Color(0xFF15803D)
                                                 : Colors.white,
-                                            elevation: mall.isActive ? 0 : 2,
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 12,
-                                            ),
+                                            elevation: mall.isActive ? 0 : 1,
+                                            padding: EdgeInsets.zero,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
-                                                  BorderRadius.circular(14),
+                                                  BorderRadius.circular(10),
                                               side: BorderSide(
                                                 color: mall.isActive
-                                                    ? const Color(0xFFA7F3D0)
+                                                    ? const Color(0xFF86EFAC)
                                                     : Colors.transparent,
                                               ),
                                             ),
@@ -855,27 +841,35 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                                           onPressed: mall.isActive
                                               ? null
                                               : () => _activateMall(mall),
-                                          icon: Icon(
-                                            mall.isActive
-                                                ? LucideIcons.checkCircle
-                                                : LucideIcons.navigation,
-                                            size: 16,
-                                          ),
-                                          label: Text(
-                                            mall.isActive
-                                                ? 'Map Active & Loaded'
-                                                : 'Use Map For Navigation',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
-                                            ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                mall.isActive
+                                                    ? LucideIcons.check
+                                                    : LucideIcons.navigation,
+                                                size: 13,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                mall.isActive
+                                                    ? 'Active'
+                                                    : 'Use Map',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 11.5,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ),
                                     ] else ...[
                                       SizedBox(
                                         width: double.infinity,
-                                        child: OutlinedButton.icon(
+                                        height: 32,
+                                        child: OutlinedButton(
                                           style: OutlinedButton.styleFrom(
                                             backgroundColor: const Color(
                                               0xFFEFF6FF,
@@ -886,25 +880,30 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                                             side: const BorderSide(
                                               color: Color(0xFFBFDBFE),
                                             ),
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 12,
-                                            ),
+                                            padding: EdgeInsets.zero,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
-                                                  BorderRadius.circular(14),
+                                                  BorderRadius.circular(10),
                                             ),
                                           ),
                                           onPressed: () => _startDownload(mall),
-                                          icon: const Icon(
-                                            LucideIcons.downloadCloud,
-                                            size: 16,
-                                          ),
-                                          label: Text(
-                                            'Download Map (${mall.packageSizeBytesMB} MB)',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
-                                            ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                LucideIcons.downloadCloud,
+                                                size: 13,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '${mall.packageSizeBytesMB} MB',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 11,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ),
@@ -913,12 +912,11 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                    childCount: filtered.length,
-                  ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }, childCount: filtered.length),
                 ),
               ),
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -927,35 +925,4 @@ class _MallExplorerScreenState extends State<MallExplorerScreen> {
       ),
     );
   }
-
-  Widget _buildMetaChip(
-    IconData icon,
-    String text,
-    Color bg,
-    Color fg,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: fg),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: fg,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
-

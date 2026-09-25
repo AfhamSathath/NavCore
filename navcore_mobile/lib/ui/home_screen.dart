@@ -9,6 +9,7 @@ import '../engine/floor_tracker.dart';
 import '../engine/bearing_engine.dart';
 import 'shop_details_screen.dart';
 import 'widgets/shop_image_widget.dart';
+import 'widgets/nexnav_logo_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   final GeodeticCoords userCoords;
@@ -662,25 +663,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     // Top Bar Header
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x332563EB),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            LucideIcons.compass,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
+                        const NexNavLogoWidget(size: 38),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -1170,11 +1153,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            LucideIcons.car,
-                            color: Colors.black,
-                            size: 13,
-                          ),
+                          Icon(LucideIcons.car, color: Colors.black, size: 13),
                           SizedBox(width: 6),
                           Text(
                             'MY PARKED CAR',
@@ -1356,8 +1335,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-
-
 }
 
 class _LiveStatusPulseDot extends StatefulWidget {
@@ -1526,27 +1503,32 @@ class _AmbientGlowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final glowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [glowColor, glowColor.withValues(alpha: 0)],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(size.width * 0.85, size.height * 0.2),
-          radius: size.width * 0.5,
-        ),
-      );
+      ..shader =
+          RadialGradient(
+            colors: [glowColor, glowColor.withValues(alpha: 0)],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.85, size.height * 0.2),
+              radius: size.width * 0.5,
+            ),
+          );
 
     final accentGlowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [accentColor, accentColor.withValues(alpha: 0)],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(size.width * 0.15, size.height * 0.8),
-          radius: size.width * 0.45,
-        ),
-      );
+      ..shader =
+          RadialGradient(
+            colors: [accentColor, accentColor.withValues(alpha: 0)],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.15, size.height * 0.8),
+              radius: size.width * 0.45,
+            ),
+          );
 
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), glowPaint);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), accentGlowPaint);
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      accentGlowPaint,
+    );
   }
 
   @override

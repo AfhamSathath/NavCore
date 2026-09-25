@@ -154,42 +154,6 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
           ],
         ),
         actions: [
-          ValueListenableBuilder<bool>(
-            valueListenable: DeveloperModeNotifier.instance,
-            builder: (context, isDevMode, child) {
-              return IconButton(
-                icon: Icon(
-                  isDevMode ? LucideIcons.bug : LucideIcons.sparkles,
-                  color: isDevMode
-                      ? const Color(0xFFDC2626)
-                      : const Color(0xFF2563EB),
-                  size: 19,
-                ),
-                onPressed: () {
-                  DeveloperModeNotifier.instance.toggle();
-                  final newState =
-                      DeveloperModeNotifier.instance.isDeveloperMode;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        newState
-                            ? 'Developer & D-Pad Controls Enabled'
-                            : 'User Navigation Mode Active',
-                      ),
-                      backgroundColor: newState
-                          ? const Color(0xFF1E293B)
-                          : const Color(0xFF10B981),
-                      duration: const Duration(seconds: 2),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-                tooltip: isDevMode
-                    ? 'Switch to User Mode'
-                    : 'Toggle Dev Telemetry & D-Pad',
-              );
-            },
-          ),
           if (!isParkingFloor)
             InkWell(
               onTap: () => _showFloorDirectoryModal(context, currentFloorPOIs),
@@ -831,7 +795,7 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                                                         ),
                                                   ),
                                                   child: Text(
-                                                    'OPEN NOW',
+                                                    'Open Now',
                                                     style:
                                                         GoogleFonts.plusJakartaSans(
                                                           fontSize: 8,
@@ -886,7 +850,7 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                                             color: Colors.white,
                                           ),
                                           label: Text(
-                                            'NAVIGATE HERE (AR)',
+                                            'Start Camera Navigation',
                                             style: GoogleFonts.plusJakartaSans(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w800,
@@ -972,11 +936,11 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
   ) {
     const double roomTopPadding = 50.0;
     final double availableHeight = height - roomTopPadding - 46.0;
-    final double roomH = availableHeight * 0.23;
+    final double roomH = availableHeight * 0.15;
     final double gapY = (availableHeight - (roomH * 3)) / 4;
-    final double roomW = width * 0.31;
-    final double leftX = 18.0;
-    final double rightX = width - 18.0 - roomW;
+    final double roomW = width * 0.30;
+    final double leftX = 20.0;
+    final double rightX = width - 20.0 - roomW;
 
     final roomRects = [
       Rect.fromLTWH(leftX, roomTopPadding + gapY, roomW, roomH),
@@ -1008,9 +972,8 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
           (poi != null &&
               poi.category.toUpperCase().contains(_selectedCategoryFilter));
 
-      final roomCode = '#${displayFloor.floorNumber}0${i + 1}';
+      final roomCode = 'Store ${i + 1}';
       final storeName = poi != null ? poi.name : 'Store Space';
-      final imageUrl = _getStoreImageUrl(storeName);
 
       widgets.add(
         Positioned(
@@ -1024,7 +987,7 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(10),
                 onTap: () {
                   if (poi != null) {
                     setState(() {
@@ -1034,161 +997,119 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    color: isSelected
+                        ? const Color(0xFFEFF6FF)
+                        : (poi != null
+                              ? Colors.white
+                              : const Color(0xFFF8FAFC)),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isSelected
                           ? const Color(0xFF2563EB)
                           : const Color(0xFFCBD5E1),
-                      width: isSelected ? 2.5 : 1.2,
+                      width: isSelected ? 2.0 : 1.0,
                     ),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
                               color: const Color(
                                 0xFF2563EB,
-                              ).withValues(alpha: 0.35),
-                              blurRadius: 10,
+                              ).withValues(alpha: 0.25),
+                              blurRadius: 6,
                               spreadRadius: 1,
                             ),
                           ]
                         : const [
-                            BoxShadow(color: Colors.black12, blurRadius: 4),
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 3,
+                              offset: Offset(0, 1),
+                            ),
                           ],
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Stack(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6.0,
+                      vertical: 4.0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Realistic Store Photography Background Image
-                        Positioned.fill(
-                          child: ShopImage(
-                            imagePathOrUrl: poi != null
-                                ? poi.effectiveImageUrl
-                                : imageUrl,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-
-                        // Gradient Scrim for Content Contrast
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.3),
-                                  Colors.black.withValues(alpha: 0.85),
-                                ],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
+                        // Top Row: Room Code Tag (Left) + Category Badge (Right)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              roomCode,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 7.5,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected
+                                    ? const Color(0xFF2563EB)
+                                    : const Color(0xFF64748B),
                               ),
                             ),
-                          ),
-                        ),
-
-                        // Top Row: Room Tag Badge (Left) + Category Badge (Right)
-                        Positioned(
-                          top: 6,
-                          left: 6,
-                          right: 6,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? const Color(0xFF2563EB)
-                                      : Colors.black54,
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: Text(
-                                  roomCode,
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                            if (poi != null)
+                              Text(
+                                _getCategoryTag(poi.category),
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 7.0,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF1E40AF),
                                 ),
                               ),
-                              if (poi != null)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(
-                                      0xFF2563EB,
-                                    ).withValues(alpha: 0.85),
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                  child: Text(
-                                    _getCategoryTag(poi.category),
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 7.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
+                          ],
                         ),
 
-                        // Bottom Row: Store Title + Icon + Rating
-                        Positioned(
-                          left: 6,
-                          bottom: 6,
-                          right: 6,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    _getCategoryIcon(poi?.category ?? ''),
-                                    size: 11,
-                                    color: const Color(0xFF60A5FA),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      storeName,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 9.0,
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.white,
-                                        height: 1.1,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (poi != null) ...[
-                                const SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    Text(
-                                      '★ ${poi.rating}',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 8.5,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFFFBBF24),
-                                      ),
-                                    ),
-                                  ],
+                        // Center: Category Icon + Shop Name
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _getCategoryIcon(poi?.category ?? ''),
+                              size: 11,
+                              color: const Color(0xFF2563EB),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                storeName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF0F172A),
                                 ),
-                              ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Bottom Row: Rating Badge (Gold Star)
+                        if (poi != null)
+                          Row(
+                            children: [
+                              Text(
+                                '★ ${poi.rating}',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 7.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFFD97706),
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                'OPEN',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 7.0,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF15803D),
+                                ),
+                              ),
                             ],
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -2133,18 +2054,14 @@ class FloorPlanScreenState extends State<FloorPlanScreen>
     );
   }
 
-  String _getStoreImageUrl(String storeName) {
-    return getFallbackShopImage(storeName, '');
-  }
-
   String _getCategoryTag(String category) {
     final cat = category.toUpperCase();
-    if (cat.contains('FOOD')) return 'DINING';
-    if (cat.contains('TECH')) return 'TECH';
-    if (cat.contains('FASHION') || cat.contains('RETAIL')) return 'FASHION';
-    if (cat.contains('LUXURY') || cat.contains('BEAUTY')) return 'BEAUTY';
-    if (cat.contains('ENTERTAINMENT')) return 'CINEMA';
-    return 'SERVICES';
+    if (cat.contains('FOOD')) return 'Food';
+    if (cat.contains('TECH')) return 'Electronics';
+    if (cat.contains('FASHION') || cat.contains('RETAIL')) return 'Clothing';
+    if (cat.contains('LUXURY') || cat.contains('BEAUTY')) return 'Beauty';
+    if (cat.contains('ENTERTAINMENT')) return 'Movies';
+    return 'Services';
   }
 
   IconData _getCategoryIcon(String cat) {
@@ -2322,10 +2239,8 @@ class ArchitecturalFloorPainter extends CustomPainter {
     );
 
     final String hubText = floorNumber == 1
-        ? 'MAIN ENTRANCE & ESCALATORS'
-        : (isParkingFloor
-              ? 'ELEVATORS & STAIRS'
-              : 'ELEVATORS & ESCALATORS');
+        ? 'Main Entrance & Escalators'
+        : (isParkingFloor ? 'Elevators & Stairs' : 'Elevators & Escalators');
 
     _drawText(
       canvas,
@@ -2366,8 +2281,8 @@ class ArchitecturalFloorPainter extends CustomPainter {
     );
 
     final String rampLabel = isParkingFloor
-        ? '▼ ENTRANCE & EXIT'
-        : '▼ PARKING ENTRANCE';
+        ? '▼ Entrance & Exit'
+        : '▼ Parking Entrance';
     _drawText(
       canvas,
       rampLabel,
@@ -2392,11 +2307,11 @@ class ArchitecturalFloorPainter extends CustomPainter {
 
   Offset? _paintRetailPlan(Canvas canvas, Size size, double roomTopPadding) {
     final double availableHeight = size.height - roomTopPadding - 46.0;
-    final double roomH = availableHeight * 0.23;
+    final double roomH = availableHeight * 0.15;
     final double gapY = (availableHeight - (roomH * 3)) / 4;
-    final double roomW = size.width * 0.31;
-    final double leftX = 18.0;
-    final double rightX = size.width - 18.0 - roomW;
+    final double roomW = size.width * 0.30;
+    final double leftX = 20.0;
+    final double rightX = size.width - 20.0 - roomW;
 
     final roomBoxes = [
       Rect.fromLTWH(leftX, roomTopPadding + gapY, roomW, roomH),
@@ -2681,8 +2596,8 @@ class ArchitecturalFloorPainter extends CustomPainter {
     );
 
     final String statusLabel = status == ParkingSlotStatus.free
-        ? 'FREE'
-        : (status == ParkingSlotStatus.occupied ? 'OCCUPIED' : 'RESERVED');
+        ? 'Available'
+        : (status == ParkingSlotStatus.occupied ? 'Occupied' : 'Reserved');
     final Color statusColor = status == ParkingSlotStatus.free
         ? const Color(0xFF22C55E)
         : (status == ParkingSlotStatus.occupied
@@ -2870,3 +2785,4 @@ class ArchitecturalFloorPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
+
